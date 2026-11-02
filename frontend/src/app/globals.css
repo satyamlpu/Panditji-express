@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ──────────────────────────────────────────────────────────
+   Brand palette (fixed) + semantic tokens (what components reference). */
+:root {
+  /* Brand palette */
+  --sunshine: #ffc926;
+  --cream: #f3e8cc;
+  --carrot: #f96015;
+  --tomato: #d52518;
+  --forest: #18542a;
+  --kiwi: #9abc05;
+  --burgundy: #701f3d;
+
+  /* Semantic */
+  --bg: #fbf7ee; /* warm off-white page */
+  --surface: #ffffff;
+  --surface-2: #faf4e6; /* subtle cream panel */
+  --ink: #1a2e22; /* dark green-black text */
+  --muted: #5b6b60; /* secondary text (AA on bg/surface) */
+  --line: #e7ddc7; /* soft warm border */
+  --brand: var(--forest);
+  --accent: var(--tomato);
+  --ring: #18542a;
+  /* Premium ornament tones */
+  --gold: #b8860b; /* antique gold for ornaments */
+  --gold-soft: #d9b45b;
+  --maroon: #5a1626; /* deep devotional maroon (darker than burgundy) */
+
+  /* Admin role tokens — the brand palette mapped to UI roles (premium SaaS).
+     green = active/success/verified/completed · burgundy = selected/brand
+     accent · yellow = attention/highlight. */
+  --admin-active: var(--forest);
+  --admin-accent: var(--burgundy);
+  --admin-cta: var(--sunshine);
+  --admin-cta-ink: #4a3500; /* legible text on yellow */
+  --trend-up: var(--forest);
+  --trend-down: var(--tomato);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+  /* Visible focus for keyboard users on every interactive element. */
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  /* Admin surfaces use Inter (font-sans) headings for a clean SaaS look;
+     the public site keeps the Bricolage display font. */
+  .admin-ui h1,
+  .admin-ui h2,
+  .admin-ui h3,
+  .admin-ui h4 {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.014em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .container-pad {
+    @apply mx-auto w-full max-w-content px-4 sm:px-6;
+  }
+  /* Rendered Markdown (pages, policies). */
+  .prose {
+    @apply text-[15px] leading-relaxed;
+    color: var(--ink);
+  }
+  .prose h2 {
+    @apply mt-8 font-display text-2xl font-bold text-ink;
+  }
+  .prose h3 {
+    @apply mt-6 font-display text-xl font-semibold text-ink;
+  }
+  .prose p {
+    @apply mt-3;
+  }
+  .prose ul {
+    @apply mt-3 list-disc space-y-1 pl-5;
+  }
+  .prose ol {
+    @apply mt-3 list-decimal space-y-1 pl-5;
+  }
+  .prose a {
+    @apply text-forest underline underline-offset-2 hover:text-carrot;
+  }
+  .prose strong {
+    @apply font-semibold text-ink;
+  }
+  .prose blockquote {
+    @apply mt-4 border-l-4 border-line pl-4 italic text-muted;
+  }
+
+  /* Thin decorative top rule using the brand palette. */
+  .brand-rule {
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      var(--forest) 0 20%,
+      var(--kiwi) 20% 40%,
+      var(--sunshine) 40% 60%,
+      var(--carrot) 60% 80%,
+      var(--tomato) 80% 100%
+    );
+  }
+}

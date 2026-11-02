@@ -1,0 +1,94 @@
+name: CI
+
+# Milestone 1 gate: the backend job runs the full test suite — including the
+# booking/payment concurrency tests — against a real PostgreSQL service and
+# verifies the Alembic migration chain on PostgreSQL. The concurrency guards
+# (SELECT … FOR UPDATE row locks) only have teeth on PostgreSQL, so CI is where
+# they are truly exercised.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (PostgreSQL)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        # PostGIS image so the spatial geo tests exercise the real extension.
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: panditji_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # App normalises this to postgresql+psycopg:// (sync + async).
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/panditji_test
+      APP_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint (ruff)
+        run: ruff check app/ tests/
+
+      - name: Migrate (alembic upgrade head on PostgreSQL)
+        run: alembic upgrade head
+
+      - name: Test (pytest on PostgreSQL)
+        run: pytest -q
+
+  frontend:
+    name: Frontend (lint · typecheck · build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,36 @@
+# Root safety net — subprojects also have their own .gitignore.
+
+# Dependencies / virtualenvs
+**/node_modules/
+**/.venv/
+venv/
+.venv/
+
+# Build output / caches
+**/.next/
+**/dist/
+**/build/
+**/.expo/
+**/__pycache__/
+*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+
+# Secrets & local env (templates .env.example are kept)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Databases / local data / uploads
+*.db
+*.sqlite
+*.sqlite3
+backend/uploads/
+
+# Logs & OS / editor cruft
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
