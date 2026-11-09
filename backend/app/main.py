@@ -85,6 +85,15 @@ app.include_router(mp_admin_finance.router)
 app.include_router(mp_admin_support.router)
 
 # Serve admin-uploaded images read-only (optional; the site works without any).
+# On a read-only serverless filesystem (e.g. Vercel) the project dir can't be
+# written, so fall back to the platform temp dir and never let this optional
+# mount crash startup.
+import tempfile  # noqa: E402
+
 _uploads = Path("uploads")
-_uploads.mkdir(parents=True, exist_ok=True)
+try:
+    _uploads.mkdir(parents=True, exist_ok=True)
+except OSError:
+    _uploads = Path(tempfile.gettempdir()) / "pje-uploads"
+    _uploads.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(_uploads)), name="uploads")

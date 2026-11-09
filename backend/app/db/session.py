@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import event
@@ -10,24 +11,30 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
 _is_sqlite = settings.database_url.startswith("sqlite")
+# Vercel (and most FaaS) set VERCEL/AWS_LAMBDA_* — each invocation is its own
+# short-lived process, so an in-process pool is useless and can exhaust the DB.
+_is_serverless = bool(os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
 
-# SQLite ignores pool sizing (one file, serialized writer); PostgreSQL gets an
-# explicitly bounded pool so N stateless app instances don't exhaust server
-# connections, with recycling to survive proxy/idle timeouts.
-_pool_kwargs: dict = (
-    {}
-    if _is_sqlite
-    else {
+# SQLite ignores pool sizing (one file, serialized writer). On serverless, use
+# NullPool (one connection per invocation) and point DATABASE_URL at a pooled
+# (pgbouncer) Postgres endpoint. A long-lived server gets a bounded pool with
+# recycling so N instances don't exhaust connections.
+if _is_sqlite:
+    _pool_kwargs: dict = {}
+elif _is_serverless:
+    _pool_kwargs = {"poolclass": NullPool}
+else:
+    _pool_kwargs = {
         "pool_size": 10,
         "max_overflow": 20,
         "pool_timeout": 30,
         "pool_recycle": 1800,
     }
-)
 
 engine = create_async_engine(
     settings.database_url,
