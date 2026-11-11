@@ -36,11 +36,19 @@ else:
         "pool_recycle": 1800,
     }
 
+# On serverless behind a pgbouncer pooler (e.g. Supabase transaction mode on
+# port 6543), psycopg's auto-prepared statements fail; disabling them keeps
+# every Supabase pooler mode (transaction/session/direct) working.
+_connect_args: dict = (
+    {"prepare_threshold": None} if _is_serverless and not _is_sqlite else {}
+)
+
 engine = create_async_engine(
     settings.database_url,
     echo=False,
     future=True,
     pool_pre_ping=not _is_sqlite,
+    connect_args=_connect_args,
     **_pool_kwargs,
 )
 
