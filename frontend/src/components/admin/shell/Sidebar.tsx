@@ -64,14 +64,21 @@ function SidebarInner({
         href={mod.home}
         className={cn("flex items-center gap-2.5 px-4 py-4", collapsed && "justify-center px-0")}
       >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-forest font-display text-base font-bold text-sunshine">
-          ॐ
-        </span>
-        {!collapsed && (
-          <span className="min-w-0">
-            <span className="block font-display text-sm font-bold leading-tight text-forest">
-              Pandit Ji Express
-            </span>
+        {collapsed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/logo-icon.svg"
+            alt="Pandit Ji Express"
+            className="h-9 w-9 shrink-0 rounded-lg"
+          />
+        ) : (
+          <span className="flex min-w-0 items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-full.svg"
+              alt="Pandit Ji Express"
+              className="h-8 w-auto shrink-0"
+            />
             <span className="block truncate text-[11px] text-muted">{mod.label}</span>
           </span>
         )}

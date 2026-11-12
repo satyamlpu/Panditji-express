@@ -8,15 +8,8 @@ export default function NotFound() {
       <header className="border-b border-line">
         <div className="container-pad flex h-16 items-center">
           <Link href="/" className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className="grid h-9 w-9 place-items-center rounded-xl bg-forest font-display text-lg font-bold text-sunshine"
-            >
-              ॐ
-            </span>
-            <span className="font-display text-lg font-bold text-forest">
-              Pandit Ji Express
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-full.svg" alt="Pandit Ji Express" className="h-9 w-auto" />
           </Link>
         </div>
       </header>

@@ -42,16 +42,9 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
       <Mandala className="pointer-events-none absolute -right-20 -top-16 h-72 w-72 text-gold opacity-[0.06]" />
       <div className="container-pad relative grid gap-10 py-12 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
-          <div className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className="grid h-9 w-9 place-items-center rounded-xl bg-forest font-display text-lg font-bold text-sunshine"
-            >
-              ॐ
-            </span>
-            <span className="font-display text-lg font-bold text-forest">
-              {siteName}
-            </span>
+          <div className="flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-full.svg" alt={siteName} className="h-10 w-auto" />
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted">
             {settings.site?.tagline ??

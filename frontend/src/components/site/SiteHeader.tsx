@@ -35,16 +35,13 @@ export function SiteHeader({
     <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur">
       <div className="brand-rule" aria-hidden />
       <div className="container-pad flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2" aria-label={`${siteName} home`}>
-          <span
-            aria-hidden
-            className="grid h-9 w-9 place-items-center rounded-xl bg-forest font-display text-lg font-bold text-sunshine"
-          >
-            ॐ
-          </span>
-          <span className="font-display text-lg font-bold text-forest">
-            {siteName}
-          </span>
+        <Link href="/" className="flex items-center" aria-label={`${siteName} home`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-full.svg"
+            alt={siteName}
+            className="h-9 w-auto md:h-10"
+          />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">

@@ -43,16 +43,9 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-center gap-2">
-          <span
-            aria-hidden
-            className="grid h-10 w-10 place-items-center rounded-xl bg-forest font-display text-xl font-bold text-sunshine"
-          >
-            ॐ
-          </span>
-          <span className="font-display text-xl font-bold text-forest">
-            Pandit Ji Express
-          </span>
+        <div className="mb-6 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-full.svg" alt="Pandit Ji Express" className="h-11 w-auto" />
         </div>
         <div className="rounded-card border border-line bg-surface p-7 shadow-soft">
           <h1 className="font-display text-xl font-bold text-ink">Admin sign in</h1>

@@ -15,14 +15,10 @@ export function CenterChrome({ children }: { children: ReactNode }) {
     <div className="admin-ui min-h-screen bg-surface-2">
       <header className="flex items-center justify-between border-b border-line bg-surface px-5 py-3 md:px-8">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-forest font-display text-base font-bold text-sunshine">
-            ॐ
-          </span>
-          <span className="font-display text-sm font-bold text-forest">
-            Pandit Ji Express
-            <span className="ml-1.5 font-sans text-xs font-medium text-muted">
-              Admin Control Center
-            </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-full.svg" alt="Pandit Ji Express" className="h-8 w-auto" />
+          <span className="font-sans text-xs font-medium text-muted">
+            Admin Control Center
           </span>
         </div>
         <div className="relative">
