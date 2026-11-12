@@ -34,13 +34,13 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur">
       <div className="brand-rule" aria-hidden />
-      <div className="container-pad flex h-16 items-center justify-between gap-4">
+      <div className="container-pad flex h-20 items-center justify-between gap-4">
         <Link href="/" className="flex items-center" aria-label={`${siteName} home`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo-full.svg"
             alt={siteName}
-            className="h-9 w-auto md:h-10"
+            className="h-12 w-auto md:h-14"
           />
         </Link>
 

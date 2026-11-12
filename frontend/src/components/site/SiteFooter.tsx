@@ -44,7 +44,7 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
         <div>
           <div className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-full.svg" alt={siteName} className="h-10 w-auto" />
+            <img src="/logo-full.svg" alt={siteName} className="h-12 w-auto" />
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted">
             {settings.site?.tagline ??
