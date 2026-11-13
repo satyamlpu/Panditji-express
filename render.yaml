@@ -1,0 +1,38 @@
+# Render Blueprint — deploys the FastAPI backend natively (no serverless quirks).
+# Render → New → Blueprint → connect this repo. Frontend stays on Vercel.
+# Secrets (DATABASE_URL = Supabase pooler, REVALIDATE_SECRET = shared with the
+# frontend) are set in the Render dashboard, never committed here.
+services:
+  - type: web
+    name: panditji-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      # Supabase Transaction pooler URL — set in dashboard (has the password).
+      - key: DATABASE_URL
+        sync: false
+      # Backend-only secrets — Render generates strong random values.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      # Must match the frontend's REVALIDATE_SECRET — set in dashboard.
+      - key: REVALIDATE_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://frontend-umber-six-66.vercel.app
+      - key: FRONTEND_REVALIDATE_URL
+        value: https://frontend-umber-six-66.vercel.app/api/revalidate
+      - key: SITE_URL
+        value: https://frontend-umber-six-66.vercel.app
