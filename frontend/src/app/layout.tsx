@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Inter, Noto_Sans_Devanagari } from "next/font/google";
+import { Archivo, Inter, Noto_Sans_Devanagari } from "next/font/google";
 import { Providers } from "@/lib/providers";
 import { SITE_URL } from "@/lib/config";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({
+const display = Archivo({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",

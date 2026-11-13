@@ -8,12 +8,12 @@ const base =
   "inline-flex items-center justify-center gap-2 rounded-pill font-semibold transition-colors focus-visible:outline-none disabled:opacity-50 disabled:pointer-events-none";
 
 const variants: Record<Variant, string> = {
-  // Forest green — the main brand action (AA contrast on white text).
-  primary: "bg-forest text-white hover:bg-[#124020]",
-  // Tomato — reserved for the single strongest CTA (e.g. Book now).
-  accent: "bg-tomato text-white hover:bg-[#b51f13]",
-  outline: "border border-forest/30 text-forest bg-surface hover:bg-surface-2",
-  ghost: "text-forest hover:bg-surface-2",
+  // Kumkum Crimson — the main brand action (AA contrast with white text).
+  primary: "bg-brand text-white hover:bg-brand-hover",
+  // Agni Saffron — reserved for the single strongest CTA (e.g. Book now).
+  accent: "bg-accent text-white hover:bg-accent-hover",
+  outline: "border border-brand/30 text-brand bg-surface hover:bg-surface-2",
+  ghost: "text-brand hover:bg-surface-2",
 };
 
 const sizes: Record<Size, string> = {

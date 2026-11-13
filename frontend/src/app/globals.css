@@ -5,39 +5,52 @@
 /* ── Design tokens ──────────────────────────────────────────────────────────
    Brand palette (fixed) + semantic tokens (what components reference). */
 :root {
-  /* Brand palette */
-  --sunshine: #ffc926;
-  --cream: #f3e8cc;
-  --carrot: #f96015;
-  --tomato: #d52518;
-  --forest: #18542a;
-  --kiwi: #9abc05;
-  --burgundy: #701f3d;
+  /* ── Brand palette v2.0 — Panditji Express Brand Guidelines ──
+     These primitives are the only raw hex values; everything else refers to
+     them, so the whole system recolours from here. */
+  --kumkum: #9a1c24; /* Kumkum Crimson — primary brand, CTAs */
+  --kumkum-dark: #7a141b; /* pressed / hover crimson */
+  --saffron: #d2600c; /* Agni Saffron — accent */
+  --saffron-dark: #b0500a;
+  --swarna: #f5ae1e; /* Swarna Gold — micro-accents, ornaments */
+  --ivory: #fbf5ea; /* Parchment Ivory — page background */
+  --charcoal: #1b1512; /* Kohl Charcoal — primary text */
+  --ash: #5a4d44; /* Ash — secondary text */
+  --success: #1c7a3f; /* verified / completed / online (stays green) */
 
-  /* Semantic */
-  --bg: #fbf7ee; /* warm off-white page */
+  /* Legacy brand aliases → remapped to v2.0 so existing components inherit it
+     without touching every file; new work should use the names above. */
+  --sunshine: var(--swarna);
+  --cream: #f3e7ce;
+  --carrot: var(--saffron);
+  --tomato: var(--kumkum);
+  --forest: var(--kumkum);
+  --kiwi: var(--saffron);
+  --burgundy: var(--kumkum-dark);
+
+  /* Semantic tokens (what components reference) */
+  --bg: var(--ivory);
   --surface: #ffffff;
-  --surface-2: #faf4e6; /* subtle cream panel */
-  --ink: #1a2e22; /* dark green-black text */
-  --muted: #5b6b60; /* secondary text (AA on bg/surface) */
-  --line: #e7ddc7; /* soft warm border */
-  --brand: var(--forest);
-  --accent: var(--tomato);
-  --ring: #18542a;
-  /* Premium ornament tones */
-  --gold: #b8860b; /* antique gold for ornaments */
-  --gold-soft: #d9b45b;
-  --maroon: #5a1626; /* deep devotional maroon (darker than burgundy) */
+  --surface-2: #faf2e4; /* subtle ivory panel */
+  --ink: var(--charcoal);
+  --muted: var(--ash);
+  --line: #ead9c4; /* warm ivory border */
+  --brand: var(--kumkum);
+  --brand-hover: var(--kumkum-dark);
+  --accent: var(--saffron);
+  --accent-hover: var(--saffron-dark);
+  --ring: var(--kumkum);
+  --gold: var(--swarna);
+  --gold-soft: #e8c876;
+  --maroon: var(--kumkum-dark);
 
-  /* Admin role tokens — the brand palette mapped to UI roles (premium SaaS).
-     green = active/success/verified/completed · burgundy = selected/brand
-     accent · yellow = attention/highlight. */
-  --admin-active: var(--forest);
-  --admin-accent: var(--burgundy);
-  --admin-cta: var(--sunshine);
-  --admin-cta-ink: #4a3500; /* legible text on yellow */
-  --trend-up: var(--forest);
-  --trend-down: var(--tomato);
+  /* Admin role tokens — success/verified stay green; brand accent is crimson. */
+  --admin-active: var(--success);
+  --admin-accent: var(--kumkum);
+  --admin-cta: var(--swarna);
+  --admin-cta-ink: #4a3500; /* legible text on gold */
+  --trend-up: var(--success);
+  --trend-down: var(--kumkum);
 }
 
 @layer base {
@@ -54,8 +67,8 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-display), Georgia, serif;
-    letter-spacing: -0.01em;
+    font-family: var(--font-display), "Archivo", system-ui, sans-serif;
+    letter-spacing: -0.015em;
   }
   /* Visible focus for keyboard users on every interactive element. */
   :where(a, button, input, textarea, select, [tabindex]):focus-visible {
@@ -124,11 +137,10 @@
     height: 4px;
     background: linear-gradient(
       90deg,
-      var(--forest) 0 20%,
-      var(--kiwi) 20% 40%,
-      var(--sunshine) 40% 60%,
-      var(--carrot) 60% 80%,
-      var(--tomato) 80% 100%
+      var(--kumkum) 0 25%,
+      var(--saffron) 25% 50%,
+      var(--swarna) 50% 75%,
+      var(--kumkum-dark) 75% 100%
     );
   }
 }
