@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -59,6 +59,22 @@ register_exception_handlers(app)
 @app.get("/health", tags=["ops"])
 async def health() -> dict:
     return {"status": "ok", "env": settings.app_env}
+
+
+@app.get("/health/db", tags=["ops"])
+async def health_db(response: Response) -> dict:
+    """DB readiness: confirms the database is reachable (no credentials leaked)."""
+    from sqlalchemy import text
+
+    from app.db.session import async_session_maker
+
+    try:
+        async with async_session_maker() as session:
+            await session.execute(text("SELECT 1"))
+        return {"status": "ok", "db": "connected"}
+    except Exception as exc:  # pragma: no cover - infrastructure dependent
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "error", "db": type(exc).__name__}
 
 
 app.include_router(auth.router)
