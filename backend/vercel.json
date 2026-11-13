@@ -1,12 +1,18 @@
 {
   "builds": [
     {
+      "src": "api/diag.py",
+      "use": "@vercel/python",
+      "config": { "includeFiles": "app/**" }
+    },
+    {
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": { "includeFiles": "app/**" }
     }
   ],
   "routes": [
+    { "src": "/diag", "dest": "api/diag.py" },
     { "src": "/(.*)", "dest": "api/index.py" }
   ]
 }
