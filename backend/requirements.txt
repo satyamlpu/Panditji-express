@@ -3,7 +3,8 @@
 # (and no Rust toolchain) is needed to install.
 fastapi>=0.118
 uvicorn[standard]>=0.34
-sqlalchemy>=2.0.43
+sqlalchemy[asyncio]>=2.0.43
+greenlet>=3.0.0
 aiosqlite>=0.20
 alembic>=1.14
 pydantic>=2.11

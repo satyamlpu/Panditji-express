@@ -1,9 +1,12 @@
-# Vercel @vercel/python installs the requirements.txt next to the entrypoint.
-# Runtime deps for the serverless FastAPI function (mirrors ../requirements.txt
-# minus the dev/test tools).
+# Vercel @vercel/python installs this file (next to the entrypoint api/index.py).
+# Runtime deps for the serverless FastAPI function.
+# NOTE: sqlalchemy[asyncio] + greenlet are REQUIRED — create_async_engine fails
+# at import with "requires the 'greenlet' library" otherwise (greenlet is not
+# auto-installed by a plain sqlalchemy pin on Vercel's Linux Python).
 fastapi>=0.118
 uvicorn[standard]>=0.34
-sqlalchemy>=2.0.43
+sqlalchemy[asyncio]>=2.0.43
+greenlet>=3.0.0
 aiosqlite>=0.20
 alembic>=1.14
 pydantic>=2.11
