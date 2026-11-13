@@ -63,9 +63,15 @@ export function SiteHeader({
           })}
         </nav>
 
-        <div className="hidden md:block">
-          <Link href="/puja-services" className={buttonClasses("accent", "sm")}>
-            Book a puja
+        <div className="hidden items-center gap-5 md:flex">
+          <Link
+            href="/admin/login"
+            className="text-sm font-semibold text-ink/80 transition-colors hover:text-brand"
+          >
+            Login
+          </Link>
+          <Link href="/puja-services" className={buttonClasses("primary", "sm")}>
+            Book now
           </Link>
         </div>
 
@@ -94,11 +100,18 @@ export function SiteHeader({
               </Link>
             ))}
             <Link
-              href="/puja-services"
-              className={buttonClasses("accent", "md", "mt-2")}
+              href="/admin/login"
+              className="rounded-lg px-3 py-3 text-sm font-medium text-ink hover:bg-surface-2"
               onClick={() => setOpen(false)}
             >
-              Book a puja
+              Login
+            </Link>
+            <Link
+              href="/puja-services"
+              className={buttonClasses("primary", "md", "mt-2")}
+              onClick={() => setOpen(false)}
+            >
+              Book now
             </Link>
           </nav>
         </div>
