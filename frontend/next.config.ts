@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Security headers on every page response. The FastAPI backend sets its own
 // headers for API responses.
@@ -28,4 +29,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Sentry. Runtime error capture is gated on the DSN env var (see the
+// sentry.*.config.ts files); build-time source-map upload is skipped unless
+// SENTRY_ORG/SENTRY_PROJECT/SENTRY_AUTH_TOKEN are also set, so builds work
+// unconfigured.
+export default withSentryConfig(nextConfig, {
+  silent: !process.env.CI,
+  disableLogger: true,
+});

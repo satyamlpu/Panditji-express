@@ -146,7 +146,7 @@ async def create_booking(
     session: AsyncSession = Depends(get_session),
 ) -> BookingOut:
     ip = client_ip(request)
-    if not rate_limit(f"mp_booking:{me.id}", 10, window_seconds=600):
+    if not await rate_limit(f"mp_booking:{me.id}", 10, window_seconds=600):
         raise APIError("Too many booking requests.", code="rate_limited", status_code=429)
 
     service = (

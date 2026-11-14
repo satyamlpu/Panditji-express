@@ -267,6 +267,7 @@ async def booking_detail(
 async def reassign(
     bid: str,
     payload: ReassignRequest,
+    request: Request,
     admin: CurrentAdmin = _ops,
     session: AsyncSession = Depends(get_session),
 ) -> BookingAdminOut:
@@ -285,8 +286,16 @@ async def reassign(
         raise NotFoundError("Booking not found")
     if new_p is None:
         raise NotFoundError("Partner not found")
+    # Audit is written inside manual_reassign (one central row, atomic with the
+    # reassignment). Pass the authenticated actor and the verified client address.
     await dispatch.manual_reassign(
-        session, b, new_p, actor=admin.email, reason=payload.reason
+        session,
+        b,
+        new_p,
+        actor=admin.email,
+        reason=payload.reason,
+        actor_id=admin.id,
+        ip=request.client.host if request.client else None,
     )
     return await _booking_admin_out(session, b)
 

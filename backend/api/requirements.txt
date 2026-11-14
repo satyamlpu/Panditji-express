@@ -17,3 +17,8 @@ argon2-cffi>=23.1
 email-validator>=2.2
 httpx>=0.28
 psycopg[binary]>=3.2
+
+# Operational hardening (P0): distributed rate-limit store + error monitoring.
+# Optional at runtime — inert unless REDIS_URL / UPSTASH_* / SENTRY_DSN are set.
+redis>=5.0
+sentry-sdk[fastapi]>=2.0
