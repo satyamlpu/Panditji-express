@@ -18,6 +18,12 @@ httpx>=0.28
 # Prod (PostgreSQL) — the app normalises DATABASE_URL to the psycopg 3 driver.
 psycopg[binary]>=3.2
 
+# Operational hardening (P0). Both are optional at runtime: the rate limiter
+# falls back to in-process when REDIS_URL/Upstash are unset, and Sentry is a
+# no-op without SENTRY_DSN. Set the env vars in production to activate them.
+redis>=5.0
+sentry-sdk[fastapi]>=2.0
+
 # Dev / test
 pytest>=8.3
 pytest-asyncio>=0.25

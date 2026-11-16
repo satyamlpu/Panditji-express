@@ -46,9 +46,27 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: str = "http://localhost:3000"
 
-    # Rate limiting (in-process token buckets)
+    # Rate limiting. Defaults to an in-process limiter (fine for a single
+    # instance). For horizontal / serverless scale set REDIS_URL (redis.asyncio)
+    # or the Upstash REST pair below; the limiter then shares state across every
+    # instance. The call sites never change.
     rate_limit_login_per_min: int = 10
     rate_limit_enquiry_per_hour: int = 8
+    redis_url: str = ""
+    upstash_redis_rest_url: str = ""
+    upstash_redis_rest_token: str = ""
+
+    # OTP hashing pepper. OTP codes are stored as HMAC-SHA256(key, "phone:code").
+    # The key is this pepper if set, otherwise JWT_SECRET (already required to be
+    # non-default in production), so a leaked OTP table cannot be brute-forced
+    # without also holding the server secret. Rotating it only invalidates the
+    # few OTPs still inside their 5-minute TTL.
+    otp_pepper: str = ""
+
+    # Error monitoring (Sentry). No-op while unset, so dev and CI stay offline;
+    # set SENTRY_DSN in production to capture unhandled errors.
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.0
 
     # On-demand revalidation of the Next.js frontend
     frontend_revalidate_url: str = "http://localhost:3000/api/revalidate"

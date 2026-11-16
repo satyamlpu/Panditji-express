@@ -220,7 +220,7 @@ async def submit_enquiry(
         return MessageResponse(message="Thank you. We'll be in touch shortly.")
 
     ip = client_ip(request)
-    if not rate_limit(
+    if not await rate_limit(
         f"enquiry:{ip}", settings.rate_limit_enquiry_per_hour, window_seconds=3600
     ):
         raise APIError(

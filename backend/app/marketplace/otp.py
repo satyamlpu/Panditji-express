@@ -9,20 +9,30 @@ rest of the flow (expiry, attempt limits, single-use) is identical.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import secrets
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.marketplace.models import OtpCode
 
 OTP_TTL_MINUTES = 5
 MAX_VERIFY_ATTEMPTS = 5
 
 
-def _hash(code: str) -> str:
-    return hashlib.sha256(code.encode()).hexdigest()
+def _hash(phone: str, code: str) -> str:
+    """Keyed hash of an OTP, bound to the phone.
+
+    HMAC-SHA256 with a server-held pepper (``OTP_PEPPER`` or, failing that,
+    ``JWT_SECRET`` — both are required to be non-default in production). Binding
+    the phone into the message stops a code hashed for one number matching
+    another. A leaked ``otp_code`` table is useless without the server secret.
+    """
+    key = (settings.otp_pepper or settings.jwt_secret).encode()
+    return hmac.new(key, f"{phone}:{code}".encode(), hashlib.sha256).hexdigest()
 
 
 async def issue_otp(session: AsyncSession, phone: str, kind: str) -> str:
@@ -31,7 +41,7 @@ async def issue_otp(session: AsyncSession, phone: str, kind: str) -> str:
         OtpCode(
             phone=phone,
             kind=kind,
-            code_hash=_hash(code),
+            code_hash=_hash(phone, code),
             expires_at=datetime.now(UTC) + timedelta(minutes=OTP_TTL_MINUTES),
         )
     )
@@ -61,7 +71,7 @@ async def verify_otp(session: AsyncSession, phone: str, kind: str, code: str) ->
         return False
 
     row.attempts += 1
-    if _hash(code) != row.code_hash:
+    if not hmac.compare_digest(_hash(phone, code), row.code_hash):
         await session.flush()
         return False
 

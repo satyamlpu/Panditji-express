@@ -25,6 +25,7 @@ from app.api.routers import (
 from app.core.config import settings
 from app.core.errors import register_exception_handlers
 from app.core.middleware import SecurityHeadersMiddleware
+from app.core.observability import init_observability
 from app.marketplace.routers import admin as mp_admin
 from app.marketplace.routers import admin_finance as mp_admin_finance
 from app.marketplace.routers import admin_support as mp_admin_support
@@ -35,6 +36,7 @@ from app.marketplace.routers import pandit as mp_pandit
 from app.marketplace.routers import payments as mp_payments
 
 settings.validate_runtime()
+init_observability()
 
 app = FastAPI(
     title=settings.app_name,

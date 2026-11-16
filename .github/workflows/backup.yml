@@ -1,0 +1,53 @@
+name: Database Backup
+
+# Daily logical backup of the production database (DR complement to Supabase
+# PITR — see backend/ops/RESTORE_RUNBOOK.md). Requires repo secret DATABASE_URL
+# (use the Supabase session-pooler / direct URL, not the :6543 transaction
+# pooler). Runs on a schedule and on manual dispatch.
+#
+# NOTE: GitHub artifacts are convenient but retention-limited and not a true
+# off-site vault. For production, replace the upload step with a push to object
+# storage (S3/GCS) with lifecycle + encryption.
+
+on:
+  schedule:
+    - cron: "17 2 * * *" # 02:17 UTC daily
+  workflow_dispatch: {}
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install postgresql-client (v16)
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+
+      - name: Run backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_DIR: ${{ github.workspace }}/backups
+          RETENTION: "14"
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set; skipping."
+            exit 1
+          fi
+          bash backend/ops/backup_db.sh "$BACKUP_DIR"
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backups/*.dump
+          retention-days: 14
+          if-no-files-found: error

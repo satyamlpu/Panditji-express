@@ -27,7 +27,7 @@ async def otp_request(
     session: AsyncSession = Depends(get_session),
 ) -> OtpRequestOut:
     ip = client_ip(request)
-    if not rate_limit(f"mp_otp:{ip}:{payload.phone}", 5, window_seconds=600):
+    if not await rate_limit(f"mp_otp:{ip}:{payload.phone}", 5, window_seconds=600):
         raise APIError(
             "Too many OTP requests. Please wait a few minutes.",
             code="rate_limited",

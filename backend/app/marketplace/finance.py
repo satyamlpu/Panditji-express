@@ -193,6 +193,8 @@ async def create_refund(
     amount_paise: int | None,
     reason: str | None,
     actor: str,
+    actor_id: str | None = None,
+    ip: str | None = None,
 ) -> Refund:
     # Lock the payment row AND refresh its attributes, so concurrent refunds
     # can't each read the same remaining balance and together exceed the amount
@@ -240,9 +242,11 @@ async def create_refund(
     await audit(
         session,
         action=MpAudit.REFUND,
+        actor_id=actor_id,
         actor_email=actor,
         entity="payment",
         entity_id=str(payment.id),
+        ip=ip,
         meta={"amount_paise": amount, "reason": reason},
     )
     if booking:
@@ -277,7 +281,14 @@ async def outstanding_by_pandit(session: AsyncSession) -> list[dict]:
     return [{"pandit_id": str(pid), "amount_paise": amt, "bookings": n} for pid, amt, n in rows]
 
 
-async def process_payout(session: AsyncSession, pandit_id, *, actor: str) -> Payout:
+async def process_payout(
+    session: AsyncSession,
+    pandit_id,
+    *,
+    actor: str,
+    actor_id: str | None = None,
+    ip: str | None = None,
+) -> Payout:
     # Lock the unsettled payable rows so two concurrent payouts for the same
     # partner can't both read them and pay out twice; the loser sees no unsettled
     # rows after the winner commits and gets a clean "nothing due".
@@ -321,9 +332,11 @@ async def process_payout(session: AsyncSession, pandit_id, *, actor: str) -> Pay
     await audit(
         session,
         action=MpAudit.PAYOUT,
+        actor_id=actor_id,
         actor_email=actor,
         entity="payout",
         entity_id=str(payout.id),
+        ip=ip,
         meta={"pandit_id": str(pandit_id), "amount_paise": total},
     )
     await notify_pandit(

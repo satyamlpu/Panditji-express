@@ -51,7 +51,7 @@ async def _db() -> AsyncGenerator:
     # trip the per-minute login cap.
     from app.core import ratelimit
 
-    ratelimit._buckets.clear()
+    ratelimit.reset()
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

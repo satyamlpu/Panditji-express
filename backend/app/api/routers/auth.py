@@ -52,7 +52,7 @@ async def login(
     session: AsyncSession = Depends(get_session),
 ) -> TokenResponse:
     ip = client_ip(request)
-    if not rate_limit(f"login:{ip}", settings.rate_limit_login_per_min):
+    if not await rate_limit(f"login:{ip}", settings.rate_limit_login_per_min):
         raise APIError(
             "Too many login attempts. Please wait a minute.",
             code="rate_limited",

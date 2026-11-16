@@ -540,7 +540,14 @@ async def cancel_booking(
 
 
 async def manual_reassign(
-    session: AsyncSession, booking: Booking, new_pandit: Pandit, *, actor: str, reason: str
+    session: AsyncSession,
+    booking: Booking,
+    new_pandit: Pandit,
+    *,
+    actor: str,
+    reason: str,
+    actor_id: str | None = None,
+    ip: str | None = None,
 ) -> Booking:
     """Ops reassigns an assigned/dispatching booking to a specific partner.
 
@@ -599,9 +606,11 @@ async def manual_reassign(
     await audit(
         session,
         action=MpAudit.MANUAL_REASSIGN,
+        actor_id=actor_id,
         actor_email=actor,
         entity="booking",
         entity_id=str(booking.id),
+        ip=ip,
         meta={"to_pandit": str(new_pandit.id)},
     )
     await notify_pandit(

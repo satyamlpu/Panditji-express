@@ -120,6 +120,7 @@ async def payment_ledger(
 async def refund(
     pid: str,
     payload: RefundRequest,
+    request: Request,
     admin: CurrentAdmin = _finance,
     session: AsyncSession = Depends(get_session),
 ) -> PaymentOut:
@@ -135,8 +136,16 @@ async def refund(
         raise NotFoundError("Payment not found") from None
     if p is None:
         raise NotFoundError("Payment not found")
+    # Audit is written inside create_refund (one central row, atomic with the
+    # refund). Pass the authenticated actor and the verified client address.
     await finance.create_refund(
-        session, p, amount_paise=payload.amount_paise, reason=payload.reason, actor=admin.email
+        session,
+        p,
+        amount_paise=payload.amount_paise,
+        reason=payload.reason,
+        actor=admin.email,
+        actor_id=admin.id,
+        ip=request.client.host if request.client else None,
     )
     return await _payment_out(session, p)
 
@@ -166,6 +175,7 @@ async def payouts_due(
 @router.post("/finance/payouts")
 async def process_payout(
     payload: PayoutRequest,
+    request: Request,
     admin: CurrentAdmin = _finance,
     session: AsyncSession = Depends(get_session),
 ) -> dict:
@@ -173,7 +183,15 @@ async def process_payout(
         pid = uuid.UUID(payload.pandit_id)
     except ValueError:
         raise NotFoundError("Partner not found") from None
-    payout = await finance.process_payout(session, pid, actor=admin.email)
+    # Audit is written inside process_payout (one central row, entity="payout"
+    # with the payout id, atomic with the payout).
+    payout = await finance.process_payout(
+        session,
+        pid,
+        actor=admin.email,
+        actor_id=admin.id,
+        ip=request.client.host if request.client else None,
+    )
     return {
         "ok": True,
         "amount_paise": payout.amount_paise,
