@@ -7,6 +7,7 @@ needs of a content-driven public site + admin.
 
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
 
 from pydantic import field_validator
@@ -18,6 +19,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 _INSECURE_JWT_SECRET = "change-me-in-production"
 _INSECURE_WEBHOOK_SECRET = "dev-mock-payment-secret"
 _INSECURE_REVALIDATE_SECRET = "change-me-revalidate-secret"
+# Public default admin password (from seed.py). Not a boot-blocker — it only
+# affects seeding, and the live admin row may already differ — but a known-public
+# default in production is a serious risk, so we warn loudly to get it rotated.
+_DEFAULT_SEED_ADMIN_PASSWORD = "Admin!Pandit123"
 
 
 class Settings(BaseSettings):
@@ -77,7 +82,7 @@ class Settings(BaseSettings):
 
     # Seed admin
     seed_admin_email: str = "admin@panditjiexpress.in"
-    seed_admin_password: str = "Admin!Pandit123"
+    seed_admin_password: str = _DEFAULT_SEED_ADMIN_PASSWORD
 
     # Marketplace payments (mock gateway in dev). The webhook secret signs the
     # provider callback; a real gateway (e.g. Razorpay) replaces the mock while
@@ -146,6 +151,15 @@ class Settings(BaseSettings):
                 "Refusing to start in production with default secrets: "
                 + ", ".join(insecure)
                 + ". Set each to a real, unique value."
+            )
+        # A known-public default admin password in production is a serious risk.
+        # Not fatal (it only governs seeding, and the live row may already differ),
+        # so warn rather than refuse — rotate via POST /api/v1/auth/change-password
+        # and set a non-default SEED_ADMIN_PASSWORD.
+        if self.seed_admin_password == _DEFAULT_SEED_ADMIN_PASSWORD:
+            logging.getLogger("panditji.config").warning(
+                "SEED_ADMIN_PASSWORD is the public default — rotate the admin "
+                "password and set a unique SEED_ADMIN_PASSWORD."
             )
         # Verbose error bodies (see app/core/errors.py) must never leak in prod.
         self.debug = False

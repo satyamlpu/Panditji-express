@@ -7,7 +7,10 @@ set directly as an httpOnly cookie scoped to the auth path.
 
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Cookie, Depends, Request, Response
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentAdmin, client_ip, get_current_admin
@@ -15,9 +18,12 @@ from app.core.config import settings
 from app.core.constants import Audit
 from app.core.errors import APIError, UnauthorizedError
 from app.core.ratelimit import rate_limit
+from app.core.security import hash_password, verify_password
 from app.db.session import get_session
+from app.models.admin_user import AdminUser
 from app.schemas.auth import (
     AdminOut,
+    ChangePasswordRequest,
     LoginRequest,
     MessageResponse,
     RefreshResponse,
@@ -106,6 +112,47 @@ async def me(admin: CurrentAdmin = Depends(get_current_admin)) -> AdminOut:
         role=admin.role,
         status=admin.status,
     )
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    admin: CurrentAdmin = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_session),
+) -> MessageResponse:
+    """Authenticated admin changes their own password (verifies the current one).
+
+    Lets an operator rotate a password without DB access. Throttled, audited.
+    """
+    if not await rate_limit(f"pwchange:{admin.id}", 5, window_seconds=600):
+        raise APIError(
+            "Too many attempts. Please wait a few minutes.",
+            code="rate_limited",
+            status_code=429,
+        )
+    row = (
+        await session.execute(select(AdminUser).where(AdminUser.id == uuid.UUID(admin.id)))
+    ).scalar_one_or_none()
+    if row is None:
+        raise UnauthorizedError("Account not found")
+    if not verify_password(payload.current_password, row.password_hash):
+        raise UnauthorizedError("Current password is incorrect")
+    if payload.new_password == payload.current_password:
+        raise APIError(
+            "New password must be different from the current one.",
+            code="invalid_password",
+            status_code=422,
+        )
+    row.password_hash = hash_password(payload.new_password)
+    await audit(
+        session,
+        action=Audit.PASSWORD_CHANGE,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        ip=client_ip(request),
+    )
+    return MessageResponse(message="Password changed.")
 
 
 @router.post("/logout", response_model=MessageResponse)
