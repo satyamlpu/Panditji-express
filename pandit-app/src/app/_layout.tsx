@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../lib/auth";
 import { I18nProvider } from "../lib/i18n";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { colors } from "../theme";
 
 export default function RootLayout() {
@@ -25,6 +26,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="job/[id]" options={{ title: "Active puja" }} />
         </Stack>
+          <OfflineBanner />
         </AuthProvider>
       </I18nProvider>
     </SafeAreaProvider>
