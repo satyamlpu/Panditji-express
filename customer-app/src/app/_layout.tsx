@@ -2,13 +2,15 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../lib/auth";
+import { I18nProvider } from "../lib/i18n";
 import { colors } from "../theme";
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="light" />
+      <I18nProvider>
+        <AuthProvider>
+          <StatusBar style="light" />
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: colors.forest },
@@ -23,7 +25,8 @@ export default function RootLayout() {
           <Stack.Screen name="book/[slug]" options={{ title: "Checkout" }} />
           <Stack.Screen name="booking/[id]" options={{ title: "Your booking" }} />
         </Stack>
-      </AuthProvider>
+        </AuthProvider>
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }
