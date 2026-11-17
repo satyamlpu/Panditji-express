@@ -36,6 +36,7 @@ class Role:
 class Audit:
     LOGIN = "auth.login"
     LOGOUT = "auth.logout"
+    PASSWORD_CHANGE = "auth.password_change"
     CREATE = "content.create"
     UPDATE = "content.update"
     DELETE = "content.delete"

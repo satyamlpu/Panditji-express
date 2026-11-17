@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    # Enforce a reasonable minimum; the endpoint also rejects re-using the
+    # current password.
+    new_password: str = Field(min_length=12, max_length=128)
 
 
 class AdminOut(BaseModel):
