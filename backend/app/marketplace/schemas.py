@@ -277,6 +277,11 @@ class NotificationOut(BaseModel):
     created_at: datetime
 
 
+class PushTokenIn(BaseModel):
+    token: str = Field(min_length=8, max_length=512)
+    platform: str = Field(default="unknown", max_length=20)
+
+
 # ── Payments & finance (Phase 3) ─────────────────────────────────────────────
 class OrderOut(BaseModel):
     payment_id: str

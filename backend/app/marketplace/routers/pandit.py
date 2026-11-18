@@ -5,14 +5,14 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import ContentStatus
 from app.core.errors import APIError, NotFoundError
 from app.db.session import get_session
-from app.marketplace import dispatch, support
+from app.marketplace import dispatch, push, support
 from app.marketplace.constants import (
     Availability,
     BookingStatus,
@@ -44,6 +44,7 @@ from app.marketplace.schemas import (
     OfferOut,
     PanditOnboard,
     PanditOut,
+    PushTokenIn,
     TicketCreate,
     TicketDetailOut,
     TicketOut,
@@ -533,3 +534,29 @@ async def earnings(
         bookings_count=len(payable),
         recent=recent,
     )
+
+
+@router.post("/push-token")
+async def register_push_token(
+    payload: PushTokenIn,
+    me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    await push.register(
+        session,
+        principal_kind="pandit",
+        principal_id=me.id,
+        token=payload.token,
+        platform=payload.platform,
+    )
+    return {"ok": True}
+
+
+@router.delete("/push-token")
+async def delete_push_token(
+    token: str = Query(..., min_length=8),
+    _me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    await push.unregister(session, token=token)
+    return {"ok": True}

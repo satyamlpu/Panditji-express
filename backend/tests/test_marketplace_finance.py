@@ -10,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import func, select
 
 from app.marketplace.finance import sign_payload
-from app.marketplace.models import LedgerEntry, Pandit
+from app.marketplace.models import LedgerEntry, Pandit, PushToken
 from app.models.service import Service
 from tests.conftest import TestSession
 from tests.test_marketplace import LAT, LNG, _auth, _book, _make_pandit, _token
@@ -205,3 +205,50 @@ async def test_partner_earnings(client: AsyncClient, admin_token, service_id):
     d2 = (await client.get("/api/v1/mp/partner/earnings", headers=_auth(ptok))).json()
     assert d2["pending_paise"] == 0
     assert d2["paid_out_paise"] > 0
+
+
+async def test_push_token_register_and_unregister(client: AsyncClient):
+    tok = await _token(client, "+919999901234", "customer")
+    token = "ExponentPushToken[abc123xyz]"
+
+    # register
+    r = await client.post(
+        "/api/v1/mp/customer/push-token",
+        headers=_auth(tok),
+        json={"token": token, "platform": "ios"},
+    )
+    assert r.status_code == 200, r.text
+
+    # re-registering the same token is idempotent — no duplicate row
+    r2 = await client.post(
+        "/api/v1/mp/customer/push-token",
+        headers=_auth(tok),
+        json={"token": token, "platform": "android"},
+    )
+    assert r2.status_code == 200
+    async with TestSession() as s:
+        count = (
+            await s.execute(
+                select(func.count()).select_from(PushToken).where(PushToken.token == token)
+            )
+        ).scalar_one()
+    assert count == 1
+
+    # auth is required
+    anon = await client.post(
+        "/api/v1/mp/customer/push-token", json={"token": token, "platform": "ios"}
+    )
+    assert anon.status_code == 401
+
+    # unregister removes it
+    d = await client.delete(
+        "/api/v1/mp/customer/push-token", params={"token": token}, headers=_auth(tok)
+    )
+    assert d.status_code == 200
+    async with TestSession() as s:
+        count2 = (
+            await s.execute(
+                select(func.count()).select_from(PushToken).where(PushToken.token == token)
+            )
+        ).scalar_one()
+    assert count2 == 0
