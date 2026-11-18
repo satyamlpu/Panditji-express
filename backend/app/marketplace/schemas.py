@@ -339,6 +339,19 @@ class FinanceSummaryOut(BaseModel):
     outstanding_payable_paise: int
 
 
+class FinanceReportOut(BaseModel):
+    start: datetime | None
+    end: datetime | None
+    gross_booking_value_paise: int
+    platform_commission_paise: int
+    gateway_fees_paise: int
+    partner_payable_paise: int
+    refunds_paise: int
+    paid_out_paise: int
+    net_commission_paise: int  # platform commission net of refunds
+    bookings_count: int
+
+
 # ── Reviews (Phase 3) ────────────────────────────────────────────────────────
 class ReviewCreate(BaseModel):
     rating: int = Field(ge=1, le=5)

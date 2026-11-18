@@ -252,3 +252,30 @@ async def test_push_token_register_and_unregister(client: AsyncClient):
             )
         ).scalar_one()
     assert count2 == 0
+
+
+async def test_finance_report(client: AsyncClient, admin_token, service_id):
+    booking, ctok, _, _ = await _completed(client, service_id, phone="+910000002060")
+    order = await _order(client, ctok, booking["id"])
+    await _webhook(client, order["provider_order_id"], payment_id="pay_report")
+
+    res = await client.get("/api/v1/mp/admin/finance/report", headers=_auth(admin_token))
+    assert res.status_code == 200, res.text
+    d = res.json()
+    assert d["gross_booking_value_paise"] > 0
+    assert d["platform_commission_paise"] > 0
+    assert d["bookings_count"] >= 1
+    assert d["net_commission_paise"] == d["platform_commission_paise"] - d["refunds_paise"]
+
+    # a window entirely in the past contains no ledger entries
+    past = await client.get(
+        "/api/v1/mp/admin/finance/report",
+        params={"end": "2000-01-01T00:00:00Z"},
+        headers=_auth(admin_token),
+    )
+    pd = past.json()
+    assert pd["gross_booking_value_paise"] == 0
+    assert pd["bookings_count"] == 0
+
+    # finance/admin auth required
+    assert (await client.get("/api/v1/mp/admin/finance/report")).status_code == 401
