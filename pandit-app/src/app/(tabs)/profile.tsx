@@ -73,6 +73,12 @@ export default function Profile() {
       )}
 
       <View style={{ height: 16 }} />
+      <Button
+        label={me.status === "approved" ? "Verification & KYC" : "Complete verification"}
+        variant={me.status === "approved" ? "outline" : "primary"}
+        onPress={() => router.push("/verification")}
+      />
+      <View style={{ height: 10 }} />
       <Button label="Notifications" variant="outline" onPress={() => router.push("/notifications")} />
       <View style={{ height: 10 }} />
       <Button label="Help & support" variant="outline" onPress={() => router.push("/support")} />

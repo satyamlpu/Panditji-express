@@ -30,6 +30,7 @@ function RootLayout() {
           <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
           <Stack.Screen name="support" options={{ title: "Help & support" }} />
           <Stack.Screen name="ticket/[id]" options={{ title: "Support request" }} />
+          <Stack.Screen name="verification" options={{ title: "Verification & KYC" }} />
         </Stack>
           <OfflineBanner />
         </AuthProvider>
