@@ -27,6 +27,9 @@ function RootLayout() {
           <Stack.Screen name="onboard" options={{ title: "Partner onboarding" }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="job/[id]" options={{ title: "Active puja" }} />
+          <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+          <Stack.Screen name="support" options={{ title: "Help & support" }} />
+          <Stack.Screen name="ticket/[id]" options={{ title: "Support request" }} />
         </Stack>
           <OfflineBanner />
         </AuthProvider>
