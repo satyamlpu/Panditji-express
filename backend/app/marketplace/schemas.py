@@ -202,6 +202,28 @@ class VerificationDecision(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
 
 
+class VerificationDocumentCreate(BaseModel):
+    # A document the partner declares for KYC. `reference` is a short label/note
+    # (e.g. "Aadhaar — last 4: 1234"), never the full sensitive number. The actual
+    # file upload (photo) is added later via private object storage.
+    doc_type: str = Field(min_length=2, max_length=40)
+    reference: str | None = Field(default=None, max_length=200)
+
+
+class VerificationDocumentOut(BaseModel):
+    id: str
+    doc_type: str
+    reference: str | None  # maps from the model's file_ref
+    status: str
+    decision_reason: str | None
+    created_at: datetime
+
+
+class VerificationStatusOut(BaseModel):
+    status: str
+    documents: list[VerificationDocumentOut]
+
+
 class BookingAdminOut(BaseModel):
     id: str
     code: str

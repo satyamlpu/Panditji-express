@@ -34,6 +34,7 @@ from app.marketplace.models import (
     DispatchAttempt,
     Pandit,
     PanditCapability,
+    VerificationDocument,
 )
 from app.marketplace.principals import require_staff
 from app.marketplace.schemas import (
@@ -47,6 +48,7 @@ from app.marketplace.schemas import (
     PanditOut,
     ReassignRequest,
     VerificationDecision,
+    VerificationDocumentOut,
 )
 from app.marketplace.serialize import pandit_out
 from app.services.audit import audit
@@ -122,6 +124,37 @@ async def get_pandit(
     if p is None:
         raise NotFoundError("Partner not found")
     return await pandit_out(session, p)
+
+
+@router.get("/pandits/{pid}/documents", response_model=list[VerificationDocumentOut])
+async def pandit_documents(
+    pid: str,
+    _: CurrentAdmin = _verify,
+    session: AsyncSession = Depends(get_session),
+) -> list[VerificationDocumentOut]:
+    """The KYC documents a partner has submitted, for verification review."""
+    docs = (
+        (
+            await session.execute(
+                select(VerificationDocument)
+                .where(VerificationDocument.pandit_id == uuid.UUID(pid))
+                .order_by(VerificationDocument.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        VerificationDocumentOut(
+            id=str(d.id),
+            doc_type=d.doc_type,
+            reference=d.file_ref,
+            status=d.status,
+            decision_reason=d.decision_reason,
+            created_at=d.created_at,
+        )
+        for d in docs
+    ]
 
 
 @router.post("/pandits/{pid}/verification-decision", response_model=PanditOut)

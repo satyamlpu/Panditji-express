@@ -30,6 +30,7 @@ from app.marketplace.models import (
     Pandit,
     PanditCapability,
     SupportTicket,
+    VerificationDocument,
 )
 from app.marketplace.principals import CurrentPandit, get_current_pandit
 from app.marketplace.schemas import (
@@ -44,6 +45,9 @@ from app.marketplace.schemas import (
     TicketDetailOut,
     TicketOut,
     TicketReply,
+    VerificationDocumentCreate,
+    VerificationDocumentOut,
+    VerificationStatusOut,
 )
 from app.marketplace.serialize import booking_out, pandit_out
 from app.models.service import Service
@@ -479,3 +483,66 @@ async def reply_ticket(
         resolution=t.resolution,
         messages=await support.messages(session, t),
     )
+
+
+def _doc_out(d: VerificationDocument) -> VerificationDocumentOut:
+    return VerificationDocumentOut(
+        id=str(d.id),
+        doc_type=d.doc_type,
+        reference=d.file_ref,
+        status=d.status,
+        decision_reason=d.decision_reason,
+        created_at=d.created_at,
+    )
+
+
+@router.post(
+    "/verification/documents", response_model=VerificationDocumentOut, status_code=201
+)
+async def submit_verification_document(
+    payload: VerificationDocumentCreate,
+    me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> VerificationDocumentOut:
+    """Partner declares a KYC document. Moves a draft/returned partner into review."""
+    p = await _load(session, me.id)
+    if p.status in (PanditStatus.APPROVED, PanditStatus.SUSPENDED):
+        raise APIError(
+            "Your verification is already complete.", code="not_allowed", status_code=409
+        )
+    doc = VerificationDocument(
+        pandit_id=uuid.UUID(me.id),
+        doc_type=payload.doc_type,
+        file_ref=payload.reference,
+        status="pending",
+    )
+    session.add(doc)
+    if p.status in (
+        PanditStatus.DRAFT,
+        PanditStatus.SUBMITTED,
+        PanditStatus.ACTION_REQUIRED,
+        PanditStatus.REJECTED,
+    ):
+        p.status = PanditStatus.UNDER_REVIEW
+    await session.flush()
+    return _doc_out(doc)
+
+
+@router.get("/verification", response_model=VerificationStatusOut)
+async def my_verification(
+    me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> VerificationStatusOut:
+    p = await _load(session, me.id)
+    docs = (
+        (
+            await session.execute(
+                select(VerificationDocument)
+                .where(VerificationDocument.pandit_id == uuid.UUID(me.id))
+                .order_by(VerificationDocument.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return VerificationStatusOut(status=p.status, documents=[_doc_out(d) for d in docs])
