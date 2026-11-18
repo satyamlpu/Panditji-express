@@ -455,3 +455,14 @@ class OtpCode(UUIDPk, Timestamps, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     consumed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+# Device push tokens (FCM / APNs / Expo). Registered by the apps; the delivery
+# transport that sends to them is added later (needs provider credentials).
+class PushToken(UUIDPk, Timestamps, Base):
+    __tablename__ = "mp_push_token"
+
+    token: Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
+    principal_kind: Mapped[str] = mapped_column(nullable=False)  # customer / pandit
+    principal_id: Mapped[uuid.UUID] = mapped_column(GUID(), nullable=False, index=True)
+    platform: Mapped[str] = mapped_column(nullable=False)  # ios / android / web

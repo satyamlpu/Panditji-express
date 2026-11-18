@@ -277,6 +277,11 @@ class NotificationOut(BaseModel):
     created_at: datetime
 
 
+class PushTokenIn(BaseModel):
+    token: str = Field(min_length=8, max_length=512)
+    platform: str = Field(default="unknown", max_length=20)
+
+
 # ── Payments & finance (Phase 3) ─────────────────────────────────────────────
 class OrderOut(BaseModel):
     payment_id: str
@@ -334,6 +339,19 @@ class FinanceSummaryOut(BaseModel):
     outstanding_payable_paise: int
 
 
+class FinanceReportOut(BaseModel):
+    start: datetime | None
+    end: datetime | None
+    gross_booking_value_paise: int
+    platform_commission_paise: int
+    gateway_fees_paise: int
+    partner_payable_paise: int
+    refunds_paise: int
+    paid_out_paise: int
+    net_commission_paise: int  # platform commission net of refunds
+    bookings_count: int
+
+
 # ── Reviews (Phase 3) ────────────────────────────────────────────────────────
 class ReviewCreate(BaseModel):
     rating: int = Field(ge=1, le=5)
@@ -357,6 +375,26 @@ class ReviewModerate(BaseModel):
 
 
 # ── Support tickets (Phase 3) ────────────────────────────────────────────────
+class EarningsLine(BaseModel):
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_id: str | None
+    settled: bool
+    at: datetime
+
+
+class EarningsOut(BaseModel):
+    total_earned_paise: int
+    total_earned_display: str
+    pending_paise: int
+    pending_display: str
+    paid_out_paise: int
+    paid_out_display: str
+    bookings_count: int
+    recent: list[EarningsLine]
+
+
 class TicketCreate(BaseModel):
     subject: str = Field(min_length=3, max_length=160)
     body: str = Field(min_length=3, max_length=4000)

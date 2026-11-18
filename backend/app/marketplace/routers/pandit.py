@@ -5,18 +5,19 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import ContentStatus
 from app.core.errors import APIError, NotFoundError
 from app.db.session import get_session
-from app.marketplace import dispatch, support
+from app.marketplace import dispatch, push, support
 from app.marketplace.constants import (
     Availability,
     BookingStatus,
     DispatchOutcome,
+    LedgerType,
     MpAudit,
     PanditStatus,
     TicketStatus,
@@ -26,6 +27,7 @@ from app.marketplace.geo import haversine_km
 from app.marketplace.models import (
     Booking,
     DispatchAttempt,
+    LedgerEntry,
     Notification,
     Pandit,
     PanditCapability,
@@ -35,11 +37,14 @@ from app.marketplace.principals import CurrentPandit, get_current_pandit
 from app.marketplace.schemas import (
     AvailabilityUpdate,
     BookingOut,
+    EarningsLine,
+    EarningsOut,
     LocationPing,
     NotificationOut,
     OfferOut,
     PanditOnboard,
     PanditOut,
+    PushTokenIn,
     TicketCreate,
     TicketDetailOut,
     TicketOut,
@@ -479,3 +484,79 @@ async def reply_ticket(
         resolution=t.resolution,
         messages=await support.messages(session, t),
     )
+
+
+@router.get("/earnings", response_model=EarningsOut)
+async def earnings(
+    me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> EarningsOut:
+    """Earnings summary for the partner, derived from the append-only ledger.
+
+    - total_earned: sum of partner_payable entries (gross earnings)
+    - pending: partner_payable not yet settled (owed, awaiting payout)
+    - paid_out: sum of payout entries actually disbursed
+    """
+    pid = uuid.UUID(me.id)
+    rows = (
+        (
+            await session.execute(
+                select(LedgerEntry)
+                .where(LedgerEntry.pandit_id == pid)
+                .order_by(LedgerEntry.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    payable = [r for r in rows if r.entry_type == LedgerType.PARTNER_PAYABLE]
+    total_earned = sum(r.amount_paise for r in payable)
+    pending = sum(r.amount_paise for r in payable if not r.settled)
+    paid_out = sum(r.amount_paise for r in rows if r.entry_type == LedgerType.PAYOUT)
+    recent = [
+        EarningsLine(
+            entry_type=r.entry_type,
+            amount_paise=r.amount_paise,
+            amount_display=price_display(r.amount_paise),
+            booking_id=str(r.booking_id) if r.booking_id else None,
+            settled=r.settled,
+            at=r.created_at,
+        )
+        for r in rows[:20]
+    ]
+    return EarningsOut(
+        total_earned_paise=total_earned,
+        total_earned_display=price_display(total_earned),
+        pending_paise=pending,
+        pending_display=price_display(pending),
+        paid_out_paise=paid_out,
+        paid_out_display=price_display(paid_out),
+        bookings_count=len(payable),
+        recent=recent,
+    )
+
+
+@router.post("/push-token")
+async def register_push_token(
+    payload: PushTokenIn,
+    me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    await push.register(
+        session,
+        principal_kind="pandit",
+        principal_id=me.id,
+        token=payload.token,
+        platform=payload.platform,
+    )
+    return {"ok": True}
+
+
+@router.delete("/push-token")
+async def delete_push_token(
+    token: str = Query(..., min_length=8),
+    _me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    await push.unregister(session, token=token)
+    return {"ok": True}
