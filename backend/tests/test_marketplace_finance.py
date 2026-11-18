@@ -178,3 +178,30 @@ async def test_review_only_on_completed_and_once(client: AsyncClient, service_id
 
 async def test_finance_requires_staff(client: AsyncClient):
     assert (await client.get("/api/v1/mp/admin/finance/summary")).status_code == 401
+
+
+async def test_partner_earnings(client: AsyncClient, admin_token, service_id):
+    booking, ctok, ptok, pid = await _completed(client, service_id, phone="+910000002050")
+    order = await _order(client, ctok, booking["id"])
+    await _webhook(client, order["provider_order_id"], payment_id="pay_earn")
+
+    # Before payout: the partner has pending earnings, nothing paid out yet.
+    res = await client.get("/api/v1/mp/partner/earnings", headers=_auth(ptok))
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["total_earned_paise"] > 0
+    assert data["pending_paise"] == data["total_earned_paise"]
+    assert data["paid_out_paise"] == 0
+    assert data["bookings_count"] >= 1
+    assert len(data["recent"]) >= 1
+
+    # After a payout: pending clears, paid_out reflects the disbursement.
+    paid = await client.post(
+        "/api/v1/mp/admin/finance/payouts",
+        headers=_auth(admin_token),
+        json={"pandit_id": pid},
+    )
+    assert paid.status_code == 200, paid.text
+    d2 = (await client.get("/api/v1/mp/partner/earnings", headers=_auth(ptok))).json()
+    assert d2["pending_paise"] == 0
+    assert d2["paid_out_paise"] > 0

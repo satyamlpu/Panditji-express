@@ -357,6 +357,26 @@ class ReviewModerate(BaseModel):
 
 
 # ── Support tickets (Phase 3) ────────────────────────────────────────────────
+class EarningsLine(BaseModel):
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_id: str | None
+    settled: bool
+    at: datetime
+
+
+class EarningsOut(BaseModel):
+    total_earned_paise: int
+    total_earned_display: str
+    pending_paise: int
+    pending_display: str
+    paid_out_paise: int
+    paid_out_display: str
+    bookings_count: int
+    recent: list[EarningsLine]
+
+
 class TicketCreate(BaseModel):
     subject: str = Field(min_length=3, max_length=160)
     body: str = Field(min_length=3, max_length=4000)
