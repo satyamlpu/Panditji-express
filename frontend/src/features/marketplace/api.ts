@@ -48,6 +48,15 @@ export interface PanditBrief {
   name: string | null;
 }
 
+export interface VerificationDocument {
+  id: string;
+  doc_type: string;
+  reference: string | null;
+  status: string;
+  decision_reason: string | null;
+  created_at: string;
+}
+
 export interface BookingAdmin {
   id: string;
   code: string;
@@ -184,6 +193,8 @@ export const mpApi = {
       decision,
       reason,
     }),
+  panditDocuments: (id: string) =>
+    api.get<VerificationDocument[]>(`${BASE}/pandits/${id}/documents`),
   bookings: (status?: string) =>
     api.get<BookingAdmin[]>(`${BASE}/bookings${status ? `?status=${status}` : ""}`),
   booking: (id: string) => api.get<BookingDetail>(`${BASE}/bookings/${id}`),

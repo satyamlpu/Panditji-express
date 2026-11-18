@@ -33,6 +33,11 @@ function PartnersInner() {
     queryFn: () => mpApi.pandit(reviewId as string),
     enabled: !!reviewId,
   });
+  const docs = useQuery({
+    queryKey: ["mp", "pandit-docs", reviewId],
+    queryFn: () => mpApi.panditDocuments(reviewId as string),
+    enabled: !!reviewId,
+  });
 
   const decide = useMutation({
     mutationFn: ({
@@ -157,6 +162,32 @@ function PartnersInner() {
                   <span className="text-sm text-muted">None declared</span>
                 )}
               </div>
+            </div>
+
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
+                Submitted documents
+              </p>
+              {docs.isLoading ? (
+                <Spinner className="text-forest" />
+              ) : !docs.data?.length ? (
+                <p className="text-sm text-muted">No documents submitted yet.</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {docs.data.map((d) => (
+                    <li
+                      key={d.id}
+                      className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm"
+                    >
+                      <span className="font-medium capitalize text-ink">
+                        {d.doc_type.replace(/_/g, " ")}
+                      </span>
+                      {d.reference ? <span className="text-muted"> · {d.reference}</span> : null}
+                      <span className="ml-2 text-xs capitalize text-muted">({d.status})</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <AField label="Reason / note (recorded with the decision)">
