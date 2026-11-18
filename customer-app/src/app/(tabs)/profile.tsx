@@ -116,6 +116,10 @@ export default function Profile() {
         <Button label="Saved addresses" variant="outline" onPress={() => router.push("/addresses")} />
       </View>
 
+      <View style={{ marginBottom: 12 }}>
+        <Button label="Help & support" variant="outline" onPress={() => router.push("/support")} />
+      </View>
+
       <Button
         label="Sign out"
         variant="accent"

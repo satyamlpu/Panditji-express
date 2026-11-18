@@ -26,6 +26,8 @@ function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="addresses" options={{ title: "Saved addresses" }} />
+          <Stack.Screen name="support" options={{ title: "Help & support" }} />
+          <Stack.Screen name="ticket/[id]" options={{ title: "Support request" }} />
           <Stack.Screen name="book/[slug]" options={{ title: "Checkout" }} />
           <Stack.Screen name="booking/[id]" options={{ title: "Your booking" }} />
         </Stack>
