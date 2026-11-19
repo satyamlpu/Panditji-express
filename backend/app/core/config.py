@@ -96,6 +96,18 @@ class Settings(BaseSettings):
     # filter (production, requires the PostGIS migration). Ranking is identical.
     geo_backend: str = "haversine"
 
+    # KYC verification document storage. Files are private (never a public URL).
+    # "local" writes under STORAGE_LOCAL_DIR (fine for dev / single host);
+    # "supabase" stores objects in a private Supabase Storage bucket via the
+    # service-role key (production; survives serverless/ephemeral filesystems).
+    storage_backend: str = "local"
+    storage_local_dir: str = "./uploads/kyc"
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+    supabase_storage_bucket: str = "kyc-private"
+    # Hard cap on a single uploaded KYC file, in bytes. Default 10 MB.
+    verification_max_upload_bytes: int = 10 * 1024 * 1024
+
     @field_validator("database_url")
     @classmethod
     def _normalize_db_url(cls, v: str) -> str:
@@ -160,6 +172,14 @@ class Settings(BaseSettings):
             logging.getLogger("panditji.config").warning(
                 "SEED_ADMIN_PASSWORD is the public default — rotate the admin "
                 "password and set a unique SEED_ADMIN_PASSWORD."
+            )
+        # KYC files on a local/ephemeral filesystem are lost on every serverless
+        # cold start. Production should store them in durable object storage.
+        if self.storage_backend.lower() == "local":
+            logging.getLogger("panditji.config").warning(
+                "STORAGE_BACKEND=local in production — KYC uploads will not "
+                "persist on an ephemeral/serverless filesystem. Set "
+                "STORAGE_BACKEND=supabase with a private bucket."
             )
         # Verbose error bodies (see app/core/errors.py) must never leak in prod.
         self.debug = False

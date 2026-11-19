@@ -202,6 +202,25 @@ class VerificationDecision(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
 
 
+class VerificationDocumentOut(BaseModel):
+    # Submitted via multipart form (doc_type + optional note + optional file) on
+    # the partner `POST /verification/documents` route. The storage key is never
+    # exposed — only whether a file is attached and its type.
+    id: str
+    doc_type: str
+    reference: str | None  # the human note (model field `note`)
+    has_file: bool  # whether an actual file is attached in private storage
+    content_type: str | None  # MIME type of the attached file, if any
+    status: str
+    decision_reason: str | None
+    created_at: datetime
+
+
+class VerificationStatusOut(BaseModel):
+    status: str
+    documents: list[VerificationDocumentOut]
+
+
 class BookingAdminOut(BaseModel):
     id: str
     code: str

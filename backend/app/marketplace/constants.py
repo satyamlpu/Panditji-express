@@ -169,6 +169,8 @@ class MpAudit:
     DISPATCH_REJECT = "mp.dispatch.reject"
     DISPATCH_NO_PARTNER = "mp.dispatch.no_partner"
     VERIFICATION_DECISION = "mp.verification.decision"
+    VERIFICATION_DOC_SUBMIT = "mp.verification.doc_submit"
+    VERIFICATION_DOC_VIEW = "mp.verification.doc_view"
     MANUAL_REASSIGN = "mp.booking.reassign"
     STATUS_ADVANCE = "mp.booking.status"
     PAYMENT_ORDER = "mp.payment.order"
