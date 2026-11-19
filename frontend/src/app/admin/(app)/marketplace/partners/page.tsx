@@ -56,6 +56,21 @@ function PartnersInner() {
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Failed"),
   });
 
+  // KYC files are private: fetch the blob through the authenticated proxy on a
+  // user click, then open it from an object URL (never embed the URL directly).
+  const openDocFile = async (docId: string) => {
+    if (!reviewId) return;
+    try {
+      const res = await fetch(mpApi.panditDocumentFileUrl(reviewId, docId));
+      if (!res.ok) throw new Error();
+      const url = URL.createObjectURL(await res.blob());
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      toast.error("Could not open the document");
+    }
+  };
+
   return (
     <div>
       <h1 className="font-display text-2xl font-bold text-ink">Partners</h1>
@@ -177,13 +192,26 @@ function PartnersInner() {
                   {docs.data.map((d) => (
                     <li
                       key={d.id}
-                      className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm"
                     >
-                      <span className="font-medium capitalize text-ink">
-                        {d.doc_type.replace(/_/g, " ")}
+                      <span className="min-w-0">
+                        <span className="font-medium capitalize text-ink">
+                          {d.doc_type.replace(/_/g, " ")}
+                        </span>
+                        {d.reference ? <span className="text-muted"> · {d.reference}</span> : null}
+                        <span className="ml-2 text-xs capitalize text-muted">({d.status})</span>
                       </span>
-                      {d.reference ? <span className="text-muted"> · {d.reference}</span> : null}
-                      <span className="ml-2 text-xs capitalize text-muted">({d.status})</span>
+                      {d.has_file ? (
+                        <button
+                          type="button"
+                          onClick={() => openDocFile(d.id)}
+                          className="shrink-0 text-xs font-medium text-forest underline underline-offset-2"
+                        >
+                          View file
+                        </button>
+                      ) : (
+                        <span className="shrink-0 text-xs text-muted">no file</span>
+                      )}
                     </li>
                   ))}
                 </ul>

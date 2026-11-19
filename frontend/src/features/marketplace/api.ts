@@ -52,6 +52,8 @@ export interface VerificationDocument {
   id: string;
   doc_type: string;
   reference: string | null;
+  has_file: boolean;
+  content_type: string | null;
   status: string;
   decision_reason: string | null;
   created_at: string;
@@ -195,6 +197,10 @@ export const mpApi = {
     }),
   panditDocuments: (id: string) =>
     api.get<VerificationDocument[]>(`${BASE}/pandits/${id}/documents`),
+  // Same-origin BFF URL for a private KYC file (cookie auth attached by the
+  // proxy). Fetch it as a blob behind a user click — never embed as a src.
+  panditDocumentFileUrl: (id: string, docId: string) =>
+    `/api/backend${BASE}/pandits/${id}/documents/${docId}/file`,
   bookings: (status?: string) =>
     api.get<BookingAdmin[]>(`${BASE}/bookings${status ? `?status=${status}` : ""}`),
   booking: (id: string) => api.get<BookingDetail>(`${BASE}/bookings/${id}`),

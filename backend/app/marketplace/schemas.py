@@ -202,18 +202,15 @@ class VerificationDecision(BaseModel):
     reason: str | None = Field(default=None, max_length=500)
 
 
-class VerificationDocumentCreate(BaseModel):
-    # A document the partner declares for KYC. `reference` is a short label/note
-    # (e.g. "Aadhaar — last 4: 1234"), never the full sensitive number. The actual
-    # file upload (photo) is added later via private object storage.
-    doc_type: str = Field(min_length=2, max_length=40)
-    reference: str | None = Field(default=None, max_length=200)
-
-
 class VerificationDocumentOut(BaseModel):
+    # Submitted via multipart form (doc_type + optional note + optional file) on
+    # the partner `POST /verification/documents` route. The storage key is never
+    # exposed — only whether a file is attached and its type.
     id: str
     doc_type: str
-    reference: str | None  # maps from the model's file_ref
+    reference: str | None  # the human note (model field `note`)
+    has_file: bool  # whether an actual file is attached in private storage
+    content_type: str | None  # MIME type of the attached file, if any
     status: str
     decision_reason: str | None
     created_at: datetime
