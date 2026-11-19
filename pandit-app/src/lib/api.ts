@@ -57,8 +57,11 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // For multipart (FormData) uploads, let fetch set Content-Type so it includes
+  // the boundary; only default to JSON for ordinary bodies.
+  const isForm = typeof FormData !== "undefined" && init?.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isForm ? {} : { "Content-Type": "application/json" }),
     ...((init?.headers as Record<string, string>) ?? {}),
   };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
@@ -105,6 +108,8 @@ export const api = {
   get: <T>(p: string) => request<T>(p),
   post: <T>(p: string, data?: unknown) =>
     request<T>(p, { method: "POST", body: data ? JSON.stringify(data) : undefined }),
+  postForm: <T>(p: string, form: FormData) =>
+    request<T>(p, { method: "POST", body: form }),
   patch: <T>(p: string, data?: unknown) =>
     request<T>(p, { method: "PATCH", body: data ? JSON.stringify(data) : undefined }),
 };

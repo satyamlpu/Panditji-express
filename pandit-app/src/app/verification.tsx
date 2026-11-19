@@ -1,5 +1,6 @@
+import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Platform, ScrollView, Text, View } from "react-native";
 import { api, ApiError } from "../lib/api";
 import { Button, Card, Chip, Field, Loading, StatusPill, WrapRow } from "../components/ui";
 import { colors } from "../theme";
@@ -8,6 +9,8 @@ interface Doc {
   id: string;
   doc_type: string;
   reference: string | null;
+  has_file: boolean;
+  content_type: string | null;
   status: string;
   decision_reason: string | null;
   created_at: string;
@@ -29,6 +32,7 @@ export default function VerificationScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [docType, setDocType] = useState("id_proof");
   const [reference, setReference] = useState("");
+  const [picked, setPicked] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -46,15 +50,38 @@ export default function VerificationScreen() {
     load();
   };
 
+  const pickFile = async () => {
+    setFormError(null);
+    // Harmless/no-op on web; on native the library picker generally needs no
+    // explicit grant, but requesting first keeps iOS happy.
+    await ImagePicker.requestMediaLibraryPermissionsAsync().catch(() => {});
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.7,
+    });
+    if (!res.canceled && res.assets?.[0]) setPicked(res.assets[0]);
+  };
+
   const submit = async () => {
     setSubmitting(true);
     setFormError(null);
     try {
-      await api.post("/api/v1/mp/partner/verification/documents", {
-        doc_type: docType,
-        reference: reference.trim() || null,
-      });
+      const form = new FormData();
+      form.append("doc_type", docType);
+      if (reference.trim()) form.append("note", reference.trim());
+      if (picked) {
+        const mime = picked.mimeType ?? "image/jpeg";
+        if (Platform.OS === "web" && picked.file) {
+          form.append("file", picked.file);
+        } else {
+          const name = picked.fileName ?? `document.${mime.split("/")[1] ?? "jpg"}`;
+          // React Native's FormData accepts this {uri,name,type} shape for files.
+          form.append("file", { uri: picked.uri, name, type: mime } as unknown as Blob);
+        }
+      }
+      await api.postForm("/api/v1/mp/partner/verification/documents", form);
       setReference("");
+      setPicked(null);
       load();
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : "Could not submit. Please try again.");
@@ -101,7 +128,7 @@ export default function VerificationScreen() {
             Submit a document
           </Text>
           <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 10 }}>
-            Pick a type and add a short reference — never the full ID number.
+            Pick a type, attach a clear photo, and add a short reference — never the full ID number.
           </Text>
           <WrapRow>
             {DOC_TYPES.map((t) => (
@@ -114,11 +141,24 @@ export default function VerificationScreen() {
             onChangeText={setReference}
             placeholder="e.g. Aadhaar — last 4: 1234"
           />
+          <View style={{ marginBottom: 10 }}>
+            <Button
+              label={picked ? "Change photo" : "Attach photo"}
+              variant="outline"
+              onPress={pickFile}
+            />
+            {picked ? (
+              <Text style={{ color: colors.forest, fontSize: 12, marginTop: 6 }}>
+                ✓ {picked.fileName ?? "Photo attached"}
+              </Text>
+            ) : (
+              <Text style={{ color: colors.muted, fontSize: 11, marginTop: 6 }}>
+                JPEG, PNG or WebP · up to 10 MB. Optional, but speeds up review.
+              </Text>
+            )}
+          </View>
           {formError ? <Text style={{ color: colors.tomato, marginBottom: 8 }}>{formError}</Text> : null}
           <Button label={submitting ? "Submitting…" : "Submit document"} onPress={submit} loading={submitting} />
-          <Text style={{ color: colors.muted, fontSize: 11, marginTop: 8 }}>
-            Photo/scan upload is coming soon — for now this records the document for review.
-          </Text>
         </Card>
       ) : null}
 
@@ -137,6 +177,9 @@ export default function VerificationScreen() {
               <StatusPill status={d.status} />
             </View>
             {d.reference ? <Text style={{ color: colors.muted, marginTop: 2 }}>{d.reference}</Text> : null}
+            <Text style={{ color: d.has_file ? colors.forest : colors.muted, fontSize: 12, marginTop: 2 }}>
+              {d.has_file ? "✓ File attached" : "No file attached"}
+            </Text>
             {d.decision_reason ? (
               <Text style={{ color: colors.tomato, fontSize: 12, marginTop: 2 }}>{d.decision_reason}</Text>
             ) : null}
