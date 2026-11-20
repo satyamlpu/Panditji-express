@@ -58,6 +58,7 @@ export const WEBSITE_NAV: NavItem[] = [
   { href: "/admin/pages", label: "Pages", icon: "pages" },
   { href: "/admin/homepage", label: "Homepage", icon: "homepage" },
   { href: "/admin/media", label: "Media Library", icon: "media" },
+  { href: "/admin/releases", label: "App Releases", icon: "app" },
   { href: "/admin/seo", label: "SEO", icon: "seo" },
   { href: "/admin/enquiries", label: "Enquiries", icon: "enquiries" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },

@@ -30,11 +30,22 @@ Classification: ✅ done & tested · 🟢 done, unverified · 🟡 partial · �
 
 ---
 
-## Phase 1 — Website app download system
-⚪ In progress — see commits after this section once landed.
+## Phase 1 — Website app download system ✅ (feature complete)
+
+| Piece | Status | Evidence |
+|---|---|---|
+| Release data model + migration | ✅ | `backend/app/models/release.py`, `alembic/versions/f2b3c4d5e6a7_app_release.py` (base→head validated) |
+| Admin CRUD API (staff-gated, audited) | ✅ | `backend/app/api/routers/admin_releases.py`; `backend/tests/test_releases.py` |
+| Public active-releases feed (safe projection, no fake links) | ✅ | `backend/app/api/routers/public.py` `GET /api/v1/public/app-releases` |
+| Public `/download` page (both apps × Android/iOS, store/APK/TestFlight, accurate "coming soon", version/checksum, install help, FAQs, privacy/support) | 🟢 | `frontend/src/app/(site)/download/page.tsx`, `frontend/src/lib/serverApi.ts` |
+| Admin "App Releases" screen (list, add, activate/deactivate, delete) + nav | 🟢 | `frontend/src/app/admin/(website)/releases/page.tsx`, `frontend/src/features/releases/api.ts`, `src/config/admin-nav.ts` |
+
+Tests: 72 passed / 6 skipped (backend); frontend tsc + lint clean. Release channels: production→store listing, beta→APK/TestFlight (presentational). **No fake/placeholder download links** — a null `download_url` renders an accurate "coming soon".
+
+**Not in scope this pass (documented):** QR codes on `/download` (a small enhancement — needs a QR renderer; deferred to avoid a new client dependency in this pass). Real signed builds/store links belong to Phase 9 (EAS) and are an external blocker until build + store accounts exist.
 
 ## Phases 2–10
-⚪ Not started. Sequencing per `docs/architecture/PRODUCTION-ROADMAP.md`. Phases depending on external credentials (SMS A1, payments A2, push A3, store builds) will be implemented up to a **testable seam/sandbox** and the blocker documented; nothing blocked will be claimed production-ready.
+⚪ Not started this session. The audit shows most of Phases 2–5 (onboarding, discovery, booking/dispatch, integration) is **already implemented and test-backed** — the remaining work there is targeted gaps + more tests, not rebuilds. Phases 6 (SMS/payments/push), 9 (store builds) are **external-credential blocked** and will be implemented to a testable seam/sandbox with the blocker documented. Sequencing per `docs/architecture/PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
 
 ---
 
