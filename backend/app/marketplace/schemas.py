@@ -72,6 +72,8 @@ class BookingCreate(BaseModel):
     service_slug: str
     mode: Literal["immediate", "scheduled"] = "immediate"
     scheduled_at: datetime | None = None
+    # Optional customer-selected pandit (from discovery). Offered first.
+    preferred_pandit_id: str | None = None
     address_id: str | None = None
     # Inline address (used when no saved address_id is given)
     address_line: str | None = None

@@ -212,6 +212,11 @@ class Booking(UUIDPk, Timestamps, Base):
     assigned_pandit_id: Mapped[uuid.UUID | None] = mapped_column(
         GUID(), ForeignKey("mp_pandit.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # Customer-selected pandit (optional). Dispatch offers this partner first,
+    # falling back to normal nearest-first ranking if they decline/expire.
+    preferred_pandit_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("mp_pandit.id", ondelete="SET NULL"), nullable=True
+    )
     confirmed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

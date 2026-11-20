@@ -61,8 +61,24 @@ rebuilt. The genuine gap was the brief's extended CRM approval lifecycle:
 
 Tests: `test_partner_lifecycle.py` (2) — interview→approve path, re-verification blocks going online. Suite **74 passed / 6 skipped**; migration base→head OK; frontend tsc+lint clean.
 
-## Phases 3–10
-⚪ The audit shows Phase 3 (PostGIS discovery), Phase 4 (concurrency-safe booking/dispatch incl. scheduled + customer-selected + reassignment), and Phase 5 (one-backend integration) are **already implemented and test-backed** — remaining work is targeted gaps + more tests, not rebuilds (see `PRODUCTION-ROADMAP.md`). Phases **6** (SMS/payments/push) and **9** (store builds) are **external-credential blocked** — to be built to a testable sandbox seam with the blocker documented. Nothing blocked will be claimed production-ready.
+## Phase 3 — Nearby discovery (verified, minor gaps noted)
+🟢 Already implemented: `GET /mp/discovery/pandits` returns distance, rating, languages for online in-range partners (`backend/app/marketplace/routers/discovery.py`); PostGIS `ST_DWithin` + GiST index tested. **Not rebuilt.** Minor future gaps (not blockers): per-result ETA + price estimate, experience/specialisation fields in the search item.
+
+## Phase 4 — Booking & dispatch (gap-fill) ✅
+Instant + scheduled booking and concurrency-safe assignment already existed and were **not rebuilt**. The genuine gap was the brief's third booking type — **customer-selected pandit**:
+
+| Piece | Status | Evidence |
+|---|---|---|
+| `booking.preferred_pandit_id` (nullable FK) + migration | ✅ | `backend/app/marketplace/models.py`, `alembic/versions/b8d0e1f2a3c4_booking_preferred_pandit.py` |
+| `BookingCreate.preferred_pandit_id`; validated approved on create (409 otherwise) | ✅ | `backend/app/marketplace/schemas.py`, `routers/customer.py` |
+| Dispatch offers the chosen pandit **first**, falls back to nearest-first | ✅ | `backend/app/marketplace/dispatch.py` `_rank_candidates`; `test_booking_preferred.py` |
+
+Tests: chosen (farther) partner offered before a nearer one; unapproved selection rejected. Suite **76 passed / 6 skipped**; migration base→head OK.
+
+**Noted (not done):** customer-app UI to pass `preferred_pandit_id` from the discovery screen (mobile wiring — small follow-up); a durable scheduler to auto-dispatch **scheduled** bookings at their time (Phase 8 infra — currently scheduled bookings are created and wait).
+
+## Phases 5–10
+⚪ Phase 5 (one-backend integration) is inherently satisfied — all clients already use the one backend as source of truth (audit §10). Realtime is HTTP-poll today; a push/WebSocket upgrade is a Phase 8 architectural decision. Phases **6** (SMS/payments/push) and **9** (store builds) are **external-credential blocked** — to be built to a testable sandbox seam with the blocker documented. Phase 7 (admin Media/SEO/RBAC-UI) and Phase 8 (analytics + load testing) remain. Sequencing per `PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
 
 ---
 
