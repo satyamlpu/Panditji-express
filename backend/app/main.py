@@ -16,6 +16,7 @@ from app.api.routers import (
     admin_locations,
     admin_media,
     admin_pages,
+    admin_releases,
     admin_services,
     admin_settings,
     admin_testimonials,
@@ -93,6 +94,7 @@ app.include_router(admin_banners.router)
 app.include_router(admin_settings.router)
 app.include_router(admin_media.router)
 app.include_router(admin_enquiries.router)
+app.include_router(admin_releases.router)
 app.include_router(public.router)
 
 # ── Marketplace (SRS Phase 1) ────────────────────────────────────────────────
