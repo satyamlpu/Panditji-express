@@ -24,7 +24,7 @@ from app.api.routers import (
 )
 from app.core.config import settings
 from app.core.errors import register_exception_handlers
-from app.core.middleware import SecurityHeadersMiddleware
+from app.core.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
 from app.core.observability import init_observability
 from app.marketplace.routers import admin as mp_admin
 from app.marketplace.routers import admin_finance as mp_admin_finance
@@ -47,6 +47,9 @@ app = FastAPI(
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
+# Added last = runs first (outermost): every response, including errors and
+# CORS preflight, gets a correlation id and one structured access log line.
+app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
