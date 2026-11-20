@@ -14,7 +14,8 @@ import { AField, AdminModal, StatusDot } from "@/components/admin/kit";
 import { cn } from "@/lib/utils";
 
 const STATUSES = [
-  "all", "submitted", "under_review", "action_required", "approved", "rejected", "suspended",
+  "all", "submitted", "under_review", "action_required", "interview_scheduled",
+  "interview_completed", "approved", "rejected", "suspended", "reverification_required",
 ];
 
 function PartnersInner() {
@@ -44,7 +45,14 @@ function PartnersInner() {
       id, decision,
     }: {
       id: string;
-      decision: "approve" | "reject" | "request_changes" | "suspend";
+      decision:
+        | "approve"
+        | "reject"
+        | "request_changes"
+        | "suspend"
+        | "schedule_interview"
+        | "complete_interview"
+        | "require_reverification";
     }) => mpApi.decide(id, decision, reason),
     onSuccess: () => {
       toast.success("Decision recorded");
@@ -250,15 +258,45 @@ function PartnersInner() {
               >
                 Reject
               </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  decide.mutate({ id: detail.data!.id, decision: "schedule_interview" })
+                }
+                disabled={decide.isPending}
+              >
+                Schedule interview
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  decide.mutate({ id: detail.data!.id, decision: "complete_interview" })
+                }
+                disabled={decide.isPending}
+              >
+                Interview done
+              </Button>
               {detail.data.status === "approved" && (
-                <Button
-                  variant="outline"
-                  onClick={() => decide.mutate({ id: detail.data!.id, decision: "suspend" })}
-                  disabled={decide.isPending}
-                  className="border-tomato/40 text-tomato"
-                >
-                  Suspend
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      decide.mutate({ id: detail.data!.id, decision: "require_reverification" })
+                    }
+                    disabled={decide.isPending}
+                    className="border-tomato/40 text-tomato"
+                  >
+                    Require re-verification
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => decide.mutate({ id: detail.data!.id, decision: "suspend" })}
+                    disabled={decide.isPending}
+                    className="border-tomato/40 text-tomato"
+                  >
+                    Suspend
+                  </Button>
+                </>
               )}
             </div>
           </div>

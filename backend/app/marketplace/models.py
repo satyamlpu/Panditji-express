@@ -70,7 +70,8 @@ class Pandit(UUIDPk, Timestamps, Base):
     __table_args__ = (
         CheckConstraint(
             "status IN ('draft', 'submitted', 'under_review', 'action_required', "
-            "'approved', 'rejected', 'suspended')",
+            "'interview_scheduled', 'interview_completed', 'approved', 'rejected', "
+            "'suspended', 'reverification_required')",
             name="ck_pandit_status",
         ),
         CheckConstraint(

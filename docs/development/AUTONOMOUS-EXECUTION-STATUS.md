@@ -44,8 +44,25 @@ Tests: 72 passed / 6 skipped (backend); frontend tsc + lint clean. Release chann
 
 **Not in scope this pass (documented):** QR codes on `/download` (a small enhancement — needs a QR renderer; deferred to avoid a new client dependency in this pass). Real signed builds/store links belong to Phase 9 (EAS) and are an external blocker until build + store accounts exist.
 
-## Phases 2–10
-⚪ Not started this session. The audit shows most of Phases 2–5 (onboarding, discovery, booking/dispatch, integration) is **already implemented and test-backed** — the remaining work there is targeted gaps + more tests, not rebuilds. Phases 6 (SMS/payments/push), 9 (store builds) are **external-credential blocked** and will be implemented to a testable seam/sandbox with the blocker documented. Sequencing per `docs/architecture/PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
+## Phase 2 — Partner onboarding (gap-fill) ✅
+
+Registration + KYC + base approval (submitted → under_review → action_required →
+approved/rejected/suspended) were **already implemented and tested** — not
+rebuilt. The genuine gap was the brief's extended CRM approval lifecycle:
+**interview scheduling/completion** and **re-verification**.
+
+| Piece | Status | Evidence |
+|---|---|---|
+| New statuses: `interview_scheduled`, `interview_completed`, `reverification_required` | ✅ | `backend/app/marketplace/constants.py` (PanditStatus) |
+| CHECK constraint widened (model + Postgres migration; SQLite via create_all) | ✅ | `backend/app/marketplace/models.py`, `alembic/versions/a7c8d9e0f1b2_pandit_interview_states.py` |
+| Admin decisions: `schedule_interview` / `complete_interview` / `require_reverification` | ✅ | `backend/app/marketplace/routers/admin.py` (`_DECISION_STATUS`), `schemas.py` (VerificationDecision) |
+| Non-approved states force offline + remain dispatch-ineligible | ✅ | existing endpoint logic; `test_partner_lifecycle.py::test_require_reverification_blocks_going_online` |
+| CRM: partner filter + decision buttons for the new states | 🟢 | `frontend/src/app/admin/(app)/marketplace/partners/page.tsx`, `features/marketplace/api.ts` |
+
+Tests: `test_partner_lifecycle.py` (2) — interview→approve path, re-verification blocks going online. Suite **74 passed / 6 skipped**; migration base→head OK; frontend tsc+lint clean.
+
+## Phases 3–10
+⚪ The audit shows Phase 3 (PostGIS discovery), Phase 4 (concurrency-safe booking/dispatch incl. scheduled + customer-selected + reassignment), and Phase 5 (one-backend integration) are **already implemented and test-backed** — remaining work is targeted gaps + more tests, not rebuilds (see `PRODUCTION-ROADMAP.md`). Phases **6** (SMS/payments/push) and **9** (store builds) are **external-credential blocked** — to be built to a testable sandbox seam with the blocker documented. Nothing blocked will be claimed production-ready.
 
 ---
 

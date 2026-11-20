@@ -66,6 +66,9 @@ _DECISION_STATUS = {
     "reject": PanditStatus.REJECTED,
     "request_changes": PanditStatus.ACTION_REQUIRED,
     "suspend": PanditStatus.SUSPENDED,
+    "schedule_interview": PanditStatus.INTERVIEW_SCHEDULED,
+    "complete_interview": PanditStatus.INTERVIEW_COMPLETED,
+    "require_reverification": PanditStatus.REVERIFICATION_REQUIRED,
 }
 
 

@@ -198,7 +198,15 @@ class PanditAdminOut(BaseModel):
 
 
 class VerificationDecision(BaseModel):
-    decision: Literal["approve", "reject", "request_changes", "suspend"]
+    decision: Literal[
+        "approve",
+        "reject",
+        "request_changes",
+        "suspend",
+        "schedule_interview",
+        "complete_interview",
+        "require_reverification",
+    ]
     reason: str | None = Field(default=None, max_length=500)
 
 

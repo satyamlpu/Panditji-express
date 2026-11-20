@@ -188,7 +188,14 @@ export const mpApi = {
   pandit: (id: string) => api.get<PanditDetail>(`${BASE}/pandits/${id}`),
   decide: (
     id: string,
-    decision: "approve" | "reject" | "request_changes" | "suspend",
+    decision:
+      | "approve"
+      | "reject"
+      | "request_changes"
+      | "suspend"
+      | "schedule_interview"
+      | "complete_interview"
+      | "require_reverification",
     reason: string,
   ) =>
     api.post<PanditDetail>(`${BASE}/pandits/${id}/verification-decision`, {
