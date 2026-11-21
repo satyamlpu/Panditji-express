@@ -107,9 +107,14 @@ RBAC was enforced server-side but had no management screen — now it does:
 
 Tests: 86 passed / 6 skipped; frontend tsc+lint+build clean.
 
+**Phase 7 SEO engine ✅** — settings-backed, admin-managed:
+- Public `seo` settings key exposed (`backend/app/api/routers/public.py`), written via the existing audited settings API; `test_seo.py`.
+- Site layout injects **Organization JSON-LD** + applies default OG image and a **global no-index** switch (pre-launch) via `generateMetadata`; `robots.ts` honors no-index. (`frontend/src/app/(site)/layout.tsx`, `src/app/robots.ts`)
+- Admin **SEO screen** replaces the placeholder: title suffix, default description, OG image, no-index, Organization (name/logo/phone/sameAs). (`frontend/src/app/admin/(website)/seo/page.tsx`, `features/seo/api.ts`)
+- Per-page titles/canonicals still override; sitemap already existed.
+
 **Still open in Phase 7:**
 - **Media Library** 🟡/⛔ — needs a public object-storage bucket + CDN + image transform (WebP/AVIF) + usage checks. The private KYC storage abstraction (`storage.py`) can be reused for a public bucket, but the bucket/CDN is an infra decision. Placeholder remains.
-- **SEO engine** 🟡 — sitemap data already exists in `public.py`; a settings-backed screen for canonical/OG defaults/robots/structured-data is moderate local work, not yet built.
 
 ## Phase 8 — Load testing (scripts authored) 🟢/⚪
 k6 scripts written for the read path, OTP, and the full booking→dispatch flow, with

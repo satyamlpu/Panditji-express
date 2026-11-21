@@ -164,6 +164,20 @@ export interface SiteSettings {
   };
   social?: Record<string, string>;
   seo_defaults?: { title_suffix?: string; default_description?: string };
+  seo?: SeoSettings;
+}
+
+export interface SeoSettings {
+  title_suffix?: string;
+  default_description?: string;
+  default_og_image?: string;
+  noindex?: boolean;
+  organization?: {
+    name?: string;
+    logo_url?: string;
+    same_as?: string[];
+    phone?: string;
+  };
 }
 
 export async function fetchSettings(): Promise<SiteSettings> {

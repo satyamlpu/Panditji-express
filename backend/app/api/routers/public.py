@@ -499,6 +499,7 @@ _PUBLIC_SETTING_KEYS = (
     "footer",
     "social",
     "seo_defaults",
+    "seo",
 )
 
 
