@@ -95,8 +95,24 @@ Built the provider **abstractions** so go-live is a config switch; real adapters
 
 External blockers: MSG91 account + DLT template (SMS); Razorpay account + keys (payments); FCM/APNs + PR #5 merge (push). Tests: 82 passed / 6 skipped.
 
-## Phases 7–10 (remaining)
-⚪ Phase 7 (admin Media Library / SEO / RBAC-UI — local, substantial), Phase 8 (real analytics events + k6/Locust load testing in an isolated env), Phase 9 (store builds — blocked on Apple/Google accounts), Phase 10 (go-live/release/rollback/test-report docs + GO-NO-GO). Sequencing per `PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
+## Phase 7 — Admin CRM completion (RBAC UI ✅; Media/SEO remaining)
+
+RBAC was enforced server-side but had no management screen — now it does:
+
+| Piece | Status | Evidence |
+|---|---|---|
+| Staff/roles API (list + assign role + enable/disable), **super-admin only**, audited | ✅ | `backend/app/api/routers/admin_staff.py`, `schemas/staff.py`; `test_staff.py` |
+| Lockout guards: can't demote self; keep ≥1 active super-admin | ✅ | `admin_staff.py`; `test_staff.py::test_cannot_lock_out_self` |
+| CRM "Staff & Roles" screen + nav | 🟢 | `frontend/src/app/admin/(website)/staff/page.tsx`, `features/staff/api.ts`, `src/config/admin-nav.ts` |
+
+Tests: 86 passed / 6 skipped; frontend tsc+lint+build clean.
+
+**Still open in Phase 7:**
+- **Media Library** 🟡/⛔ — needs a public object-storage bucket + CDN + image transform (WebP/AVIF) + usage checks. The private KYC storage abstraction (`storage.py`) can be reused for a public bucket, but the bucket/CDN is an infra decision. Placeholder remains.
+- **SEO engine** 🟡 — sitemap data already exists in `public.py`; a settings-backed screen for canonical/OG defaults/robots/structured-data is moderate local work, not yet built.
+
+## Phases 8–10 (remaining)
+⚪ Phase 8 (real analytics events + k6/Locust load testing in an isolated env), Phase 9 (store builds — blocked on Apple/Google accounts), Phase 10 (go-live/release/rollback/final-test docs + GO-NO-GO; will be **NO-GO** until the external blockers clear). Sequencing per `PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
 
 ---
 
