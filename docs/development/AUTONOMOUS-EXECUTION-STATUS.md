@@ -111,8 +111,31 @@ Tests: 86 passed / 6 skipped; frontend tsc+lint+build clean.
 - **Media Library** 🟡/⛔ — needs a public object-storage bucket + CDN + image transform (WebP/AVIF) + usage checks. The private KYC storage abstraction (`storage.py`) can be reused for a public bucket, but the bucket/CDN is an infra decision. Placeholder remains.
 - **SEO engine** 🟡 — sitemap data already exists in `public.py`; a settings-backed screen for canonical/OG defaults/robots/structured-data is moderate local work, not yet built.
 
-## Phases 8–10 (remaining)
-⚪ Phase 8 (real analytics events + k6/Locust load testing in an isolated env), Phase 9 (store builds — blocked on Apple/Google accounts), Phase 10 (go-live/release/rollback/final-test docs + GO-NO-GO; will be **NO-GO** until the external blockers clear). Sequencing per `PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
+## Phase 8 — Load testing (scripts authored) 🟢/⚪
+k6 scripts written for the read path, OTP, and the full booking→dispatch flow, with
+a README (targets, isolated-env-only warning, how to tune pool/Redis from results).
+`backend/ops/loadtest/{read_path,otp_request,booking_flow}.js` + `README.md`.
+**Not run** — needs an isolated/staging environment with resource limits (external).
+Analytics dashboard with real events: ⚪ not started.
+
+## Phase 9 — Mobile builds ⛔
+Blocked on Apple Developer + Google Play accounts (EAS build/submit). The website
+`/download` + CRM App Releases already consume real builds once they exist.
+
+## Phase 10 — Final production readiness ✅ (docs) / NO-GO
+Written: `docs/production/GO-LIVE-CHECKLIST.md`, `RELEASE-PLAN.md`, `ROLLBACK-PLAN.md`,
+`FINAL-TEST-REPORT.md`. **Recommendation: NO-GO for public launch** — code-complete
+and well-tested, but launch-critical integrations (SMS/payments/push), prod data/
+storage enablement, and a load test are outstanding. Full rationale + path-to-GO in
+the test report. Nothing blocked is claimed production-ready.
+
+## Summary of this execution (branch `feat/production-readiness`)
+Phases delivered with tests/docs: 0 (infra), 1 (download+releases), 2 (partner
+lifecycle), 4 (customer-selected booking), 6 (SMS/payment seams), 7 (RBAC UI),
+8 (load scripts), 10 (go-live docs). Phase 3/5 verified already-built. Remaining:
+Phase 7 Media/SEO, Phase 8 run + analytics, Phase 9 store builds, and the external
+blockers. Backend 86 passed / 6 skipped; frontend + mobile clean. Not merged to
+`main`; nothing deployed.
 
 ---
 
