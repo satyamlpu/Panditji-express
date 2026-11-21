@@ -90,6 +90,20 @@ class Settings(BaseSettings):
     payment_webhook_secret: str = _INSECURE_WEBHOOK_SECRET
     platform_commission_percent: float = 15.0
     gateway_fee_percent: float = 2.0
+    # Payment provider adapter: "mock" (dev/sandbox) or "razorpay" (prod). The
+    # ledger/idempotency/webhook-verify flow is identical; only signature scheme
+    # and order creation differ. Live keys come from the environment.
+    payment_provider: str = "mock"
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+
+    # SMS / OTP delivery provider: "none" (dev — code returned in the response),
+    # "console" (dev — code logged, not returned), or "msg91" (prod DLT). Live
+    # credentials come from the environment and a DLT-approved template.
+    sms_provider: str = "none"
+    msg91_auth_key: str = ""
+    msg91_sender_id: str = ""
+    msg91_dlt_template_id: str = ""
 
     # Geo matching backend for dispatch eligibility. "haversine" scans in Python
     # (dev/SQLite, correct but O(n)); "postgis" uses an indexed ST_DWithin radius

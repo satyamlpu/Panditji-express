@@ -77,8 +77,26 @@ Tests: chosen (farther) partner offered before a nearer one; unapproved selectio
 
 **Noted (not done):** customer-app UI to pass `preferred_pandit_id` from the discovery screen (mobile wiring — small follow-up); a durable scheduler to auto-dispatch **scheduled** bookings at their time (Phase 8 infra — currently scheduled bookings are created and wait).
 
-## Phases 5–10
-⚪ Phase 5 (one-backend integration) is inherently satisfied — all clients already use the one backend as source of truth (audit §10). Realtime is HTTP-poll today; a push/WebSocket upgrade is a Phase 8 architectural decision. Phases **6** (SMS/payments/push) and **9** (store builds) are **external-credential blocked** — to be built to a testable sandbox seam with the blocker documented. Phase 7 (admin Media/SEO/RBAC-UI) and Phase 8 (analytics + load testing) remain. Sequencing per `PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
+## Correction to the audit baseline
+While working Phase 6 I found that **push-token registry, partner earnings, and the finance report are NOT on `main`** — they live in **open PR #5 (`backend-p4`)**, unmerged. The earlier `CURRENT-SYSTEM-AUDIT.md` listed them as present (carried over from a prior session summary); treat them as **pending-merge**, not shipped. No other audit items were affected (verified against the router/grep this session).
+
+## Phase 5 — Integration
+🟢 Inherently satisfied: every client already uses the one backend as source of truth (audit §10). Realtime is HTTP-poll today; a push/WebSocket upgrade is a Phase 8 architectural decision.
+
+## Phase 6 — Production integrations (seams built; live activation blocked) ✅/⛔
+Built the provider **abstractions** so go-live is a config switch; real adapters are env-gated and never called in tests.
+
+| Piece | Status | Evidence |
+|---|---|---|
+| SMS/OTP provider abstraction (`none`/`console`/`msg91`) wired into OTP request | ✅ seam / ⛔ live | `backend/app/marketplace/sms.py`, `routers/auth.py`; `test_integrations.py` (code returned only when no provider delivered; hidden once a provider sends) |
+| Payment provider seam + Razorpay signature verifiers (checkout + webhook) | ✅ seam / ⛔ live | `backend/app/marketplace/payment_providers.py`; `test_integrations.py` (deterministic HMAC round-trip). Ledger/idempotency flow untouched. |
+| Settings: `sms_provider`+MSG91, `payment_provider`+Razorpay keys | ✅ | `backend/app/core/config.py` |
+| Push sender | ⛔ deferred | Depends on the device-token registry in **open PR #5** — not duplicated here to avoid a merge conflict. Build after PR #5 merges. |
+
+External blockers: MSG91 account + DLT template (SMS); Razorpay account + keys (payments); FCM/APNs + PR #5 merge (push). Tests: 82 passed / 6 skipped.
+
+## Phases 7–10 (remaining)
+⚪ Phase 7 (admin Media Library / SEO / RBAC-UI — local, substantial), Phase 8 (real analytics events + k6/Locust load testing in an isolated env), Phase 9 (store builds — blocked on Apple/Google accounts), Phase 10 (go-live/release/rollback/test-report docs + GO-NO-GO). Sequencing per `PRODUCTION-ROADMAP.md`. Nothing blocked will be claimed production-ready.
 
 ---
 
