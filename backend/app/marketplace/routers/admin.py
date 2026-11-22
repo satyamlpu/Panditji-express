@@ -6,21 +6,24 @@ action records actor, reason and result via the audit log.
 
 from __future__ import annotations
 
+import hmac
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentAdmin
-from app.core.errors import APIError, NotFoundError
+from app.core.config import settings
+from app.core.errors import APIError, NotFoundError, UnauthorizedError
 from app.db.base import utcnow
 from app.db.session import get_session
 from app.marketplace import dispatch
 from app.marketplace.constants import (
     Availability,
+    BookingMode,
     BookingStatus,
     MpAudit,
     PanditStatus,
@@ -541,3 +544,55 @@ async def analytics(
         ],
         top_services=[AnalyticsTopService(title=t, bookings=c) for t, c in top],
     )
+
+
+def _require_scheduler(
+    x_scheduler_token: str | None = Header(default=None),
+) -> None:
+    """Authorize the scheduled-dispatch cron via a shared secret.
+
+    Disabled (503) until ``SCHEDULER_SECRET`` is set, so it can't be abused
+    before it's deliberately wired to a cron. Constant-time token compare."""
+    secret = settings.scheduler_secret
+    if not secret:
+        raise APIError(
+            "Scheduled dispatch is not enabled (SCHEDULER_SECRET is unset).",
+            code="scheduler_disabled",
+            status_code=503,
+        )
+    if not x_scheduler_token or not hmac.compare_digest(x_scheduler_token, secret):
+        raise UnauthorizedError("Invalid scheduler token")
+
+
+@router.post("/scheduler/dispatch-due")
+async def dispatch_due_scheduled(
+    _: None = Depends(_require_scheduler),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Dispatch scheduled bookings whose time has arrived.
+
+    Meant to be polled by an external cron (Vercel Cron / GitHub Action). Picks
+    scheduled bookings still at ``requested`` whose ``scheduled_at`` has passed
+    and starts dispatch for each. Idempotent — a booking leaves ``requested`` as
+    soon as dispatch starts, so it is never picked twice. No background worker."""
+    now = utcnow()
+    due = (
+        await session.execute(
+            select(Booking)
+            .where(
+                Booking.mode == BookingMode.SCHEDULED,
+                Booking.status == BookingStatus.REQUESTED,
+                Booking.scheduled_at.is_not(None),
+                Booking.scheduled_at <= now,
+            )
+            .order_by(Booking.scheduled_at.asc())
+            .limit(100)
+        )
+    ).scalars().all()
+
+    dispatched = 0
+    for booking in due:
+        await dispatch.start_dispatch(session, booking)
+        dispatched += 1
+
+    return {"dispatched": dispatched, "checked_at": now.isoformat()}

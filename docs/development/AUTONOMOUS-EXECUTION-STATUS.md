@@ -83,7 +83,19 @@ Instant + scheduled booking and concurrency-safe assignment already existed and 
 
 Tests: chosen (farther) partner offered before a nearer one; unapproved selection rejected. Suite **76 passed / 6 skipped**; migration base→head OK.
 
-**Customer-app UI ✅:** the booking screen (`customer-app/src/app/book/[slug].tsx`) now lets the customer **tap a nearby pandit to request them specifically** — the selected card highlights, and the booking is created with `preferred_pandit_id` (dispatch offers them first, falls back to nearest). Verified live on Expo web. **Still not done:** a durable scheduler to auto-dispatch **scheduled** bookings at their time (Phase 8 infra — currently scheduled bookings are created and wait).
+**Customer-app UI ✅:** the booking screen (`customer-app/src/app/book/[slug].tsx`) now lets the customer **tap a nearby pandit to request them specifically** — the selected card highlights, and the booking is created with `preferred_pandit_id` (dispatch offers them first, falls back to nearest). Verified live on Expo web.
+
+**Scheduled-booking dispatch ✅** — scheduled bookings are no longer stranded at `requested`:
+- `POST /api/v1/mp/admin/scheduler/dispatch-due` finds scheduled bookings whose
+  `scheduled_at` has passed (still at `requested`) and starts dispatch for each.
+  Idempotent (a booking leaves `requested` as soon as dispatch starts), batch-capped.
+  No background worker — meant to be polled by an external cron.
+- Guarded by a shared `SCHEDULER_SECRET` (`X-Scheduler-Token` header, constant-time
+  compare); **disabled (503) until the secret is set**, so it's safe by default.
+- Tests: `backend/tests/test_scheduled_dispatch.py` (3) — due dispatched + future
+  skipped + idempotent, disabled-without-secret 503, wrong/missing token 401.
+- **Activation (ops, not code):** set `SCHEDULER_SECRET` and wire a cron (Vercel
+  Cron / GitHub Action) to POST this endpoint every minute or two.
 
 ## Correction to the audit baseline
 While working Phase 6 I found that **push-token registry, partner earnings, and the finance report are NOT on `main`** — they live in **open PR #5 (`backend-p4`)**, unmerged. The earlier `CURRENT-SYSTEM-AUDIT.md` listed them as present (carried over from a prior session summary); treat them as **pending-merge**, not shipped. No other audit items were affected (verified against the router/grep this session).

@@ -84,6 +84,12 @@ class Settings(BaseSettings):
     seed_admin_email: str = "admin@panditjiexpress.in"
     seed_admin_password: str = _DEFAULT_SEED_ADMIN_PASSWORD
 
+    # Shared secret for the scheduled-booking dispatch endpoint. Empty by default,
+    # which DISABLES the endpoint (503). Set it in prod and have an external cron
+    # (Vercel Cron / GitHub Action) POST with the `X-Scheduler-Token` header so
+    # scheduled bookings dispatch at their time. No background worker required.
+    scheduler_secret: str = ""
+
     # Marketplace payments (mock gateway in dev). The webhook secret signs the
     # provider callback; a real gateway (e.g. Razorpay) replaces the mock while
     # the verification + idempotency + ledger flow stays the same.
