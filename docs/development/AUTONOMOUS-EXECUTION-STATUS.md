@@ -68,7 +68,7 @@ Tests: `test_partner_lifecycle.py` (2) — interview→approve path, re-verifica
 - Search results now carry **`eta_minutes`** (reuses the shared `app.marketplace.eta.eta_minutes` the offer flow already uses — straight-line distance over an avg urban speed; indicative, not routed), **`price_display`** (the requested service's catalogue price), and **`experience_years` + `specialisation`**.
 - New nullable `experience_years` / `specialisation` columns on `mp_pandit` (migration `d5e2f3a4b6c7`, additive, up+down validated), set at onboarding (`PanditOnboard` + `/partner/onboard`) and exposed on the profile.
 - Tests: `backend/tests/test_discovery_enrichment.py` (3) — ETA/price/profile in results, ETA grows with distance (nearest-first), onboarding persists the fields. Suite **100 passed / 6 skipped**; ruff clean.
-- **Follow-up (not done):** customer-app UI to surface ETA/price/experience on the discovery screen (mobile wiring); a real-time/routed ETA (needs a maps provider — external).
+- **Customer-app UI ✅** (`customer-app/src/app/book/[slug].tsx`): the "Available near you" cards now show the per-pandit ETA, experience and specialisation (alongside distance/rating/languages). Verified live on Expo web. A real-time/routed ETA still needs a maps provider (external).
 
 ## Phase 4 — Booking & dispatch (gap-fill) ✅
 Instant + scheduled booking and concurrency-safe assignment already existed and were **not rebuilt**. The genuine gap was the brief's third booking type — **customer-selected pandit**:
@@ -81,7 +81,7 @@ Instant + scheduled booking and concurrency-safe assignment already existed and 
 
 Tests: chosen (farther) partner offered before a nearer one; unapproved selection rejected. Suite **76 passed / 6 skipped**; migration base→head OK.
 
-**Noted (not done):** customer-app UI to pass `preferred_pandit_id` from the discovery screen (mobile wiring — small follow-up); a durable scheduler to auto-dispatch **scheduled** bookings at their time (Phase 8 infra — currently scheduled bookings are created and wait).
+**Customer-app UI ✅:** the booking screen (`customer-app/src/app/book/[slug].tsx`) now lets the customer **tap a nearby pandit to request them specifically** — the selected card highlights, and the booking is created with `preferred_pandit_id` (dispatch offers them first, falls back to nearest). Verified live on Expo web. **Still not done:** a durable scheduler to auto-dispatch **scheduled** bookings at their time (Phase 8 infra — currently scheduled bookings are created and wait).
 
 ## Correction to the audit baseline
 While working Phase 6 I found that **push-token registry, partner earnings, and the finance report are NOT on `main`** — they live in **open PR #5 (`backend-p4`)**, unmerged. The earlier `CURRENT-SYSTEM-AUDIT.md` listed them as present (carried over from a prior session summary); treat them as **pending-merge**, not shipped. No other audit items were affected (verified against the router/grep this session).
