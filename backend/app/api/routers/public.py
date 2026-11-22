@@ -6,7 +6,9 @@ invisible to the public and absent from the sitemap.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, Request
+import uuid
+
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,11 +19,13 @@ from app.core.constants import ContentStatus
 from app.core.errors import APIError, NotFoundError
 from app.core.ratelimit import rate_limit
 from app.db.session import get_session
+from app.marketplace.storage import StorageError, get_media_storage
 from app.models.banner import HomepageSection
 from app.models.category import Category
 from app.models.enquiry import BookingEnquiry
 from app.models.faq import Faq
 from app.models.location import Location, ServiceLocation
+from app.models.media import MediaAsset
 from app.models.page import Page
 from app.models.redirect import Redirect
 from app.models.release import AppRelease
@@ -85,6 +89,39 @@ async def public_app_releases(
         )
         for r in rows
     ]
+
+
+@router.get("/media/{media_id}")
+async def public_media(
+    media_id: str, session: AsyncSession = Depends(get_session)
+) -> Response:
+    """Serve a Media Library image's bytes through the backend.
+
+    Stable, cache-friendly proxy for website images: works on ephemeral/
+    serverless filesystems (and can sit behind a CDN) without exposing the raw
+    storage key. Unknown ids and missing objects both look like a 404.
+    """
+    try:
+        mid = uuid.UUID(media_id)
+    except (ValueError, TypeError):
+        raise NotFoundError("Media not found") from None
+
+    row = (
+        await session.execute(select(MediaAsset).where(MediaAsset.id == mid))
+    ).scalar_one_or_none()
+    if row is None:
+        raise NotFoundError("Media not found")
+
+    try:
+        data = await get_media_storage().fetch(row.storage_key)
+    except StorageError:
+        raise NotFoundError("Media not found") from None
+
+    return Response(
+        content=data,
+        media_type=row.content_type or "application/octet-stream",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 def _truncate(text: str | None, length: int) -> str | None:

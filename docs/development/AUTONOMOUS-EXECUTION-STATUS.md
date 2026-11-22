@@ -1,7 +1,7 @@
 # Autonomous Execution — Status
 
 _Branch: `feat/production-readiness` (off `main`). Not merged to `main`. No production infra touched._
-_Last updated: 2026-11-20._
+_Last updated: 2026-11-22._
 
 Classification: ✅ done & tested · 🟢 done, unverified · 🟡 partial · ⚪ not started · 🔴 broken · ⛔ blocked (external).
 
@@ -95,7 +95,7 @@ Built the provider **abstractions** so go-live is a config switch; real adapters
 
 External blockers: MSG91 account + DLT template (SMS); Razorpay account + keys (payments); FCM/APNs + PR #5 merge (push). Tests: 82 passed / 6 skipped.
 
-## Phase 7 — Admin CRM completion (RBAC UI ✅; Media/SEO remaining)
+## Phase 7 — Admin CRM completion (RBAC UI ✅ · SEO ✅ · Media Library ✅)
 
 RBAC was enforced server-side but had no management screen — now it does:
 
@@ -113,8 +113,29 @@ Tests: 86 passed / 6 skipped; frontend tsc+lint+build clean.
 - Admin **SEO screen** replaces the placeholder: title suffix, default description, OG image, no-index, Organization (name/logo/phone/sameAs). (`frontend/src/app/admin/(website)/seo/page.tsx`, `features/seo/api.ts`)
 - Per-page titles/canonicals still override; sitemap already existed.
 
-**Still open in Phase 7:**
-- **Media Library** 🟡/⛔ — needs a public object-storage bucket + CDN + image transform (WebP/AVIF) + usage checks. The private KYC storage abstraction (`storage.py`) can be reused for a public bucket, but the bucket/CDN is an infra decision. Placeholder remains.
+**Phase 7 Media Library ✅** (dev-complete; prod needs a public bucket/CDN):
+- `MediaAsset` model + migration `c4d1e2f3a5b6` (base→head validated; up+down).
+- Storage seam extended: `get_media_storage()` / `build_media_key()` reuse the
+  same local/Supabase backends as KYC but a **separate dir/bucket**
+  (`media-public`), plus a real `delete()` on both backends. Config:
+  `media_storage_local_dir`, `supabase_media_bucket`, `media_max_upload_bytes`.
+- Admin API (`app/api/routers/admin_media.py`, super-admin + audited): upload
+  (image allowlist, SVG rejected, 3 MB cap), list with search, alt-text edit,
+  and delete **gated by a usage check** (scans homepage images + settings JSON
+  by the stable media path; 409 while referenced). The existing `POST` contract
+  (`{url, path}`) is preserved, so the inline `ImageUpload` pickers keep working.
+- Public **proxy** `GET /api/v1/public/media/{id}` streams bytes with a 1-year
+  immutable cache header — works on ephemeral/serverless filesystems and can sit
+  behind a CDN later (so no public bucket is strictly required for dev-complete).
+- Admin **Media Library** screen (`admin/(website)/media/page.tsx`): upload grid,
+  search, inline alt editing, copy-URL, delete — replaces the placeholder.
+- Evidence: `backend/tests/test_media.py` (9 tests: upload/list/public-fetch,
+  auth, 415, 413, alt, search, delete-usage-check 409→200, unknown-id 404).
+  Verified **live** against the running backend (upload → proxy bytes identical
+  → alt → search → delete → 404). `features/media/api.ts`.
+- **Prod/infra follow-ups (⛔ external):** a public `media-public` Supabase bucket
+  (+ `STORAGE_BACKEND=supabase`), a CDN in front of the proxy, and WebP/AVIF
+  transform — an image pipeline that needs the bucket/CDN decision first.
 
 ## Phase 8 — Load testing (scripts authored) 🟢/⚪
 k6 scripts written for the read path, OTP, and the full booking→dispatch flow, with
@@ -136,11 +157,11 @@ the test report. Nothing blocked is claimed production-ready.
 
 ## Summary of this execution (branch `feat/production-readiness`)
 Phases delivered with tests/docs: 0 (infra), 1 (download+releases), 2 (partner
-lifecycle), 4 (customer-selected booking), 6 (SMS/payment seams), 7 (RBAC UI),
-8 (load scripts), 10 (go-live docs). Phase 3/5 verified already-built. Remaining:
-Phase 7 Media/SEO, Phase 8 run + analytics, Phase 9 store builds, and the external
-blockers. Backend 86 passed / 6 skipped; frontend + mobile clean. Not merged to
-`main`; nothing deployed.
+lifecycle), 4 (customer-selected booking), 6 (SMS/payment seams), 7 (RBAC UI +
+SEO engine + Media Library), 8 (load scripts), 10 (go-live docs). Phase 3/5
+verified already-built. Remaining: Phase 8 run + analytics, Phase 9 store builds,
+and the external blockers. Backend 97 passed / 6 skipped; frontend tsc+lint+build
+clean. Not merged to `main`; nothing deployed.
 
 ---
 

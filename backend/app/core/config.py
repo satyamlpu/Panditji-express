@@ -122,6 +122,14 @@ class Settings(BaseSettings):
     # Hard cap on a single uploaded KYC file, in bytes. Default 10 MB.
     verification_max_upload_bytes: int = 10 * 1024 * 1024
 
+    # Public Media Library (website images). Uses the same storage backend switch
+    # as KYC but a separate dir/bucket, and is served through a cache-friendly
+    # public proxy endpoint (so it works on ephemeral/serverless filesystems and
+    # can sit behind a CDN in production). Images only; a single hard size cap.
+    media_storage_local_dir: str = "./uploads/media"
+    supabase_media_bucket: str = "media-public"
+    media_max_upload_bytes: int = 3 * 1024 * 1024
+
     @field_validator("database_url")
     @classmethod
     def _normalize_db_url(cls, v: str) -> str:
