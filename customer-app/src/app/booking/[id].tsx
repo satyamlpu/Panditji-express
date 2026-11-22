@@ -18,10 +18,14 @@ interface Tracking {
   has_location: boolean; eta_minutes: number | null;
   freshness_seconds: number | null; is_stale: boolean; pandit_name: string | null;
 }
+interface BookingEvent {
+  from_status: string | null; to_status: string; actor: string; reason: string | null; at: string;
+}
 
 export default function BookingDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [b, setB] = useState<Booking | null>(null);
+  const [events, setEvents] = useState<BookingEvent[]>([]);
   const [track, setTrack] = useState<Tracking | null>(null);
   const [paid, setPaid] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -35,6 +39,11 @@ export default function BookingDetail() {
     try {
       const data = await api.get<Booking>(`/api/v1/mp/customer/bookings/${id}`);
       setB(data);
+      try {
+        setEvents(await api.get<BookingEvent[]>(`/api/v1/mp/customer/bookings/${id}/events`));
+      } catch {
+        /* keep last events */
+      }
       if (ASSIGNED.includes(data.status)) {
         setTrack(await api.get<Tracking>(`/api/v1/mp/customer/bookings/${id}/tracking`));
       } else {
@@ -191,6 +200,26 @@ export default function BookingDetail() {
         <View style={{ marginTop: 14 }}>
           <Button label="Cancel booking" variant="outline" onPress={cancel} loading={busy} />
         </View>
+      )}
+
+      {events.length > 0 && (
+        <Card style={{ marginTop: 14 }}>
+          <Text style={{ fontWeight: "700", color: colors.ink, marginBottom: 10 }}>History</Text>
+          {events.map((e, i) => (
+            <View key={i} style={{ flexDirection: "row", marginBottom: 8 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.forest, marginTop: 5, marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.ink, fontWeight: "600", textTransform: "capitalize" }}>
+                  {e.to_status.replace(/_/g, " ")}
+                </Text>
+                {e.reason ? <Text style={{ color: colors.muted, fontSize: 12 }}>{e.reason}</Text> : null}
+                <Text style={{ color: colors.muted, fontSize: 11, marginTop: 1 }}>
+                  {new Date(e.at).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </Card>
       )}
 
       {msg && <Text style={{ color: colors.forest, textAlign: "center", marginTop: 16 }}>{msg}</Text>}

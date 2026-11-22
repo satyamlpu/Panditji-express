@@ -1,14 +1,19 @@
+import * as Sentry from "@sentry/react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../lib/auth";
+import { I18nProvider } from "../lib/i18n";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { colors } from "../theme";
+import "../lib/observability";
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="light" />
+      <I18nProvider>
+        <AuthProvider>
+          <StatusBar style="light" />
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: colors.forest },
@@ -20,10 +25,17 @@ export default function RootLayout() {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="addresses" options={{ title: "Saved addresses" }} />
+          <Stack.Screen name="support" options={{ title: "Help & support" }} />
+          <Stack.Screen name="ticket/[id]" options={{ title: "Support request" }} />
           <Stack.Screen name="book/[slug]" options={{ title: "Checkout" }} />
           <Stack.Screen name="booking/[id]" options={{ title: "Your booking" }} />
         </Stack>
-      </AuthProvider>
+          <OfflineBanner />
+        </AuthProvider>
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);

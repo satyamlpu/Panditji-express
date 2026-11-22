@@ -1,7 +1,7 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { setToken, setUnauthorizedHandler } from "./api";
+import { storageDelete, storageMigrate, storageSet } from "./storage";
 
 const KEY = "pje_partner_token";
 
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const t = await AsyncStorage.getItem(KEY);
+        const t = await storageMigrate(KEY);
         if (t) {
           setTok(t);
           setToken(t);
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => {
       setTok(null);
       setToken(null);
-      AsyncStorage.removeItem(KEY).catch(() => {});
+      void storageDelete(KEY);
       router.replace("/login");
     });
     return () => setUnauthorizedHandler(null);
@@ -53,21 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (t: string) => {
     setTok(t);
     setToken(t);
-    try {
-      await AsyncStorage.setItem(KEY, t);
-    } catch {
-      /* ignore */
-    }
+    await storageSet(KEY, t);
   };
 
   const signOut = async () => {
     setTok(null);
     setToken(null);
-    try {
-      await AsyncStorage.removeItem(KEY);
-    } catch {
-      /* ignore */
-    }
+    await storageDelete(KEY);
   };
 
   return <Ctx.Provider value={{ token, loading, signIn, signOut }}>{children}</Ctx.Provider>;

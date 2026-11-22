@@ -150,7 +150,14 @@ class VerificationDocument(UUIDPk, Timestamps, Base):
         GUID(), ForeignKey("mp_pandit.id", ondelete="CASCADE"), nullable=False, index=True
     )
     doc_type: Mapped[str] = mapped_column(nullable=False)  # id_proof, address_proof…
-    file_ref: Mapped[str | None] = mapped_column(nullable=True)  # private storage path
+    # Short human label the partner types (e.g. "Aadhaar — last 4: 1234"), never
+    # the full sensitive number.
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Private storage key for the uploaded file (see marketplace/storage.py).
+    # Null until a file is attached; never a public URL or a client filename.
+    file_ref: Mapped[str | None] = mapped_column(nullable=True)
+    content_type: Mapped[str | None] = mapped_column(nullable=True)
+    size_bytes: Mapped[int | None] = mapped_column(nullable=True)
     status: Mapped[str] = mapped_column(default="pending", nullable=False)
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 

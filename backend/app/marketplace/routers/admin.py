@@ -10,11 +10,12 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentAdmin
-from app.core.errors import NotFoundError
+from app.core.errors import APIError, NotFoundError
 from app.db.base import utcnow
 from app.db.session import get_session
 from app.marketplace import dispatch
@@ -34,8 +35,9 @@ from app.marketplace.models import (
     DispatchAttempt,
     Pandit,
     PanditCapability,
+    VerificationDocument,
 )
-from app.marketplace.principals import require_staff
+from app.marketplace.principals import client_ip, require_staff
 from app.marketplace.schemas import (
     BookingAdminDetail,
     BookingAdminOut,
@@ -47,8 +49,10 @@ from app.marketplace.schemas import (
     PanditOut,
     ReassignRequest,
     VerificationDecision,
+    VerificationDocumentOut,
 )
 from app.marketplace.serialize import pandit_out
+from app.marketplace.storage import ALLOWED_CONTENT_TYPES, StorageError, get_storage
 from app.services.audit import audit
 from app.services.money import price_display
 
@@ -122,6 +126,97 @@ async def get_pandit(
     if p is None:
         raise NotFoundError("Partner not found")
     return await pandit_out(session, p)
+
+
+@router.get("/pandits/{pid}/documents", response_model=list[VerificationDocumentOut])
+async def pandit_documents(
+    pid: str,
+    _: CurrentAdmin = _verify,
+    session: AsyncSession = Depends(get_session),
+) -> list[VerificationDocumentOut]:
+    """The KYC documents a partner has submitted, for verification review."""
+    docs = (
+        (
+            await session.execute(
+                select(VerificationDocument)
+                .where(VerificationDocument.pandit_id == uuid.UUID(pid))
+                .order_by(VerificationDocument.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        VerificationDocumentOut(
+            id=str(d.id),
+            doc_type=d.doc_type,
+            reference=d.note,
+            has_file=d.file_ref is not None,
+            content_type=d.content_type,
+            status=d.status,
+            decision_reason=d.decision_reason,
+            created_at=d.created_at,
+        )
+        for d in docs
+    ]
+
+
+@router.get("/pandits/{pid}/documents/{doc_id}/file")
+async def pandit_document_file(
+    pid: str,
+    doc_id: str,
+    request: Request,
+    admin: CurrentAdmin = _verify,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Stream a submitted KYC file to a verification-role reviewer.
+
+    The bytes are proxied through this process (never a public/signed URL), the
+    access is audited, and the response is marked private and non-cacheable.
+    """
+    try:
+        doc = (
+            await session.execute(
+                select(VerificationDocument).where(
+                    VerificationDocument.id == uuid.UUID(doc_id),
+                    VerificationDocument.pandit_id == uuid.UUID(pid),
+                )
+            )
+        ).scalar_one_or_none()
+    except ValueError:
+        raise NotFoundError("Document not found") from None
+    if doc is None or doc.file_ref is None:
+        raise NotFoundError("Document not found")
+
+    try:
+        data = await get_storage().fetch(doc.file_ref)
+    except StorageError:
+        raise APIError(
+            "Stored file is unavailable.", code="storage_error", status_code=502
+        ) from None
+
+    await audit(
+        session,
+        action=MpAudit.VERIFICATION_DOC_VIEW,
+        actor_id=admin.id,
+        actor_email=admin.email,
+        entity="verification_document",
+        entity_id=str(doc.id),
+        ip=client_ip(request),
+    )
+    # Filename is built only from server-controlled values (the document uuid and
+    # an extension derived from the stored, allowlisted content-type) — never from
+    # partner-supplied text — so it cannot inject response headers.
+    ext = ALLOWED_CONTENT_TYPES.get(doc.content_type or "", "bin")
+    return Response(
+        content=data,
+        media_type=doc.content_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'inline; filename="kyc-{doc.id}.{ext}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post("/pandits/{pid}/verification-decision", response_model=PanditOut)

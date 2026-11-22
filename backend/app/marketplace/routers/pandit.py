@@ -5,10 +5,11 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.constants import ContentStatus
 from app.core.errors import APIError, NotFoundError
 from app.db.session import get_session
@@ -32,8 +33,9 @@ from app.marketplace.models import (
     Pandit,
     PanditCapability,
     SupportTicket,
+    VerificationDocument,
 )
-from app.marketplace.principals import CurrentPandit, get_current_pandit
+from app.marketplace.principals import CurrentPandit, client_ip, get_current_pandit
 from app.marketplace.schemas import (
     AvailabilityUpdate,
     BookingOut,
@@ -49,8 +51,16 @@ from app.marketplace.schemas import (
     TicketDetailOut,
     TicketOut,
     TicketReply,
+    VerificationDocumentOut,
+    VerificationStatusOut,
 )
 from app.marketplace.serialize import booking_out, pandit_out
+from app.marketplace.storage import (
+    ALLOWED_CONTENT_TYPES,
+    StorageError,
+    build_key,
+    get_storage,
+)
 from app.models.service import Service
 from app.services.audit import audit
 from app.services.money import price_display
@@ -484,6 +494,130 @@ async def reply_ticket(
         resolution=t.resolution,
         messages=await support.messages(session, t),
     )
+
+
+def _doc_out(d: VerificationDocument) -> VerificationDocumentOut:
+    return VerificationDocumentOut(
+        id=str(d.id),
+        doc_type=d.doc_type,
+        reference=d.note,
+        has_file=d.file_ref is not None,
+        content_type=d.content_type,
+        status=d.status,
+        decision_reason=d.decision_reason,
+        created_at=d.created_at,
+    )
+
+
+@router.post(
+    "/verification/documents", response_model=VerificationDocumentOut, status_code=201
+)
+async def submit_verification_document(
+    request: Request,
+    doc_type: str = Form(..., min_length=2, max_length=40),
+    note: str | None = Form(default=None, max_length=200),
+    file: UploadFile | None = File(default=None),
+    me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> VerificationDocumentOut:
+    """Partner submits a KYC document, optionally with a file (photo/scan).
+
+    The file, if present, is validated against a MIME allowlist and a size cap,
+    then stored under a server-generated key in **private** storage — never a
+    public URL, and the client's filename is never used to build the path.
+    Submitting moves a draft/returned partner into review.
+    """
+    p = await _load(session, me.id)
+    if p.status in (PanditStatus.APPROVED, PanditStatus.SUSPENDED):
+        raise APIError(
+            "Your verification is already complete.", code="not_allowed", status_code=409
+        )
+
+    doc_id = uuid.uuid4()
+    file_ref: str | None = None
+    content_type: str | None = None
+    size_bytes: int | None = None
+
+    if file is not None and file.filename:
+        content_type = (file.content_type or "").split(";")[0].strip().lower()
+        if content_type not in ALLOWED_CONTENT_TYPES:
+            raise APIError(
+                "Unsupported file type. Upload a JPEG, PNG, WebP or PDF.",
+                code="unsupported_media_type",
+                status_code=415,
+            )
+        cap = settings.verification_max_upload_bytes
+        # Read at most cap+1 bytes so an oversized upload can't exhaust memory.
+        data = await file.read(cap + 1)
+        if len(data) > cap:
+            raise APIError(
+                f"File too large. Maximum size is {cap // (1024 * 1024)} MB.",
+                code="payload_too_large",
+                status_code=413,
+            )
+        if not data:
+            raise APIError("Uploaded file is empty.", code="bad_request", status_code=400)
+        ext = ALLOWED_CONTENT_TYPES[content_type]
+        key = build_key(me.id, str(doc_id), ext)
+        try:
+            file_ref = await get_storage().save(key, data, content_type)
+        except StorageError:
+            raise APIError(
+                "Could not store the uploaded file. Please try again.",
+                code="storage_error",
+                status_code=502,
+            ) from None
+        size_bytes = len(data)
+
+    doc = VerificationDocument(
+        id=doc_id,
+        pandit_id=uuid.UUID(me.id),
+        doc_type=doc_type.strip(),
+        note=(note.strip() or None) if note else None,
+        file_ref=file_ref,
+        content_type=content_type,
+        size_bytes=size_bytes,
+        status="pending",
+    )
+    session.add(doc)
+    if p.status in (
+        PanditStatus.DRAFT,
+        PanditStatus.SUBMITTED,
+        PanditStatus.ACTION_REQUIRED,
+        PanditStatus.REJECTED,
+    ):
+        p.status = PanditStatus.UNDER_REVIEW
+    await session.flush()
+    await audit(
+        session,
+        action=MpAudit.VERIFICATION_DOC_SUBMIT,
+        actor_id=me.id,
+        entity="verification_document",
+        entity_id=str(doc_id),
+        ip=client_ip(request),
+        meta={"doc_type": doc.doc_type, "has_file": file_ref is not None},
+    )
+    return _doc_out(doc)
+
+
+@router.get("/verification", response_model=VerificationStatusOut)
+async def my_verification(
+    me: CurrentPandit = Depends(get_current_pandit),
+    session: AsyncSession = Depends(get_session),
+) -> VerificationStatusOut:
+    p = await _load(session, me.id)
+    docs = (
+        (
+            await session.execute(
+                select(VerificationDocument)
+                .where(VerificationDocument.pandit_id == uuid.UUID(me.id))
+                .order_by(VerificationDocument.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return VerificationStatusOut(status=p.status, documents=[_doc_out(d) for d in docs])
 
 
 @router.get("/earnings", response_model=EarningsOut)

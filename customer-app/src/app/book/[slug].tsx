@@ -17,6 +17,15 @@ interface Service {
   duration_label: string | null;
 }
 
+interface Pandit {
+  id: string;
+  name: string | null;
+  languages: string[];
+  distance_km: number;
+  rating_avg: number | null;
+  rating_count: number;
+}
+
 export default function BookScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const [service, setService] = useState<Service | null>(null);
@@ -24,11 +33,23 @@ export default function BookScreen() {
   const [samagri, setSamagri] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pandits, setPandits] = useState<Pandit[] | null>(null);
 
   useEffect(() => {
     api
       .get<Service[]>("/api/v1/mp/discovery/services")
       .then((list) => setService(list.find((s) => s.slug === slug) ?? null));
+  }, [slug]);
+
+  useEffect(() => {
+    // Real discovery: verified pandits available for this service near the
+    // (demo) location. Shown as a preview before booking.
+    api
+      .get<Pandit[]>(
+        `/api/v1/mp/discovery/pandits?service_slug=${slug}&lat=${KANPUR.lat}&lng=${KANPUR.lng}`,
+      )
+      .then(setPandits)
+      .catch(() => setPandits([]));
   }, [slug]);
 
   function toggleSamagri(key: string) {
@@ -86,6 +107,30 @@ export default function BookScreen() {
             <Text style={{ color: colors.forest, fontWeight: "800", fontSize: 13 }}>×1</Text>
           </View>
         </View>
+
+        {/* Available pandits near you (real discovery endpoint) */}
+        {pandits && pandits.length > 0 && (
+          <>
+            <Text style={styles.secTitle}>Available near you</Text>
+            {pandits.slice(0, 3).map((p) => (
+              <View key={p.id} style={styles.sheet}>
+                <Text style={{ fontWeight: "800", color: colors.ink }}>{p.name ?? "Verified pandit"}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                  {p.distance_km} km away
+                  {p.rating_avg ? ` · ★ ${p.rating_avg} (${p.rating_count})` : ""}
+                  {p.languages.length ? ` · ${p.languages.join(", ")}` : ""}
+                </Text>
+              </View>
+            ))}
+          </>
+        )}
+        {pandits && pandits.length === 0 && (
+          <View style={[styles.sheet, { marginTop: 14 }]}>
+            <Text style={{ color: colors.muted, fontSize: 13 }}>
+              No pandit is online near this demo location right now — you can still place the request.
+            </Text>
+          </View>
+        )}
 
         {/* Before you book — samagri add-ons */}
         <Text style={styles.secTitle}>Before you book</Text>
