@@ -40,6 +40,8 @@ export interface PanditDetail {
   base_lat: number | null;
   base_lng: number | null;
   service_radius_km: number;
+  experience_years: number | null;
+  specialisation: string | null;
   capabilities: CapabilityRef[];
 }
 

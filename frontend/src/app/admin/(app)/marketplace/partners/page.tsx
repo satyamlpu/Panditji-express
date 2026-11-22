@@ -166,6 +166,16 @@ function PartnersInner() {
                   Languages: {detail.data.languages.join(", ")}
                 </p>
               ) : null}
+              {detail.data.experience_years != null ? (
+                <p className="mt-1 text-sm text-muted">
+                  Experience: {detail.data.experience_years} yrs
+                </p>
+              ) : null}
+              {detail.data.specialisation ? (
+                <p className="mt-1 text-sm text-muted">
+                  Specialisation: {detail.data.specialisation}
+                </p>
+              ) : null}
             </div>
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
