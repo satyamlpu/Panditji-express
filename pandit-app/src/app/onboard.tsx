@@ -15,6 +15,8 @@ export default function Onboard() {
   const [name, setName] = useState("");
   const [city, setCity] = useState("Kanpur");
   const [radius, setRadius] = useState("12");
+  const [experience, setExperience] = useState("");
+  const [specialisation, setSpecialisation] = useState("");
   const [langs, setLangs] = useState<string[]>(["Hindi"]);
   const [slugs, setSlugs] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -36,6 +38,8 @@ export default function Onboard() {
         setName(p.name ?? "");
         setCity(p.city ?? "Kanpur");
         if (p.service_radius_km) setRadius(String(p.service_radius_km));
+        if (p.experience_years != null) setExperience(String(p.experience_years));
+        if (p.specialisation) setSpecialisation(p.specialisation);
         if (p.languages?.length) setLangs(p.languages);
         if (p.capabilities?.length) setSlugs(p.capabilities.map((c) => c.slug));
       } catch {
@@ -53,6 +57,10 @@ export default function Onboard() {
     if (name.trim().length < 2) return setError("Please enter your full name.");
     if (langs.length === 0) return setError("Select at least one language.");
     if (slugs.length === 0) return setError("Select at least one puja you can perform.");
+    const exp = experience.trim() ? Number(experience) : null;
+    if (exp != null && (!Number.isFinite(exp) || exp < 0 || exp > 80)) {
+      return setError("Experience must be a number between 0 and 80 years.");
+    }
     setBusy(true);
     try {
       const updated = await api.post<Pandit>("/api/v1/mp/partner/onboard", {
@@ -63,6 +71,8 @@ export default function Onboard() {
         base_lng: KANPUR.lng,
         service_radius_km: Number(radius) || 10,
         service_slugs: slugs,
+        experience_years: exp,
+        specialisation: specialisation.trim() || null,
       });
       setMe(updated);
     } catch (e) {
@@ -122,6 +132,19 @@ export default function Onboard() {
               onChangeText={setRadius}
               keyboardType="number-pad"
               placeholder="12"
+            />
+            <Field
+              label="Years of experience (optional)"
+              value={experience}
+              onChangeText={setExperience}
+              keyboardType="number-pad"
+              placeholder="e.g. 15"
+            />
+            <Field
+              label="Specialisation (optional)"
+              value={specialisation}
+              onChangeText={setSpecialisation}
+              placeholder="e.g. Vedic havan & Griha Pravesh"
             />
             <Text style={{ color: colors.muted, fontSize: 12 }}>
               📍 Base location is set to a demo point in Kanpur for this preview.

@@ -20,6 +20,8 @@ export interface Pandit {
   service_radius_km: number;
   rating_avg: number | null;
   rating_count: number;
+  experience_years: number | null;
+  specialisation: string | null;
   capabilities: Capability[];
 }
 

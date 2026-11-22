@@ -69,6 +69,7 @@ Tests: `test_partner_lifecycle.py` (2) — interview→approve path, re-verifica
 - New nullable `experience_years` / `specialisation` columns on `mp_pandit` (migration `d5e2f3a4b6c7`, additive, up+down validated), set at onboarding (`PanditOnboard` + `/partner/onboard`) and exposed on the profile.
 - Tests: `backend/tests/test_discovery_enrichment.py` (3) — ETA/price/profile in results, ETA grows with distance (nearest-first), onboarding persists the fields. Suite **100 passed / 6 skipped**; ruff clean.
 - **Customer-app UI ✅** (`customer-app/src/app/book/[slug].tsx`): the "Available near you" cards now show the per-pandit ETA, experience and specialisation (alongside distance/rating/languages). Verified live on Expo web. A real-time/routed ETA still needs a maps provider (external).
+- **Pandit-app onboarding ✅** (`pandit-app/src/app/onboard.tsx`): the onboarding form now captures **years of experience** and **specialisation** (both optional) and sends them to `/partner/onboard`, so pandits set what customers see. tsc + expo lint clean; the persist path is covered by `test_onboard_persists_experience_and_specialisation`.
 
 ## Phase 4 — Booking & dispatch (gap-fill) ✅
 Instant + scheduled booking and concurrency-safe assignment already existed and were **not rebuilt**. The genuine gap was the brief's third booking type — **customer-selected pandit**:
