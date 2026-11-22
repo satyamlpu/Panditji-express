@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-import math
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.constants import ContentStatus
 from app.core.errors import NotFoundError
 from app.db.session import get_session
 from app.marketplace.constants import Availability, PanditStatus
 from app.marketplace.dispatch import HEARTBEAT_FRESH_SECONDS
+from app.marketplace.eta import eta_minutes
 from app.marketplace.geo import haversine_km
 from app.marketplace.models import Pandit, PanditCapability
 from app.marketplace.schemas import PanditSearchItem, Serviceability
@@ -22,13 +21,6 @@ from app.models.service import Service
 from app.services.money import price_display
 
 router = APIRouter(prefix="/api/v1/mp/discovery", tags=["mp:discovery"])
-
-
-def _eta_minutes(distance_km: float) -> int:
-    """Indicative travel time from straight-line distance over an average urban
-    speed. At least 1 minute; never a routed/traffic-aware figure."""
-    speed = settings.discovery_eta_speed_kmph or 24.0
-    return max(1, math.ceil((distance_km / speed) * 60))
 
 
 async def _available_partners(
@@ -119,7 +111,7 @@ async def search_pandits(
             service_radius_km=p.service_radius_km,
             rating_avg=round(p.rating_sum / p.rating_count, 2) if p.rating_count else None,
             rating_count=p.rating_count,
-            eta_minutes=_eta_minutes(d),
+            eta_minutes=eta_minutes(d),
             price_display=price,
             experience_years=p.experience_years,
             specialisation=p.specialisation,

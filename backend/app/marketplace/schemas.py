@@ -196,6 +196,37 @@ class Serviceability(BaseModel):
     available_partners: int = 0
 
 
+# ── Operations analytics ─────────────────────────────────────────────────────
+class AnalyticsDaily(BaseModel):
+    date: str  # YYYY-MM-DD (UTC)
+    total: int
+    completed: int
+    no_partner: int
+
+
+class AnalyticsTopService(BaseModel):
+    title: str
+    bookings: int
+
+
+class AnalyticsTotals(BaseModel):
+    bookings: int
+    completed: int
+    no_partner: int
+    cancelled: int
+    completion_rate: float
+    no_match_rate: float
+    gmv_paise: int
+    gmv_display: str
+
+
+class AnalyticsOut(BaseModel):
+    days: int
+    totals: AnalyticsTotals
+    daily: list[AnalyticsDaily]
+    top_services: list[AnalyticsTopService]
+
+
 # ── Admin ────────────────────────────────────────────────────────────────────
 class PanditAdminOut(BaseModel):
     id: str

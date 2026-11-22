@@ -7,7 +7,7 @@ action records actor, reason and result via the audit log.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import Response
@@ -39,6 +39,10 @@ from app.marketplace.models import (
 )
 from app.marketplace.principals import client_ip, require_staff
 from app.marketplace.schemas import (
+    AnalyticsDaily,
+    AnalyticsOut,
+    AnalyticsTopService,
+    AnalyticsTotals,
     BookingAdminDetail,
     BookingAdminOut,
     BookingEventOut,
@@ -447,4 +451,93 @@ async def dashboard(
         pending_verifications=pending,
         no_match_rate=round(no_partner / total, 3) if total else 0.0,
         bookings_today=bookings_today,
+    )
+
+
+_CANCELLED_STATUSES = (
+    BookingStatus.CANCELLED_CUSTOMER,
+    BookingStatus.CANCELLED_PARTNER,
+    BookingStatus.CANCELLED_PLATFORM,
+)
+
+
+@router.get("/analytics", response_model=AnalyticsOut)
+async def analytics(
+    days: int = Query(30, ge=1, le=180),
+    _: CurrentAdmin = _ops,
+    session: AsyncSession = Depends(get_session),
+) -> AnalyticsOut:
+    """Operations trend analytics over the last ``days`` days (real booking data).
+
+    Daily booking volume (with completed / no-partner splits), top services, and
+    window totals + rates. Aggregated in Python from the booking rows so it stays
+    dialect-portable (no DB-specific date functions)."""
+    start = utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(
+        days=days - 1
+    )
+    rows = (
+        await session.execute(
+            select(
+                Booking.created_at,
+                Booking.status,
+                Booking.service_title_snapshot,
+                Booking.price_paise,
+            ).where(Booking.created_at >= start)
+        )
+    ).all()
+
+    # Seed every day in the window so the series has no gaps.
+    buckets: dict[str, dict[str, int]] = {}
+    for i in range(days):
+        key = (start + timedelta(days=i)).strftime("%Y-%m-%d")
+        buckets[key] = {"total": 0, "completed": 0, "no_partner": 0}
+
+    service_counts: dict[str, int] = {}
+    totals = {"bookings": 0, "completed": 0, "no_partner": 0, "cancelled": 0}
+    gmv_paise = 0
+
+    for created_at, status, title, price_paise in rows:
+        day = created_at.strftime("%Y-%m-%d")
+        b = buckets.get(day)
+        if b is not None:
+            b["total"] += 1
+            if status == BookingStatus.COMPLETED:
+                b["completed"] += 1
+            elif status == BookingStatus.NO_PARTNER:
+                b["no_partner"] += 1
+        totals["bookings"] += 1
+        if status == BookingStatus.COMPLETED:
+            totals["completed"] += 1
+            gmv_paise += price_paise or 0
+        elif status == BookingStatus.NO_PARTNER:
+            totals["no_partner"] += 1
+        elif status in _CANCELLED_STATUSES:
+            totals["cancelled"] += 1
+        service_counts[title] = service_counts.get(title, 0) + 1
+
+    n = totals["bookings"]
+    top = sorted(service_counts.items(), key=lambda kv: kv[1], reverse=True)[:5]
+
+    return AnalyticsOut(
+        days=days,
+        totals=AnalyticsTotals(
+            bookings=n,
+            completed=totals["completed"],
+            no_partner=totals["no_partner"],
+            cancelled=totals["cancelled"],
+            completion_rate=round(totals["completed"] / n, 3) if n else 0.0,
+            no_match_rate=round(totals["no_partner"] / n, 3) if n else 0.0,
+            gmv_paise=gmv_paise,
+            gmv_display=price_display(gmv_paise),
+        ),
+        daily=[
+            AnalyticsDaily(
+                date=day,
+                total=v["total"],
+                completed=v["completed"],
+                no_partner=v["no_partner"],
+            )
+            for day, v in buckets.items()
+        ],
+        top_services=[AnalyticsTopService(title=t, bookings=c) for t, c in top],
     )

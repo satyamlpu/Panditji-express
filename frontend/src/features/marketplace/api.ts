@@ -179,10 +179,41 @@ export interface TicketDetail extends Ticket {
   messages: TicketMessage[];
 }
 
+export interface MpAnalyticsDaily {
+  date: string;
+  total: number;
+  completed: number;
+  no_partner: number;
+}
+
+export interface MpAnalyticsTopService {
+  title: string;
+  bookings: number;
+}
+
+export interface MpAnalyticsTotals {
+  bookings: number;
+  completed: number;
+  no_partner: number;
+  cancelled: number;
+  completion_rate: number;
+  no_match_rate: number;
+  gmv_paise: number;
+  gmv_display: string;
+}
+
+export interface MpAnalytics {
+  days: number;
+  totals: MpAnalyticsTotals;
+  daily: MpAnalyticsDaily[];
+  top_services: MpAnalyticsTopService[];
+}
+
 const BASE = "/api/v1/mp/admin";
 
 export const mpApi = {
   dashboard: () => api.get<MpDashboard>(`${BASE}/dashboard`),
+  analytics: (days = 30) => api.get<MpAnalytics>(`${BASE}/analytics?days=${days}`),
   pandits: (status?: string) =>
     api.get<PanditAdmin[]>(`${BASE}/pandits${status ? `?status=${status}` : ""}`),
   pandit: (id: string) => api.get<PanditDetail>(`${BASE}/pandits/${id}`),

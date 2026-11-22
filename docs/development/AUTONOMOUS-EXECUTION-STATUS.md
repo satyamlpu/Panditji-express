@@ -65,7 +65,7 @@ Tests: `test_partner_lifecycle.py` (2) — interview→approve path, re-verifica
 🟢 Already implemented: `GET /mp/discovery/pandits` returns distance, rating, languages for online in-range partners (`backend/app/marketplace/routers/discovery.py`); PostGIS `ST_DWithin` + GiST index tested. **Not rebuilt.**
 
 **Enrichment (branch `feat/discovery-enrichment`, off the reviewed tip) ✅** — closed the noted gaps:
-- Search results now carry **`eta_minutes`** (straight-line distance over an avg urban speed, `discovery_eta_speed_kmph` config — indicative, not routed), **`price_display`** (the requested service's catalogue price), and **`experience_years` + `specialisation`**.
+- Search results now carry **`eta_minutes`** (reuses the shared `app.marketplace.eta.eta_minutes` the offer flow already uses — straight-line distance over an avg urban speed; indicative, not routed), **`price_display`** (the requested service's catalogue price), and **`experience_years` + `specialisation`**.
 - New nullable `experience_years` / `specialisation` columns on `mp_pandit` (migration `d5e2f3a4b6c7`, additive, up+down validated), set at onboarding (`PanditOnboard` + `/partner/onboard`) and exposed on the profile.
 - Tests: `backend/tests/test_discovery_enrichment.py` (3) — ETA/price/profile in results, ETA grows with distance (nearest-first), onboarding persists the fields. Suite **100 passed / 6 skipped**; ruff clean.
 - **Follow-up (not done):** customer-app UI to surface ETA/price/experience on the discovery screen (mobile wiring); a real-time/routed ETA (needs a maps provider — external).
@@ -143,12 +143,25 @@ Tests: 86 passed / 6 skipped; frontend tsc+lint+build clean.
   (+ `STORAGE_BACKEND=supabase`), a CDN in front of the proxy, and WebP/AVIF
   transform — an image pipeline that needs the bucket/CDN decision first.
 
-## Phase 8 — Load testing (scripts authored) 🟢/⚪
+## Phase 8 — Load testing (scripts authored) + Analytics ✅
 k6 scripts written for the read path, OTP, and the full booking→dispatch flow, with
 a README (targets, isolated-env-only warning, how to tune pool/Redis from results).
 `backend/ops/loadtest/{read_path,otp_request,booking_flow}.js` + `README.md`.
 **Not run** — needs an isolated/staging environment with resource limits (external).
-Analytics dashboard with real events: ⚪ not started.
+
+**Operations Analytics ✅** (branch `feat/discovery-enrichment`) — real booking data, no new events table:
+- `GET /api/v1/mp/admin/analytics?days=N` (ops-gated): daily booking trend
+  (total + completed + no-partner, gaps zero-filled), top services, and window
+  totals/rates (`completion_rate`, `no_match_rate`, GMV from completed-booking
+  prices). Aggregated in Python → dialect-portable. `app/marketplace/routers/admin.py`.
+- Admin **Analytics** screen (`admin/(app)/marketplace/analytics/page.tsx`, nav added):
+  7/30/90-day selector, KPI tiles, a dependency-free inline-SVG daily column chart
+  (completed shaded) and a top-services bar list (reuses `charts.tsx`).
+- Tests: `backend/tests/test_marketplace_analytics.py` (3) — totals/daily/top +
+  GMV, staff-gated 401, empty-window zeroed. Suite **103 passed / 6 skipped**;
+  frontend tsc+lint+build clean.
+- **Follow-up:** revenue reconciliation / payout analytics (finance module);
+  conversion funnel once discovery→booking events are tracked.
 
 ## Phase 9 — Mobile builds ⛔
 Blocked on Apple Developer + Google Play accounts (EAS build/submit). The website
