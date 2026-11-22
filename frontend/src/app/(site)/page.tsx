@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clock,
   CreditCard,
+  Download,
   Flame,
   HandCoins,
   Headphones,
@@ -483,9 +484,17 @@ export default async function HomePage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-7 inline-flex items-center gap-2 rounded-pill bg-white/10 px-4 py-2 text-sm font-semibold">
-                <Smartphone size={16} className="text-swarna" aria-hidden /> Coming soon to iOS &amp; Android
-              </p>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/download"
+                  className="inline-flex items-center gap-2 rounded-pill bg-white px-5 py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-white/90"
+                >
+                  <Download size={16} aria-hidden /> Download the app
+                </Link>
+                <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-4 py-2 text-sm font-semibold">
+                  <Smartphone size={16} className="text-swarna" aria-hidden /> iOS &amp; Android
+                </span>
+              </div>
             </div>
             <div className="relative mx-auto w-[220px] md:w-[260px]">
               <div className="rounded-[2.2rem] border-[6px] border-white/15 bg-black/25 p-1.5 shadow-soft-lg">

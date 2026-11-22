@@ -152,3 +152,23 @@ export async function fetchSettings(): Promise<SiteSettings> {
   });
   return data ?? {};
 }
+
+export interface AppReleasePublic {
+  app_type: "customer" | "partner";
+  platform: "android" | "ios";
+  channel: "beta" | "production";
+  version: string;
+  build_number: number | null;
+  download_url: string | null;
+  checksum_sha256: string | null;
+  release_notes: string | null;
+  min_supported_version: string | null;
+}
+
+export async function fetchAppReleases(): Promise<AppReleasePublic[]> {
+  const data = await getJson<AppReleasePublic[]>("/api/v1/public/app-releases", {
+    tags: ["releases"],
+    revalidate: 300,
+  });
+  return data ?? [];
+}
