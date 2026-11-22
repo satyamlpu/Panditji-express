@@ -70,7 +70,8 @@ class Pandit(UUIDPk, Timestamps, Base):
     __table_args__ = (
         CheckConstraint(
             "status IN ('draft', 'submitted', 'under_review', 'action_required', "
-            "'approved', 'rejected', 'suspended')",
+            "'interview_scheduled', 'interview_completed', 'approved', 'rejected', "
+            "'suspended', 'reverification_required')",
             name="ck_pandit_status",
         ),
         CheckConstraint(
@@ -85,6 +86,9 @@ class Pandit(UUIDPk, Timestamps, Base):
     name: Mapped[str | None] = mapped_column(nullable=True)
     languages: Mapped[list | None] = mapped_column(JSON, nullable=True)  # list[str]
     city: Mapped[str | None] = mapped_column(nullable=True)
+    # Optional profile enrichment surfaced in discovery results (set at onboarding).
+    experience_years: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    specialisation: Mapped[str | None] = mapped_column(nullable=True)
 
     # Verification lifecycle + reviewer trail
     status: Mapped[str] = mapped_column(
@@ -210,6 +214,11 @@ class Booking(UUIDPk, Timestamps, Base):
 
     assigned_pandit_id: Mapped[uuid.UUID | None] = mapped_column(
         GUID(), ForeignKey("mp_pandit.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # Customer-selected pandit (optional). Dispatch offers this partner first,
+    # falling back to normal nearest-first ranking if they decline/expire.
+    preferred_pandit_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("mp_pandit.id", ondelete="SET NULL"), nullable=True
     )
     confirmed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

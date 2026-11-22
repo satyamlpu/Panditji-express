@@ -24,6 +24,10 @@ interface Pandit {
   distance_km: number;
   rating_avg: number | null;
   rating_count: number;
+  eta_minutes: number | null;
+  price_display: string | null;
+  experience_years: number | null;
+  specialisation: string | null;
 }
 
 export default function BookScreen() {
@@ -34,6 +38,9 @@ export default function BookScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pandits, setPandits] = useState<Pandit[] | null>(null);
+  // When set, the customer has chosen a specific pandit; dispatch offers them
+  // first and falls back to nearest-first if they decline.
+  const [selectedPandit, setSelectedPandit] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -66,6 +73,7 @@ export default function BookScreen() {
         address_line: address,
         lat: KANPUR.lat,
         lng: KANPUR.lng,
+        ...(selectedPandit ? { preferred_pandit_id: selectedPandit } : {}),
       });
       router.replace(`/booking/${b.id}`);
     } catch (e) {
@@ -112,16 +120,49 @@ export default function BookScreen() {
         {pandits && pandits.length > 0 && (
           <>
             <Text style={styles.secTitle}>Available near you</Text>
-            {pandits.slice(0, 3).map((p) => (
-              <View key={p.id} style={styles.sheet}>
-                <Text style={{ fontWeight: "800", color: colors.ink }}>{p.name ?? "Verified pandit"}</Text>
-                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
-                  {p.distance_km} km away
-                  {p.rating_avg ? ` · ★ ${p.rating_avg} (${p.rating_count})` : ""}
-                  {p.languages.length ? ` · ${p.languages.join(", ")}` : ""}
-                </Text>
-              </View>
-            ))}
+            <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 8 }}>
+              Tap a pandit to request them specifically, or we&apos;ll match the nearest.
+            </Text>
+            {pandits.slice(0, 3).map((p) => {
+              const picked = selectedPandit === p.id;
+              return (
+                <Pressable
+                  key={p.id}
+                  onPress={() => setSelectedPandit(picked ? null : p.id)}
+                  style={({ pressed }) => [
+                    styles.sheet,
+                    picked && { borderColor: colors.forest, borderWidth: 2, backgroundColor: colors.tintGreen },
+                    { opacity: pressed ? 0.95 : 1 },
+                  ]}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text style={{ fontWeight: "800", color: colors.ink, flex: 1 }}>
+                      {p.name ?? "Verified pandit"}
+                    </Text>
+                    {p.eta_minutes != null && (
+                      <Text style={{ color: colors.forest, fontWeight: "800", fontSize: 12 }}>
+                        ~{p.eta_minutes} min
+                      </Text>
+                    )}
+                    {picked && (
+                      <Text style={{ color: colors.forest, fontWeight: "800", marginLeft: 8 }}>✓</Text>
+                    )}
+                  </View>
+                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                    {p.distance_km} km away
+                    {p.rating_avg ? ` · ★ ${p.rating_avg} (${p.rating_count})` : ""}
+                    {p.experience_years != null ? ` · ${p.experience_years} yrs exp` : ""}
+                  </Text>
+                  {(p.specialisation || p.languages.length > 0) && (
+                    <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+                      {p.specialisation ? p.specialisation : ""}
+                      {p.specialisation && p.languages.length ? " · " : ""}
+                      {p.languages.length ? p.languages.join(", ") : ""}
+                    </Text>
+                  )}
+                </Pressable>
+              );
+            })}
           </>
         )}
         {pandits && pandits.length === 0 && (
@@ -190,7 +231,11 @@ export default function BookScreen() {
           style={({ pressed }) => [styles.placeBtn, { opacity: busy ? 0.6 : pressed ? 0.9 : 1 }]}
         >
           <Text style={{ color: colors.white, fontWeight: "800", fontSize: 16 }}>
-            {busy ? "Finding pandit…" : "Find a pandit now  →"}
+            {busy
+              ? "Finding pandit…"
+              : selectedPandit
+                ? "Request this pandit  →"
+                : "Find a pandit now  →"}
           </Text>
         </Pressable>
       </View>

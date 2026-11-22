@@ -10,6 +10,7 @@ from app.models.category import Category
 from app.models.enquiry import BookingEnquiry
 from app.models.faq import Faq
 from app.models.location import Location, ServiceLocation
+from app.models.media import MediaAsset
 from app.models.page import Page
 from app.models.redirect import Redirect
 from app.models.refresh_token import RefreshToken
@@ -25,6 +26,7 @@ __all__ = [
     "Faq",
     "HomepageSection",
     "Location",
+    "MediaAsset",
     "Page",
     "Redirect",
     "RefreshToken",

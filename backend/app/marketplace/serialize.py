@@ -65,6 +65,8 @@ async def pandit_out(session: AsyncSession, p: Pandit) -> PanditOut:
         service_radius_km=p.service_radius_km,
         rating_avg=round(p.rating_sum / p.rating_count, 2) if p.rating_count else None,
         rating_count=p.rating_count,
+        experience_years=p.experience_years,
+        specialisation=p.specialisation,
         capabilities=[
             CapabilityRef(service_id=str(s.id), slug=s.slug, title=s.title) for s in caps
         ],

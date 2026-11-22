@@ -72,6 +72,8 @@ class BookingCreate(BaseModel):
     service_slug: str
     mode: Literal["immediate", "scheduled"] = "immediate"
     scheduled_at: datetime | None = None
+    # Optional customer-selected pandit (from discovery). Offered first.
+    preferred_pandit_id: str | None = None
     address_id: str | None = None
     # Inline address (used when no saved address_id is given)
     address_line: str | None = None
@@ -124,6 +126,8 @@ class PanditOnboard(BaseModel):
     base_lng: float = Field(ge=-180, le=180)
     service_radius_km: float = Field(default=10, ge=1, le=100)
     service_slugs: list[str] = Field(default_factory=list)
+    experience_years: int | None = Field(default=None, ge=0, le=80)
+    specialisation: str | None = Field(default=None, max_length=120)
 
 
 class CapabilityRef(BaseModel):
@@ -145,6 +149,8 @@ class PanditOut(BaseModel):
     service_radius_km: float
     rating_avg: float | None
     rating_count: int
+    experience_years: int | None = None
+    specialisation: str | None = None
     capabilities: list[CapabilityRef]
 
 
@@ -175,12 +181,50 @@ class PanditSearchItem(BaseModel):
     service_radius_km: float
     rating_avg: float | None = None
     rating_count: int = 0
+    # Estimated time for the pandit to reach the customer (straight-line distance
+    # over an average urban travel speed; indicative, not a routed ETA).
+    eta_minutes: int | None = None
+    # Indicative price for the requested service (formatted).
+    price_display: str | None = None
+    experience_years: int | None = None
+    specialisation: str | None = None
 
 
 class Serviceability(BaseModel):
     serviceable: bool
     reason: str | None = None
     available_partners: int = 0
+
+
+# ── Operations analytics ─────────────────────────────────────────────────────
+class AnalyticsDaily(BaseModel):
+    date: str  # YYYY-MM-DD (UTC)
+    total: int
+    completed: int
+    no_partner: int
+
+
+class AnalyticsTopService(BaseModel):
+    title: str
+    bookings: int
+
+
+class AnalyticsTotals(BaseModel):
+    bookings: int
+    completed: int
+    no_partner: int
+    cancelled: int
+    completion_rate: float
+    no_match_rate: float
+    gmv_paise: int
+    gmv_display: str
+
+
+class AnalyticsOut(BaseModel):
+    days: int
+    totals: AnalyticsTotals
+    daily: list[AnalyticsDaily]
+    top_services: list[AnalyticsTopService]
 
 
 # ── Admin ────────────────────────────────────────────────────────────────────
@@ -198,7 +242,15 @@ class PanditAdminOut(BaseModel):
 
 
 class VerificationDecision(BaseModel):
-    decision: Literal["approve", "reject", "request_changes", "suspend"]
+    decision: Literal[
+        "approve",
+        "reject",
+        "request_changes",
+        "suspend",
+        "schedule_interview",
+        "complete_interview",
+        "require_reverification",
+    ]
     reason: str | None = Field(default=None, max_length=500)
 
 

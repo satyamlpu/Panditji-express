@@ -84,12 +84,32 @@ class Settings(BaseSettings):
     seed_admin_email: str = "admin@panditjiexpress.in"
     seed_admin_password: str = _DEFAULT_SEED_ADMIN_PASSWORD
 
+    # Shared secret for the scheduled-booking dispatch endpoint. Empty by default,
+    # which DISABLES the endpoint (503). Set it in prod and have an external cron
+    # (Vercel Cron / GitHub Action) POST with the `X-Scheduler-Token` header so
+    # scheduled bookings dispatch at their time. No background worker required.
+    scheduler_secret: str = ""
+
     # Marketplace payments (mock gateway in dev). The webhook secret signs the
     # provider callback; a real gateway (e.g. Razorpay) replaces the mock while
     # the verification + idempotency + ledger flow stays the same.
     payment_webhook_secret: str = _INSECURE_WEBHOOK_SECRET
     platform_commission_percent: float = 15.0
     gateway_fee_percent: float = 2.0
+    # Payment provider adapter: "mock" (dev/sandbox) or "razorpay" (prod). The
+    # ledger/idempotency/webhook-verify flow is identical; only signature scheme
+    # and order creation differ. Live keys come from the environment.
+    payment_provider: str = "mock"
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+
+    # SMS / OTP delivery provider: "none" (dev — code returned in the response),
+    # "console" (dev — code logged, not returned), or "msg91" (prod DLT). Live
+    # credentials come from the environment and a DLT-approved template.
+    sms_provider: str = "none"
+    msg91_auth_key: str = ""
+    msg91_sender_id: str = ""
+    msg91_dlt_template_id: str = ""
 
     # Geo matching backend for dispatch eligibility. "haversine" scans in Python
     # (dev/SQLite, correct but O(n)); "postgis" uses an indexed ST_DWithin radius
@@ -107,6 +127,14 @@ class Settings(BaseSettings):
     supabase_storage_bucket: str = "kyc-private"
     # Hard cap on a single uploaded KYC file, in bytes. Default 10 MB.
     verification_max_upload_bytes: int = 10 * 1024 * 1024
+
+    # Public Media Library (website images). Uses the same storage backend switch
+    # as KYC but a separate dir/bucket, and is served through a cache-friendly
+    # public proxy endpoint (so it works on ephemeral/serverless filesystems and
+    # can sit behind a CDN in production). Images only; a single hard size cap.
+    media_storage_local_dir: str = "./uploads/media"
+    supabase_media_bucket: str = "media-public"
+    media_max_upload_bytes: int = 3 * 1024 * 1024
 
     @field_validator("database_url")
     @classmethod

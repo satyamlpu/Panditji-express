@@ -130,6 +130,26 @@ export async function fetchRedirect(
   });
 }
 
+export interface AppReleasePublic {
+  app_type: "customer" | "partner";
+  platform: "android" | "ios";
+  channel: "beta" | "production";
+  version: string;
+  build_number: number | null;
+  download_url: string | null;
+  checksum_sha256: string | null;
+  release_notes: string | null;
+  min_supported_version: string | null;
+}
+
+export async function fetchAppReleases(): Promise<AppReleasePublic[]> {
+  const data = await getJson<AppReleasePublic[]>("/api/v1/public/app-releases", {
+    tags: ["releases"],
+    revalidate: 300,
+  });
+  return data ?? [];
+}
+
 export interface SiteSettings {
   site?: { name?: string; tagline?: string };
   contact?: {
@@ -144,6 +164,20 @@ export interface SiteSettings {
   };
   social?: Record<string, string>;
   seo_defaults?: { title_suffix?: string; default_description?: string };
+  seo?: SeoSettings;
+}
+
+export interface SeoSettings {
+  title_suffix?: string;
+  default_description?: string;
+  default_og_image?: string;
+  noindex?: boolean;
+  organization?: {
+    name?: string;
+    logo_url?: string;
+    same_as?: string[];
+    phone?: string;
+  };
 }
 
 export async function fetchSettings(): Promise<SiteSettings> {

@@ -58,13 +58,16 @@ export const WEBSITE_NAV: NavItem[] = [
   { href: "/admin/pages", label: "Pages", icon: "pages" },
   { href: "/admin/homepage", label: "Homepage", icon: "homepage" },
   { href: "/admin/media", label: "Media Library", icon: "media" },
+  { href: "/admin/releases", label: "App Releases", icon: "app" },
   { href: "/admin/seo", label: "SEO", icon: "seo" },
   { href: "/admin/enquiries", label: "Enquiries", icon: "enquiries" },
+  { href: "/admin/staff", label: "Staff & Roles", icon: "security" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 
 export const APP_NAV: NavItem[] = [
   { href: "/admin/marketplace", label: "Operations", icon: "operations", exact: true },
+  { href: "/admin/marketplace/analytics", label: "Analytics", icon: "analytics" },
   { href: "/admin/marketplace/customers", label: "Customers", icon: "customers" },
   { href: "/admin/marketplace/partners", label: "Partners", icon: "partners" },
   { href: "/admin/marketplace/bookings", label: "Bookings", icon: "bookings" },

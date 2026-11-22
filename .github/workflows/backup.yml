@@ -33,18 +33,30 @@ jobs:
           sudo apt-get install -y postgresql-client-16
 
       - name: Run backup
+        id: backup
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BACKUP_DIR: ${{ github.workspace }}/backups
           RETENTION: "14"
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
-            echo "::error::DATABASE_URL secret is not set; skipping."
+            # Not yet configured. On the daily schedule, skip cleanly so the
+            # workflow does not alarm every night before the secret is set.
+            # On a manual run the operator expects a backup, so fail loudly.
+            if [ "$EVENT_NAME" = "schedule" ]; then
+              echo "::warning::DATABASE_URL secret not set; skipping scheduled backup. Set the repo secret (Supabase session-pooler/direct URL) to enable nightly backups."
+              echo "skipped=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "::error::DATABASE_URL secret is not set. Add it in repo Settings → Secrets (use the Supabase session-pooler / direct URL, not :6543)."
             exit 1
           fi
           bash backend/ops/backup_db.sh "$BACKUP_DIR"
+          echo "skipped=false" >> "$GITHUB_OUTPUT"
 
       - name: Upload archive
+        if: steps.backup.outputs.skipped != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ github.run_id }}

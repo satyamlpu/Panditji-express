@@ -15,6 +15,7 @@ from app.marketplace.models import Customer, Pandit
 from app.marketplace.otp import issue_otp, verify_otp
 from app.marketplace.principals import client_ip, create_principal_token
 from app.marketplace.schemas import OtpRequest, OtpRequestOut, OtpVerify, TokenOut
+from app.marketplace.sms import send_otp_sms
 from app.services.audit import audit
 
 router = APIRouter(prefix="/api/v1/mp/auth", tags=["mp:auth"])
@@ -33,18 +34,22 @@ async def otp_request(
             code="rate_limited",
             status_code=429,
         )
-    code = await issue_otp(session, payload.phone.strip(), payload.kind)
+    phone = payload.phone.strip()
+    code = await issue_otp(session, phone, payload.kind)
+    sent = await send_otp_sms(phone, code)
     await audit(
         session,
         action=MpAudit.OTP_REQUEST,
         entity=payload.kind,
         entity_id=payload.phone,
         ip=ip,
+        meta={"sms_sent": sent},
     )
-    # In production the code is sent by SMS and never returned.
+    # Return the code only in non-production AND when no provider delivered it —
+    # so dev stays testable but a configured SMS provider never echoes the code.
     return OtpRequestOut(
         message="OTP sent.",
-        dev_code=None if settings.is_production else code,
+        dev_code=None if (settings.is_production or sent) else code,
     )
 
 
