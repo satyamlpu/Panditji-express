@@ -86,6 +86,9 @@ class Pandit(UUIDPk, Timestamps, Base):
     name: Mapped[str | None] = mapped_column(nullable=True)
     languages: Mapped[list | None] = mapped_column(JSON, nullable=True)  # list[str]
     city: Mapped[str | None] = mapped_column(nullable=True)
+    # Optional profile enrichment surfaced in discovery results (set at onboarding).
+    experience_years: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    specialisation: Mapped[str | None] = mapped_column(nullable=True)
 
     # Verification lifecycle + reviewer trail
     status: Mapped[str] = mapped_column(

@@ -61,8 +61,14 @@ rebuilt. The genuine gap was the brief's extended CRM approval lifecycle:
 
 Tests: `test_partner_lifecycle.py` (2) — interview→approve path, re-verification blocks going online. Suite **74 passed / 6 skipped**; migration base→head OK; frontend tsc+lint clean.
 
-## Phase 3 — Nearby discovery (verified, minor gaps noted)
-🟢 Already implemented: `GET /mp/discovery/pandits` returns distance, rating, languages for online in-range partners (`backend/app/marketplace/routers/discovery.py`); PostGIS `ST_DWithin` + GiST index tested. **Not rebuilt.** Minor future gaps (not blockers): per-result ETA + price estimate, experience/specialisation fields in the search item.
+## Phase 3 — Nearby discovery (verified + enriched ✅)
+🟢 Already implemented: `GET /mp/discovery/pandits` returns distance, rating, languages for online in-range partners (`backend/app/marketplace/routers/discovery.py`); PostGIS `ST_DWithin` + GiST index tested. **Not rebuilt.**
+
+**Enrichment (branch `feat/discovery-enrichment`, off the reviewed tip) ✅** — closed the noted gaps:
+- Search results now carry **`eta_minutes`** (straight-line distance over an avg urban speed, `discovery_eta_speed_kmph` config — indicative, not routed), **`price_display`** (the requested service's catalogue price), and **`experience_years` + `specialisation`**.
+- New nullable `experience_years` / `specialisation` columns on `mp_pandit` (migration `d5e2f3a4b6c7`, additive, up+down validated), set at onboarding (`PanditOnboard` + `/partner/onboard`) and exposed on the profile.
+- Tests: `backend/tests/test_discovery_enrichment.py` (3) — ETA/price/profile in results, ETA grows with distance (nearest-first), onboarding persists the fields. Suite **100 passed / 6 skipped**; ruff clean.
+- **Follow-up (not done):** customer-app UI to surface ETA/price/experience on the discovery screen (mobile wiring); a real-time/routed ETA (needs a maps provider — external).
 
 ## Phase 4 — Booking & dispatch (gap-fill) ✅
 Instant + scheduled booking and concurrency-safe assignment already existed and were **not rebuilt**. The genuine gap was the brief's third booking type — **customer-selected pandit**:

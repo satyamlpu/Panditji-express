@@ -126,6 +126,8 @@ class PanditOnboard(BaseModel):
     base_lng: float = Field(ge=-180, le=180)
     service_radius_km: float = Field(default=10, ge=1, le=100)
     service_slugs: list[str] = Field(default_factory=list)
+    experience_years: int | None = Field(default=None, ge=0, le=80)
+    specialisation: str | None = Field(default=None, max_length=120)
 
 
 class CapabilityRef(BaseModel):
@@ -147,6 +149,8 @@ class PanditOut(BaseModel):
     service_radius_km: float
     rating_avg: float | None
     rating_count: int
+    experience_years: int | None = None
+    specialisation: str | None = None
     capabilities: list[CapabilityRef]
 
 
@@ -177,6 +181,13 @@ class PanditSearchItem(BaseModel):
     service_radius_km: float
     rating_avg: float | None = None
     rating_count: int = 0
+    # Estimated time for the pandit to reach the customer (straight-line distance
+    # over an average urban travel speed; indicative, not a routed ETA).
+    eta_minutes: int | None = None
+    # Indicative price for the requested service (formatted).
+    price_display: str | None = None
+    experience_years: int | None = None
+    specialisation: str | None = None
 
 
 class Serviceability(BaseModel):

@@ -109,6 +109,9 @@ class Settings(BaseSettings):
     # (dev/SQLite, correct but O(n)); "postgis" uses an indexed ST_DWithin radius
     # filter (production, requires the PostGIS migration). Ranking is identical.
     geo_backend: str = "haversine"
+    # Average urban travel speed used to turn straight-line distance into an
+    # indicative discovery ETA (minutes). Not a routed/traffic-aware estimate.
+    discovery_eta_speed_kmph: float = 24.0
 
     # KYC verification document storage. Files are private (never a public URL).
     # "local" writes under STORAGE_LOCAL_DIR (fine for dev / single host);

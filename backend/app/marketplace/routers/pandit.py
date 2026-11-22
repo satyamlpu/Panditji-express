@@ -100,6 +100,8 @@ async def onboard(
     p.base_lat = payload.base_lat
     p.base_lng = payload.base_lng
     p.service_radius_km = payload.service_radius_km
+    p.experience_years = payload.experience_years
+    p.specialisation = (payload.specialisation or "").strip() or None
     p.status = PanditStatus.SUBMITTED
 
     # Reset + set capabilities from published services.
