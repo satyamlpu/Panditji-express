@@ -42,7 +42,7 @@ Classification: ✅ done & tested · 🟢 done, unverified · 🟡 partial · �
 
 Tests: 72 passed / 6 skipped (backend); frontend tsc + lint clean. Release channels: production→store listing, beta→APK/TestFlight (presentational). **No fake/placeholder download links** — a null `download_url` renders an accurate "coming soon".
 
-**Not in scope this pass (documented):** QR codes on `/download` (a small enhancement — needs a QR renderer; deferred to avoid a new client dependency in this pass). Real signed builds/store links belong to Phase 9 (EAS) and are an external blocker until build + store accounts exist.
+**QR codes on `/download` ✅** (branch `feat/discovery-enrichment`): each real download link now renders a **server-generated SVG QR code** (via the `qrcode` lib, built in the async server component — no client JS) with a "Scan to open on your phone" caption, shown on ≥sm screens; "Coming soon" slots render none. Verified live. Real signed builds/store links still belong to Phase 9 (EAS) and are an external blocker until build + store accounts exist.
 
 ## Phase 2 — Partner onboarding (gap-fill) ✅
 

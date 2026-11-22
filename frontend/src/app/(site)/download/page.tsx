@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import QRCode from "qrcode";
 import { Smartphone, Apple, Download, ShieldCheck } from "lucide-react";
 import { PageHero } from "@/components/site/PageHero";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
@@ -7,6 +8,21 @@ import { buttonClasses } from "@/components/ui/button";
 import { fetchAppReleases, type AppReleasePublic } from "@/lib/serverApi";
 
 export const revalidate = 300;
+
+/** Server-side QR SVG for a (trusted, server-known) download URL. Returns null
+ *  if generation fails, so a bad URL never breaks the page. */
+async function qrSvg(url: string): Promise<string | null> {
+  try {
+    return await QRCode.toString(url, {
+      type: "svg",
+      margin: 0,
+      width: 104,
+      color: { dark: "#1f2937", light: "#ffffff" },
+    });
+  } catch {
+    return null;
+  }
+}
 
 export const metadata: Metadata = {
   title: "Download the apps",
@@ -35,7 +51,7 @@ function pick(
     .sort((a, b) => (a.channel < b.channel ? 1 : -1)); // production before beta
 }
 
-function PlatformBlock({
+async function PlatformBlock({
   releases,
   app,
   platform,
@@ -47,6 +63,7 @@ function PlatformBlock({
   const options = pick(releases, app, platform);
   const Icon = platform === "android" ? Smartphone : Apple;
   const name = platform === "android" ? "Android" : "iOS";
+  const qrs = await Promise.all(options.map((r) => qrSvg(r.download_url as string)));
   return (
     <div className="rounded-xl border border-line bg-surface-2 p-4">
       <div className="flex items-center gap-2 text-ink">
@@ -57,7 +74,7 @@ function PlatformBlock({
         <p className="mt-3 text-sm text-muted">Coming soon — not yet available.</p>
       ) : (
         <ul className="mt-3 space-y-2">
-          {options.map((r) => (
+          {options.map((r, i) => (
             <li key={`${r.channel}-${r.version}`}>
               <a
                 href={r.download_url as string}
@@ -72,6 +89,19 @@ function PlatformBlock({
                 {r.build_number != null ? ` (build ${r.build_number})` : ""}
                 {r.checksum_sha256 ? " · SHA-256 verified" : ""}
               </p>
+              {qrs[i] && (
+                <div className="mt-2 hidden flex-col items-center sm:flex">
+                  <div
+                    className="rounded-lg border border-line bg-white p-2"
+                    aria-hidden
+                    // Trusted: SVG generated server-side from our own release URL.
+                    dangerouslySetInnerHTML={{ __html: qrs[i] as string }}
+                  />
+                  <p className="mt-1 text-center text-[11px] text-muted">
+                    Scan to open on your phone
+                  </p>
+                </div>
+              )}
             </li>
           ))}
         </ul>
