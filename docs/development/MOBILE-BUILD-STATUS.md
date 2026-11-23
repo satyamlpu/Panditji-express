@@ -1,5 +1,36 @@
 # Mobile Build Status — Customer & Pandit Partner (Android/iOS)
 
+## ✅ Android internal-testing APKs built (EAS, account @sbsharma3434)
+
+| | Customer | Pandit Partner |
+|---|---|---|
+| Expo project | `@sbsharma3434/customer-app` | `@sbsharma3434/pandit-app` |
+| projectId | `6cef0738-6a0e-4053-b7b4-26b6f7be3f85` | `c45a1991-1796-4768-9cb9-3f85fb8520ab` |
+| Application ID | `com.panditjiexpress.customer` | `com.panditjiexpress.partner` |
+| Version (code) | `1.0.0 (1)` | `1.0.0 (1)` |
+| EAS build ID | `cc39a027-49fb-47fe-80bd-b47325ae0642` | `ed06aa01-ed8d-4e9f-a777-0c382e5b0fb2` |
+| Status | **FINISHED** | **FINISHED** |
+| Completed (UTC) | 2026-11-23T13:27:11Z | 2026-11-23T13:25:52Z |
+| APK artifact | https://expo.dev/artifacts/eas/D2JUdTeXiuYVxFXYVG3HnrobIQoJsYFFlZ86jgPV46k.apk | https://expo.dev/artifacts/eas/8ZwYJujnyFoijBmlWRrHuC080CTMYQIxhzxtSHKBRs8.apk |
+| Profile | preview (internal-distribution APK) | preview |
+| API base | https://panditji-express2.vercel.app | same |
+
+**SHA-256:** compute after downloading on a normal network — `shasum -a 256 <file>.apk`.
+(The prep environment's proxy/TLS made a local download impractical; the APKs themselves
+are valid and were built + signed by EAS — status FINISHED.)
+
+**Build fix applied:** first builds failed at the Sentry source-map upload
+(`:app:...SentryUpload`, sentry-cli exit 1, no Sentry org/project configured).
+Fixed with `SENTRY_DISABLE_AUTO_UPLOAD=true` in the `preview`/`production` build env.
+
+**Installation testing:** PENDING — no Android device/emulator available in this
+environment. To test: `adb install customer.apk` / `adb install partner.apk`, then
+launch, OTP login, discovery, booking, partner onboarding.
+
+---
+
+# Mobile Build Status — Customer & Pandit Partner (Android/iOS)
+
 _Config prepared on branch `chore/mobile-build-config` (PR #12). No APK has been
 built — EAS auth is not configured in the prep environment._
 
