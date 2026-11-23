@@ -8,9 +8,13 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.panditjiexpress.customer",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.panditjiexpress.customer",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -26,7 +30,8 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-status-bar"
     ]
   }
 }
