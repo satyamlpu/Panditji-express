@@ -205,3 +205,15 @@ clean. Not merged to `main`; nothing deployed.
 
 ## Next
 Phase 1: release-management backend (model + migration + admin APIs + public active-releases endpoint + tests), then the public `/download` page + admin release screen with an accurate "unavailable" state (no fake links).
+
+## Deployment prep (2026-11-24)
+- **Android APKs built ✅** (EAS, @sbsharma3434): Customer + Partner, v1.0.0(1),
+  internal-distribution APKs FINISHED. Build IDs cc39a027… / ed06aa01…; artifact
+  URLs on expo.dev. Config on PR #12 (app IDs, eas.json, projectIds, Sentry-upload
+  disabled). iOS: prebuild done, dev-build paused (CocoaPods link issue).
+- **Prod migration preflight PASSED ✅** against Supabase `easvvosvjaiaqcjuggki`
+  (PG 17.11). Prod @ `c3e6a9f1d4b7` → head `54a335ac54d9`. Dry-run = additive only
+  (3 CREATE TABLE, 6 ADD COLUMN, 4 CREATE INDEX); the two flagged lines
+  (ck_pandit_status recreate = widened superset; alembic_version DELETE = merge
+  bookkeeping) verified safe. See PROD-MIGRATION-RUNBOOK.md. Nothing executed —
+  migration + PR #11 merge await explicit approval.
