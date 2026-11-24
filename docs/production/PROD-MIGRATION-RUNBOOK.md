@@ -173,3 +173,16 @@ WT=/private/tmp/claude-501/-Users-satyamsharma-Assignment-/9fce653c-5644-4043-97
 "$WT/.venv/bin/alembic" heads                                  # expect single head
 ```
 (Run from `$WT`. PR #11 is merged only after this succeeds and you approve.)
+
+---
+
+## SECURITY UPDATE — new head `e7a1b2c3d4f5` (2026-11-24)
+A HIGH-severity finding (marketplace tables readable via the Supabase Data API by
+`anon`/`authenticated`) is fixed **inside this same migration chain**. New target
+head is **`e7a1b2c3d4f5`** (was `54a335ac54d9`): it revokes Data API access to the
+`public` schema, blocks future tables from inheriting those grants, and enables
+RLS (defense-in-depth). Nothing in the product uses the Data API, so impact = 0.
+See `docs/security/DATABASE-SECURITY-AUDIT.md`. The regenerated
+`~/Desktop/pje_prod_migration.sql` (single atomic transaction) now ends at
+`e7a1b2c3d4f5` and includes the lockdown. Post-migration, run the verification
+queries in the audit doc. CLI path: `alembic upgrade head` → `e7a1b2c3d4f5`.

@@ -217,3 +217,11 @@ Phase 1: release-management backend (model + migration + admin APIs + public act
   (ck_pandit_status recreate = widened superset; alembic_version DELETE = merge
   bookkeeping) verified safe. See PROD-MIGRATION-RUNBOOK.md. Nothing executed —
   migration + PR #11 merge await explicit approval.
+
+## Security hardening (2026-11-24)
+- **DB Data API lockdown ✅** — migration `e7a1b2c3d4f5` (Postgres-only, role-guarded):
+  revokes `anon`/`authenticated` access to `public`, ALTER DEFAULT PRIVILEGES for
+  future tables, RLS on all app tables. Fixes anon-readable marketplace/KYC tables.
+  `tests/test_security.py` (13) + `docs/security/DATABASE-SECURITY-AUDIT.md`.
+  Prod migration SQL regenerated (head c3e6a9f1d4b7 → e7a1b2c3d4f5). Nothing
+  executed on prod — awaits explicit approval.
