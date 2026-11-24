@@ -133,3 +133,43 @@ Live SMS delivery (MSG91 + DLT template), live payments (Razorpay live keys),
 push **delivery** (FCM/APNs credentials — the token *registry* ships here),
 mobile store builds (Apple/Google accounts), and a load-test run (isolated env).
 Each is a config/credential step, not code.
+
+---
+
+## Preflight VERIFIED (prod Supabase `easvvosvjaiaqcjuggki`, PG 17.11) — 2026-11-24
+
+- **Current prod revision:** `c3e6a9f1d4b7` → **target head:** `54a335ac54d9`.
+- Dry-run (`alembic upgrade c3e6a9f1d4b7:head --sql`): **3 CREATE TABLE**
+  (`app_release`, `media_asset`, `mp_push_token`), **6 ADD COLUMN**
+  (verification_document note/content_type/size_bytes, booking.preferred_pandit_id,
+  pandit.experience_years/specialisation), **4 CREATE INDEX** — all **additive**.
+- **Two flagged statements, both verified SAFE:**
+  1. `ALTER TABLE mp_pandit DROP CONSTRAINT ck_pandit_status;` is **immediately
+     followed by** `ADD CONSTRAINT ck_pandit_status CHECK (... )` — a CHECK
+     *recreation* that widens the allowed set (adds interview_scheduled /
+     interview_completed / reverification_required). New set is a **superset** of
+     the old → every existing pandit row stays valid; no data change.
+  2. `DELETE FROM alembic_version WHERE version_num='4a2a7c68abb5';` is Alembic's
+     **merge-revision bookkeeping** (consolidating the two heads into one). It
+     touches **only the alembic_version tracking table**, never business data.
+- **No** DROP TABLE / TRUNCATE / business-table DELETE anywhere.
+- **Backward compatibility (migrate-first):** every change is additive or a
+  superset CHECK, so the currently-deployed backend keeps working against the new
+  schema until PR #11 is merged/deployed.
+- **Locking:** ADD COLUMN (nullable) is metadata-only; new tables/indexes don't
+  touch live tables; the ck_pandit_status swap + booking FK take a brief
+  ACCESS EXCLUSIVE lock on small marketplace tables. Run off-peak to be safe.
+- **Transaction/recovery:** each revision runs in its own transaction; a failure
+  rolls that step back and `alembic upgrade head` resumes.
+- **Rollback:** `alembic downgrade c3e6a9f1d4b7` (drops the new tables/cols,
+  restores the old CHECK) or restore the pre-migration backup.
+
+### Exact migration commands (run in the shell where DATABASE_URL is set)
+```bash
+WT=/private/tmp/claude-501/-Users-satyamsharma-Assignment-/9fce653c-5644-4043-9730-22162723cc58/scratchpad/relmig/backend
+"$WT/.venv/bin/alembic" -c "$WT/alembic.ini" current          # expect c3e6a9f1d4b7
+"$WT/.venv/bin/alembic" upgrade head                           # applies to 54a335ac54d9
+"$WT/.venv/bin/alembic" current                                # expect 54a335ac54d9 (head)
+"$WT/.venv/bin/alembic" heads                                  # expect single head
+```
+(Run from `$WT`. PR #11 is merged only after this succeeds and you approve.)
