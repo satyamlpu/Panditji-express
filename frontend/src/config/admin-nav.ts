@@ -60,6 +60,7 @@ export const WEBSITE_NAV: NavItem[] = [
   { href: "/admin/media", label: "Media Library", icon: "media" },
   { href: "/admin/seo", label: "SEO", icon: "seo" },
   { href: "/admin/enquiries", label: "Enquiries", icon: "enquiries" },
+  { href: "/admin/activity", label: "Sync & Activity", icon: "activity" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 

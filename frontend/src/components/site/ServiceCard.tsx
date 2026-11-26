@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Thumb } from "@/components/site/Thumb";
 import type { ServiceListItem } from "@/lib/types";
 
 export function ServiceCard({ service }: { service: ServiceListItem }) {
   return (
-    <article className="group relative flex flex-col rounded-card border border-line bg-surface p-5 shadow-soft transition-shadow hover:shadow-soft-lg">
+    <article className="group relative flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-soft transition-shadow hover:shadow-soft-lg">
+      <Thumb thumbnail={service.thumbnail} alt={service.title} rounded="" />
+      <div className="flex flex-col p-5">
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-display text-lg font-semibold text-ink">
           <Link
@@ -44,6 +47,7 @@ export function ServiceCard({ service }: { service: ServiceListItem }) {
             className="transition-transform group-hover:translate-x-0.5"
           />
         </span>
+      </div>
       </div>
     </article>
   );

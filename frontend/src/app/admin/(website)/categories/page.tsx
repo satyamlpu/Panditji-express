@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2 } from "lucide-react";
-import {
-  categoriesApi,
-  type CategoryAdmin,
-} from "@/features/content/api";
+import { ImageOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { categoriesApi, type CategoryAdmin } from "@/features/content/api";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { AField, AdminModal, selectClass, StatusDot } from "@/components/admin/kit";
+import {
+  AField,
+  AdminModal,
+  selectClass,
+  StatusBadge,
+} from "@/components/admin/kit";
+import { MediaPicker, type ThumbnailValue } from "@/components/admin/MediaPicker";
 
 type Draft = Partial<CategoryAdmin>;
 
@@ -27,6 +30,7 @@ export default function AdminCategoriesPage() {
     queryFn: () => categoriesApi.list(),
   });
   const [editing, setEditing] = useState<Draft | null>(null);
+  const [q, setQ] = useState("");
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["admin", "categories"] });
@@ -53,13 +57,32 @@ export default function AdminCategoriesPage() {
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Delete failed"),
   });
 
+  const rows = useMemo(() => {
+    const list = data ?? [];
+    const term = q.trim().toLowerCase();
+    const filtered = term
+      ? list.filter(
+          (c) =>
+            c.name.toLowerCase().includes(term) ||
+            c.slug.toLowerCase().includes(term),
+        )
+      : list;
+    return [...filtered].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  }, [data, q]);
+
+  const thumbValue: ThumbnailValue = {
+    mediaId: editing?.thumbnail_media_id ?? null,
+    previewUrl: editing?.thumbnail?.url ?? null,
+    alt: editing?.thumbnail_alt ?? editing?.thumbnail?.alt ?? "",
+  };
+
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold text-ink">Categories</h1>
           <p className="mt-1 text-sm text-muted">
-            Optional groupings for your pujas.
+            Groupings for your pujas — with thumbnails shown across the site and apps.
           </p>
         </div>
         <Button onClick={() => setEditing({ status: "draft", sort_order: 0 })}>
@@ -67,48 +90,91 @@ export default function AdminCategoriesPage() {
         </Button>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-card border border-line bg-surface">
+      <div className="mt-5">
+        <Input
+          type="search"
+          placeholder="Search name or slug…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="w-full sm:w-64"
+        />
+      </div>
+
+      <div className="mt-5 overflow-x-auto rounded-card border border-line bg-surface shadow-soft">
         {isLoading ? (
           <div className="py-16 text-center">
             <Spinner className="text-forest" />
           </div>
-        ) : !data?.length ? (
-          <p className="py-16 text-center text-sm text-muted">No categories yet.</p>
+        ) : rows.length === 0 ? (
+          <p className="py-16 text-center text-sm text-muted">No categories found.</p>
         ) : (
-          <ul className="divide-y divide-line">
-            {data.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-3 p-4">
-                <div>
-                  <p className="font-medium text-ink">
-                    {c.name}{" "}
-                    <span className="text-xs text-muted">
-                      · {c.service_count ?? 0} pujas
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted">/{c.slug}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StatusDot status={c.status} />
-                  <button
-                    onClick={() => setEditing(c)}
-                    className="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-forest"
-                    aria-label="Edit"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete “${c.name}”?`)) remove.mutate(c.id);
-                    }}
-                    className="rounded-lg p-2 text-muted hover:bg-tomato/10 hover:text-tomato"
-                    aria-label="Delete"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-muted">
+                <th className="px-4 py-3 font-semibold">Thumbnail</th>
+                <th className="px-4 py-3 font-semibold">Category</th>
+                <th className="px-4 py-3 font-semibold">Description</th>
+                <th className="px-4 py-3 font-semibold">Services</th>
+                <th className="px-4 py-3 font-semibold">Order</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 text-right font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((c) => (
+                <tr key={c.id} className="border-b border-line last:border-0 align-middle">
+                  <td className="px-4 py-3">
+                    <div className="h-12 w-20 overflow-hidden rounded-lg border border-line bg-surface-2">
+                      {c.thumbnail?.url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={c.thumbnail.thumb_url || c.thumbnail.url}
+                          alt={c.thumbnail.alt || c.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-muted">
+                          <ImageOff size={16} />
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-ink">{c.name}</div>
+                    <div className="text-xs text-muted/80">/{c.slug}</div>
+                  </td>
+                  <td className="max-w-xs px-4 py-3 text-muted">
+                    <span className="line-clamp-2">{c.description || "—"}</span>
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-muted">{c.service_count ?? 0}</td>
+                  <td className="px-4 py-3 tabular-nums text-muted">{c.sort_order}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={c.status} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setEditing(c)}
+                        className="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-forest"
+                        aria-label="Edit"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete “${c.name}”?`)) remove.mutate(c.id);
+                        }}
+                        className="rounded-lg p-2 text-muted hover:bg-tomato/10 hover:text-tomato"
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
@@ -151,6 +217,22 @@ export default function AdminCategoriesPage() {
                 }
               />
             </AField>
+
+            <MediaPicker
+              value={thumbValue}
+              onChange={(next) =>
+                setEditing((d) => ({
+                  ...d!,
+                  thumbnail_media_id: next.mediaId,
+                  thumbnail_alt: next.alt,
+                  thumbnail: next.previewUrl
+                    ? { url: next.previewUrl, thumb_url: null, alt: next.alt }
+                    : null,
+                }))
+              }
+              label="Category thumbnail"
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <AField label="Sort order">
                 <Input
