@@ -18,28 +18,21 @@ export const TAB_BAR_HEIGHT = 62;
 export const TAB_BAR_SPACE = TAB_BAR_HEIGHT + 34; // bar + float margin, generous for scroll content
 
 /**
- * Minimal structural shape of the props expo-router's `Tabs` passes to a custom
- * `tabBar`. A subset is enough (and keeps us off the vendored react-navigation
- * build path); the full props object remains assignable to it at the call site.
+ * Minimal structural shape of the props expo-router's (SDK 58) `Tabs` passes to a
+ * custom `tabBar`. A subset is enough (and keeps us off the vendored
+ * react-navigation build path); the full props object stays assignable at the
+ * call site.
  */
 export interface TabBarProps {
   state: { index: number; routes: { key: string; name: string }[] };
-  descriptors: Record<
-    string,
-    { options: { title?: string; tabBarLabel?: unknown } }
-  >;
-  navigation: {
-    emit: (e: { type: "tabPress"; target: string; canPreventDefault: true }) => {
-      defaultPrevented: boolean;
-    };
-    navigate: (name: string) => void;
-  };
+  descriptors: Record<string, { options: { title?: string; tabBarLabel?: unknown } }>;
+  navigateToTab: (routeKey: string) => void;
 }
 
 export function GlassTabBar({
   state,
   descriptors,
-  navigation,
+  navigateToTab,
   icons,
 }: TabBarProps & { icons: Record<string, IconName> }) {
   const colors = useColors();
@@ -67,8 +60,7 @@ export function GlassTabBar({
 
           const onPress = () => {
             haptics.select();
-            const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+            if (!focused) navigateToTab(route.key);
           };
 
           return (

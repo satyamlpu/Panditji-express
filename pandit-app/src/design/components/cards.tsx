@@ -10,7 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { palette, radius, spacing } from "../tokens";
 import { useColors } from "../theme";
 import { Icon, type IconName } from "../icons";
-import { Txt, Card, PressableScale } from "./primitives";
+import { Txt, Card } from "./primitives";
 import { PriceDisplay, Rating, StatusIndicator, VerifiedBadge, Avatar } from "./display";
 
 /** Image with a designed neutral placeholder (never an emoji) when media is missing. */

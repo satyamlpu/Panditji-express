@@ -1,14 +1,34 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import type { Pandit } from "../../lib/model";
-import { Button, Card, Chip, Loading, SectionHeader, StatusPill, WrapRow } from "../../components/ui";
-import { colors } from "../../theme";
+import {
+  AppHeader,
+  Avatar,
+  Button,
+  Card,
+  Chip,
+  Icon,
+  Loading,
+  PressableScale,
+  Rating,
+  SectionHeader,
+  StatusIndicator,
+  TAB_BAR_SPACE,
+  Txt,
+  WrapRow,
+  radius,
+  spacing,
+  useColors,
+  type IconName,
+} from "../../design";
 
 export default function Profile() {
   const { signOut } = useAuth();
+  const colors = useColors();
   const [me, setMe] = useState<Pandit | null>(null);
 
   useEffect(() => {
@@ -18,88 +38,149 @@ export default function Profile() {
   if (!me) return <Loading />;
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <Card>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontSize: 20, fontWeight: "900", color: colors.ink }}>{me.name ?? "Partner"}</Text>
-          <StatusPill status={me.status} />
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.surface }}>
+        <AppHeader title="Profile" />
+      </SafeAreaView>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: TAB_BAR_SPACE, gap: spacing.md }}>
+        {/* Identity */}
+        <Card>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+            <Avatar name={me.name} size={56} />
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                <Txt variant="h3" numberOfLines={1} style={{ flexShrink: 1 }}>
+                  {me.name ?? "Partner"}
+                </Txt>
+                <StatusIndicator status={me.status} />
+              </View>
+              <Txt variant="callout" color={colors.inkSecondary} style={{ marginTop: 2 }}>
+                {me.phone}
+              </Txt>
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.lg }}>
+            <Stat label="Rating">
+              <Rating value={me.rating_avg} count={me.rating_count} size={15} />
+            </Stat>
+            <Stat label="Reviews">
+              <Txt variant="h3">{me.rating_count}</Txt>
+            </Stat>
+            <Stat label="Radius">
+              <Txt variant="h3">{me.service_radius_km} km</Txt>
+            </Stat>
+          </View>
+        </Card>
+
+        <Card>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Icon name="location" size={16} color={colors.primary} />
+            <Txt variant="bodyStrong">{me.city ?? "—"}</Txt>
+          </View>
+        </Card>
+
+        <View>
+          <SectionHeader title="Languages" />
+          {me.languages?.length ? (
+            <WrapRow>
+              {me.languages.map((l) => (
+                <Chip key={l} label={l} selected />
+              ))}
+            </WrapRow>
+          ) : (
+            <Txt variant="callout" color={colors.inkSecondary}>
+              No languages listed.
+            </Txt>
+          )}
         </View>
-        <Text style={{ color: colors.muted, marginTop: 4 }}>{me.phone}</Text>
-        <View style={{ flexDirection: "row", marginTop: 12, gap: 20 }}>
-          <View>
-            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>RATING</Text>
-            <Text style={{ color: colors.ink, fontWeight: "800", fontSize: 16, marginTop: 2 }}>
-              ⭐ {me.rating_avg?.toFixed(1) ?? "New"}
-            </Text>
-          </View>
-          <View>
-            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>REVIEWS</Text>
-            <Text style={{ color: colors.ink, fontWeight: "800", fontSize: 16, marginTop: 2 }}>{me.rating_count}</Text>
-          </View>
-          <View>
-            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>RADIUS</Text>
-            <Text style={{ color: colors.ink, fontWeight: "800", fontSize: 16, marginTop: 2 }}>
-              {me.service_radius_km} km
-            </Text>
-          </View>
+
+        <View>
+          <SectionHeader title="Pujas you offer" />
+          {me.capabilities.length ? (
+            <View style={{ gap: spacing.sm }}>
+              {me.capabilities.map((c) => (
+                <Card key={c.service_id}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                    <Icon name="blessing" size={18} color={colors.primary} />
+                    <Txt variant="bodyStrong">{c.title}</Txt>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          ) : (
+            <Txt variant="callout" color={colors.inkSecondary}>
+              No pujas selected yet.
+            </Txt>
+          )}
         </View>
-      </Card>
 
-      <SectionHeader title="City" />
-      <Card>
-        <Text style={{ color: colors.ink }}>📍 {me.city ?? "—"}</Text>
-      </Card>
+        {/* Links */}
+        <Card padded={false}>
+          <LinkRow
+            icon="shield"
+            label={me.status === "approved" ? "Verification & KYC" : "Complete verification"}
+            onPress={() => router.push("/verification")}
+            first
+          />
+          <LinkRow icon="alerts" label="Notifications" onPress={() => router.push("/notifications")} />
+          <LinkRow icon="support" label="Help & support" onPress={() => router.push("/support")} />
+          {me.status !== "approved" ? (
+            <LinkRow icon="forward" label="Continue onboarding" onPress={() => router.push("/onboard")} />
+          ) : null}
+        </Card>
 
-      <SectionHeader title="Languages" />
-      {me.languages?.length ? (
-        <WrapRow>
-          {me.languages.map((l) => (
-            <Chip key={l} label={l} selected />
-          ))}
-        </WrapRow>
-      ) : (
-        <Text style={{ color: colors.muted }}>No languages listed.</Text>
-      )}
+        <Button
+          label="Sign out"
+          variant="outline"
+          icon="signout"
+          onPress={async () => {
+            await signOut();
+            router.replace("/login");
+          }}
+        />
+        <Txt variant="caption" color={colors.inkMuted} style={{ textAlign: "center", marginTop: spacing.sm }}>
+          Pandit Ji Express · Partner app
+        </Txt>
+      </ScrollView>
+    </View>
+  );
+}
 
-      <SectionHeader title="Pujas you offer" />
-      {me.capabilities.length ? (
-        me.capabilities.map((c) => (
-          <Card key={c.service_id} style={{ marginBottom: 8 }}>
-            <Text style={{ fontWeight: "700", color: colors.ink }}>🕉️  {c.title}</Text>
-          </Card>
-        ))
-      ) : (
-        <Text style={{ color: colors.muted }}>No pujas selected yet.</Text>
-      )}
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  const colors = useColors();
+  return (
+    <View style={{ flex: 1 }}>
+      <Txt variant="micro" color={colors.inkMuted}>
+        {label.toUpperCase()}
+      </Txt>
+      <View style={{ marginTop: 4 }}>{children}</View>
+    </View>
+  );
+}
 
-      <View style={{ height: 16 }} />
-      <Button
-        label={me.status === "approved" ? "Verification & KYC" : "Complete verification"}
-        variant={me.status === "approved" ? "outline" : "primary"}
-        onPress={() => router.push("/verification")}
-      />
-      <View style={{ height: 10 }} />
-      <Button label="Notifications" variant="outline" onPress={() => router.push("/notifications")} />
-      <View style={{ height: 10 }} />
-      <Button label="Help & support" variant="outline" onPress={() => router.push("/support")} />
-      <View style={{ height: 10 }} />
-      {me.status !== "approved" && (
-        <>
-          <Button label="Continue onboarding" variant="outline" onPress={() => router.push("/onboard")} />
-          <View style={{ height: 10 }} />
-        </>
-      )}
-      <Button
-        label="Sign out"
-        variant="outline"
-        onPress={async () => {
-          await signOut();
-          router.replace("/login");
-        }}
-      />
-      <Text style={{ color: colors.muted, textAlign: "center", marginTop: 20, fontSize: 12 }}>
-        Pandit Ji Express · Partner app
-      </Text>
-    </ScrollView>
+function LinkRow({ icon, label, onPress, first }: { icon: IconName; label: string; onPress: () => void; first?: boolean }) {
+  const colors = useColors();
+  return (
+    <PressableScale
+      onPress={onPress}
+      haptic="select"
+      scaleTo={0.99}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.md,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: colors.border,
+        borderRadius: radius.lg,
+      }}
+    >
+      <Icon name={icon} size={20} color={colors.primary} />
+      <Txt variant="bodyStrong" style={{ flex: 1 }}>
+        {label}
+      </Txt>
+      <Icon name="chevron" size={18} color={colors.inkMuted} />
+    </PressableScale>
   );
 }

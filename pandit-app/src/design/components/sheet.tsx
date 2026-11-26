@@ -2,7 +2,7 @@
  * BottomSheet — native modal sheet with a scrim, slide-up animation, drag handle
  * and safe-area padding. Reduced-motion aware. Shared design system.
  */
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { Animated, Modal, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { elevation, motion, radius, spacing } from "../tokens";
@@ -23,8 +23,8 @@ export function BottomSheet({
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
-  const y = useRef(new Animated.Value(60)).current;
-  const fade = useRef(new Animated.Value(0)).current;
+  const y = useMemo(() => new Animated.Value(60), []);
+  const fade = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
     if (visible) {
