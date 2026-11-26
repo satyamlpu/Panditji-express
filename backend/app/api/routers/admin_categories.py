@@ -8,6 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.admin_util import apply_thumbnail
 from app.api.deps import CurrentAdmin, client_ip, require_admin
 from app.api.serializers import category_out
 from app.core.constants import Audit, ContentStatus
@@ -20,6 +21,7 @@ from app.schemas.category import CategoryCreate, CategoryOut, CategoryUpdate
 from app.schemas.common import MessageResponse
 from app.services.audit import audit
 from app.services.revalidate import revalidate_tags
+from app.services.revisions import record_revision
 
 router = APIRouter(
     prefix="/api/v1/admin/categories",
@@ -95,6 +97,11 @@ async def create_category(
         og_description=payload.og_description,
         canonical_url=payload.canonical_url,
     )
+    await apply_thumbnail(
+        session,
+        cat,
+        payload.model_dump(include={"thumbnail_media_id", "thumbnail_alt"}),
+    )
     session.add(cat)
     await session.flush()
     await audit(
@@ -106,8 +113,18 @@ async def create_category(
         entity_id=str(cat.id),
         ip=client_ip(request),
     )
+    out = category_out(cat, 0)
+    await record_revision(
+        session,
+        entity_type="category",
+        entity_id=str(cat.id),
+        snapshot=out.model_dump(mode="json"),
+        action="create",
+        actor_id=admin.id,
+        actor_email=admin.email,
+    )
     _revalidate(bg)
-    return category_out(cat, 0)
+    return out
 
 
 @router.get("/{category_id}", response_model=CategoryOut)
@@ -159,18 +176,44 @@ async def update_category(
         if field in data:
             setattr(cat, field, data[field])
 
+    await apply_thumbnail(session, cat, data)
+
     await session.flush()
+    status_val = data.get("status")
+    action = (
+        Audit.PUBLISH
+        if status_val == ContentStatus.PUBLISHED
+        else Audit.UNPUBLISH
+        if status_val == ContentStatus.UNPUBLISHED
+        else Audit.UPDATE
+    )
     await audit(
         session,
-        action=Audit.UPDATE,
+        action=action,
         actor_id=admin.id,
         actor_email=admin.email,
         entity="category",
         entity_id=str(cat.id),
         ip=client_ip(request),
     )
+    out = category_out(cat, await _count_services(session, cat.id))
+    await record_revision(
+        session,
+        entity_type="category",
+        entity_id=str(cat.id),
+        snapshot=out.model_dump(mode="json"),
+        action=(
+            "publish"
+            if status_val == ContentStatus.PUBLISHED
+            else "unpublish"
+            if status_val == ContentStatus.UNPUBLISHED
+            else "update"
+        ),
+        actor_id=admin.id,
+        actor_email=admin.email,
+    )
     _revalidate(bg)
-    return category_out(cat, await _count_services(session, cat.id))
+    return out
 
 
 @router.delete("/{category_id}", response_model=MessageResponse)

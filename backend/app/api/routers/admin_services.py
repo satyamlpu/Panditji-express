@@ -12,6 +12,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.admin_util import apply_thumbnail
 from app.api.deps import CurrentAdmin, client_ip, require_admin
 from app.api.serializers import service_out
 from app.core.constants import Audit, ContentStatus
@@ -26,6 +27,7 @@ from app.schemas.service import ServiceCreate, ServiceOut, ServiceUpdate
 from app.services.audit import audit
 from app.services.money import rupees_to_paise
 from app.services.revalidate import revalidate_tags
+from app.services.revisions import record_revision
 
 router = APIRouter(
     prefix="/api/v1/admin/services",
@@ -132,6 +134,7 @@ async def create_service(
     service = Service(
         slug=payload.slug,
         title=payload.title,
+        title_hi=payload.title_hi,
         summary=payload.summary,
         description=payload.description,
         price_paise=rupees_to_paise(payload.price_rupees),
@@ -149,6 +152,11 @@ async def create_service(
         og_description=payload.og_description,
         canonical_url=payload.canonical_url,
     )
+    await apply_thumbnail(
+        session,
+        service,
+        payload.model_dump(include={"thumbnail_media_id", "thumbnail_alt"}),
+    )
     session.add(service)
     await session.flush()
     await audit(
@@ -161,8 +169,18 @@ async def create_service(
         ip=client_ip(request),
         meta={"slug": service.slug, "status": service.status},
     )
+    out = service_out(service, await _category_for(session, service))
+    await record_revision(
+        session,
+        entity_type="service",
+        entity_id=str(service.id),
+        snapshot=out.model_dump(mode="json"),
+        action="create",
+        actor_id=admin.id,
+        actor_email=admin.email,
+    )
     _revalidate(bg, service.slug)
-    return service_out(service, await _category_for(session, service))
+    return out
 
 
 @router.get("/{service_id}", response_model=ServiceOut)
@@ -239,6 +257,7 @@ async def update_service(
     for field in (
         "slug",
         "title",
+        "title_hi",
         "summary",
         "description",
         "duration_label",
@@ -256,9 +275,28 @@ async def update_service(
         if field in data:
             setattr(service, field, data[field])
 
+    await apply_thumbnail(session, service, data)
+
     await session.flush()
+    out = service_out(service, await _category_for(session, service))
+    revision_action = (
+        "publish"
+        if data.get("status") == ContentStatus.PUBLISHED
+        else "unpublish"
+        if data.get("status") == ContentStatus.UNPUBLISHED
+        else "update"
+    )
+    await record_revision(
+        session,
+        entity_type="service",
+        entity_id=str(service.id),
+        snapshot=out.model_dump(mode="json"),
+        action=revision_action,
+        actor_id=admin.id,
+        actor_email=admin.email,
+    )
     _revalidate(bg, service.slug, old_slug)
-    return service_out(service, await _category_for(session, service))
+    return out
 
 
 @router.delete("/{service_id}", response_model=MessageResponse)
