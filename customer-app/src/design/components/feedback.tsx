@@ -2,7 +2,7 @@
  * Feedback + loading states: SkeletonLoader (shimmer), Loading, EmptyState,
  * ErrorState, InlineError. Shared design system — mirrored into both apps.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { ActivityIndicator, Animated, View, type StyleProp, type ViewStyle } from "react-native";
 import { radius, spacing } from "../tokens";
 import { useColors, useReducedMotion } from "../theme";
@@ -23,7 +23,7 @@ export function Skeleton({
 }) {
   const colors = useColors();
   const reduced = useReducedMotion();
-  const pulse = useRef(new Animated.Value(0.5)).current;
+  const pulse = useMemo(() => new Animated.Value(0.5), []);
   useEffect(() => {
     if (reduced) return;
     const anim = Animated.loop(

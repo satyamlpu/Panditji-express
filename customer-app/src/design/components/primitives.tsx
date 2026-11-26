@@ -3,7 +3,7 @@
  * section headers. All consume semantic tokens — no raw hex in screens.
  * Shared design system — mirrored into both apps.
  */
-import { useRef, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -61,7 +61,7 @@ export function PressableScale({
   style?: StyleProp<ViewStyle>;
 } & Omit<PressableProps, "onPress" | "style">) {
   const reduced = useReducedMotion();
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useMemo(() => new Animated.Value(1), []);
   const spring = (to: number) =>
     Animated.spring(scale, { toValue: to, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   return (

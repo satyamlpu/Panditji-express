@@ -6,7 +6,7 @@ import { type ReactNode } from "react";
 import { Pressable, TextInput, View, type StyleProp, type ViewStyle } from "react-native";
 import { hitSlop, MIN_TARGET, radius, spacing } from "../tokens";
 import { useColors } from "../theme";
-import { Icon, type IconName } from "../icons";
+import { Icon } from "../icons";
 import { Txt, PressableScale } from "./primitives";
 
 /**

@@ -1,14 +1,25 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { Button, Field } from "../components/ui";
-import { colors } from "../theme";
+import {
+  Button,
+  FormInput,
+  InlineError,
+  Txt,
+  palette,
+  radius,
+  spacing,
+  useColors,
+  haptics,
+} from "../design";
 
 export default function Login() {
   const { signIn } = useAuth();
+  const colors = useColors();
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("+91");
   const [name, setName] = useState("");
@@ -46,8 +57,10 @@ export default function Login() {
         name: name.trim() || undefined,
       });
       await signIn(r.access_token);
+      haptics.success();
       router.replace("/(tabs)");
     } catch (e) {
+      haptics.error();
       setError(e instanceof ApiError ? e.message : "Verification failed");
     } finally {
       setBusy(false);
@@ -55,82 +68,111 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.sunshine }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        {/* Yellow hero */}
-        <View style={{ alignItems: "center", paddingTop: 54, paddingBottom: 40 }}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Emerald hero */}
+          <LinearGradient colors={[palette.emeraldDeep, palette.emerald]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+            <SafeAreaView edges={["top"]}>
+              <View style={{ alignItems: "center", paddingTop: spacing.huge, paddingBottom: spacing.huge + 12 }}>
+                <View
+                  style={{
+                    width: 78,
+                    height: 78,
+                    borderRadius: radius.xl,
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    borderWidth: 1,
+                    borderColor: palette.gold,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: spacing.lg,
+                  }}
+                >
+                  <Text style={{ fontSize: 40, lineHeight: 46, color: palette.gold, fontWeight: "600" }}>ॐ</Text>
+                </View>
+                <Txt variant="h1" color={palette.white}>
+                  Pandit Ji Express
+                </Txt>
+                <Txt variant="callout" color={palette.goldSoft} style={{ marginTop: 4 }}>
+                  Tradition, at your doorstep
+                </Txt>
+              </View>
+            </SafeAreaView>
+          </LinearGradient>
+
+          {/* White sheet */}
           <View
             style={{
-              width: 72, height: 72, borderRadius: 20, backgroundColor: colors.forest,
-              alignItems: "center", justifyContent: "center", marginBottom: 14,
+              flex: 1,
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: radius.xxl,
+              borderTopRightRadius: radius.xxl,
+              marginTop: -20,
+              padding: spacing.xxl,
+              paddingTop: spacing.xxl + 4,
             }}
           >
-            <Text style={{ color: colors.sunshine, fontSize: 36 }}>🕉️</Text>
-          </View>
-          <Text style={{ fontSize: 26, fontWeight: "900", color: colors.forest, letterSpacing: -0.5 }}>
-            Pandit Ji Express
-          </Text>
-          <Text style={{ color: colors.forestDark, marginTop: 4, fontWeight: "700" }}>
-            India&apos;s last-minute puja app
-          </Text>
-        </View>
+            <Txt variant="h2" style={{ marginBottom: 4 }}>
+              {step === "phone" ? "Log in or sign up" : "Verify your number"}
+            </Txt>
+            <Txt variant="body" color={colors.inkSecondary} style={{ marginBottom: spacing.xl }}>
+              {step === "phone"
+                ? "We'll send a one-time code to your phone."
+                : `Enter the code sent to ${phone}.`}
+            </Txt>
 
-        {/* White sheet */}
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.surface,
-            borderTopLeftRadius: 28,
-            borderTopRightRadius: 28,
-            padding: 24,
-            paddingTop: 28,
-          }}
-        >
-          <Text style={{ fontSize: 18, fontWeight: "800", color: colors.ink, marginBottom: 16 }}>
-            {step === "phone" ? "Log in or sign up" : "Verify your number"}
-          </Text>
-
-          {step === "phone" ? (
-          <>
-            <Field
-              label="Phone number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              placeholder="+91 ..."
-            />
-            <Button label="Send OTP" onPress={requestOtp} loading={busy} />
-          </>
-        ) : (
-          <>
-            <Field
-              label="Enter OTP"
-              value={code}
-              onChangeText={setCode}
-              keyboardType="number-pad"
-              placeholder="6-digit code"
-            />
-            {devCode && (
-              <Text style={{ color: colors.muted, marginBottom: 12, fontSize: 13 }}>
-                Dev OTP: {devCode}
-              </Text>
+            {step === "phone" ? (
+              <>
+                <FormInput
+                  label="Phone number"
+                  icon="phone"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  placeholder="+91 00000 00000"
+                />
+                <Button label="Send OTP" iconRight="forward" onPress={requestOtp} loading={busy} size="lg" />
+              </>
+            ) : (
+              <>
+                <FormInput
+                  label="One-time code"
+                  icon="shield"
+                  value={code}
+                  onChangeText={setCode}
+                  keyboardType="number-pad"
+                  placeholder="6-digit code"
+                  hint={devCode ? `Dev OTP: ${devCode}` : undefined}
+                />
+                <FormInput
+                  label="Your name (optional)"
+                  icon="profile"
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Full name"
+                />
+                <Button label="Verify & continue" onPress={verify} loading={busy} size="lg" />
+                <View style={{ height: spacing.md }} />
+                <Button label="Change number" variant="ghost" onPress={() => setStep("phone")} />
+              </>
             )}
-            <Field label="Your name (optional)" value={name} onChangeText={setName} placeholder="Full name" />
-            <Button label="Verify & continue" onPress={verify} loading={busy} />
-            <View style={{ height: 10 }} />
-            <Button label="Change number" variant="outline" onPress={() => setStep("phone")} />
-          </>
-        )}
 
-          {error && (
-            <Text style={{ color: colors.tomato, marginTop: 14, textAlign: "center" }}>{error}</Text>
-          )}
+            {error ? (
+              <View style={{ marginTop: spacing.lg }}>
+                <InlineError message={error} />
+              </View>
+            ) : null}
 
-          <Text style={{ color: colors.muted, fontSize: 11.5, textAlign: "center", marginTop: 22 }}>
-            By continuing you agree to our Terms & Privacy Policy.
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <Txt variant="caption" color={colors.inkMuted} style={{ textAlign: "center", marginTop: spacing.xl }}>
+              By continuing you agree to our Terms & Privacy Policy.
+            </Txt>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
