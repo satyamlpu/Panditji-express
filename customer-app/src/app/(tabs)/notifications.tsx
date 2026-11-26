@@ -1,9 +1,18 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
-import { Card, Empty, Loading } from "../../components/ui";
-import { colors } from "../../theme";
+import {
+  AppHeader,
+  EmptyState,
+  NotificationCard,
+  SkeletonList,
+  TAB_BAR_SPACE,
+  spacing,
+  useColors,
+  type IconName,
+} from "../../design";
 
 interface Notice {
   id: string;
@@ -14,8 +23,24 @@ interface Notice {
   created_at: string;
 }
 
+// Map backend notification kinds to a fitting vector icon.
+function iconFor(kind: string): IconName {
+  if (/book|dispatch|offer|assign/i.test(kind)) return "bookings";
+  if (/pay|refund|ledger/i.test(kind)) return "payments";
+  if (/track|arriv|route|location/i.test(kind)) return "navigation";
+  if (/review|rating/i.test(kind)) return "rating";
+  return "alerts";
+}
+
 export default function Notifications() {
+  const colors = useColors();
   const [items, setItems] = useState<Notice[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(
+    () => api.get<Notice[]>("/api/v1/mp/customer/notifications").then(setItems).catch(() => setItems([])),
+    [],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -31,34 +56,38 @@ export default function Notifications() {
     }, []),
   );
 
-  if (!items) return <Loading />;
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16 }}>
-      {items.length === 0 ? (
-        <Empty text="No notifications yet." />
-      ) : (
-        items.map((n) => (
-          <Card key={n.id} style={{ marginBottom: 10 }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {!n.read && (
-                <View
-                  style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.carrot, marginRight: 8 }}
-                />
-              )}
-              <Text style={{ fontSize: 15, fontWeight: "700", color: colors.ink, flex: 1 }}>
-                {n.title}
-              </Text>
-            </View>
-            {n.body ? (
-              <Text style={{ color: colors.muted, marginTop: 4 }}>{n.body}</Text>
-            ) : null}
-            <Text style={{ color: colors.muted, marginTop: 6, fontSize: 11 }}>
-              {new Date(n.created_at).toLocaleString()}
-            </Text>
-          </Card>
-        ))
-      )}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.surface }}>
+        <AppHeader title="Alerts" subtitle="Booking updates & announcements" />
+      </SafeAreaView>
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.lg, paddingBottom: TAB_BAR_SPACE, gap: spacing.sm, flexGrow: 1 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
+        {items === null ? (
+          <SkeletonList count={5} />
+        ) : items.length === 0 ? (
+          <EmptyState icon="alerts" title="You're all caught up" body="Booking offers and updates will show up here." />
+        ) : (
+          items.map((n) => (
+            <NotificationCard
+              key={n.id}
+              title={n.title}
+              body={n.body}
+              read={n.read}
+              icon={iconFor(n.kind)}
+              time={new Date(n.created_at).toLocaleString()}
+            />
+          ))
+        )}
+      </ScrollView>
+    </View>
   );
 }

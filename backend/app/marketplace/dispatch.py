@@ -269,8 +269,8 @@ async def _no_partner(session: AsyncSession, booking: Booking, *, reason: str) -
     )
     await notify_customer(
         session, booking.customer_id, kind="no_partner",
-        title="No pandit available right now",
-        body="We couldn't find an available pandit. Please try again shortly or schedule.",
+        title="No Panditji available right now",
+        body="We couldn't find an available Panditji. Please try again shortly or schedule.",
         booking_id=booking.id,
     )
 
@@ -387,8 +387,8 @@ async def accept_offer(session: AsyncSession, pandit: Pandit, booking_id) -> Boo
         entity_id=str(booking.id),
     )
     await notify_customer(
-        session, booking.customer_id, kind="confirmed", title="Pandit confirmed",
-        body=f"{pandit.name or 'Your pandit'} will perform your "
+        session, booking.customer_id, kind="confirmed", title="Panditji confirmed",
+        body=f"{pandit.name or 'Your Panditji'} will perform your "
         f"{booking.service_title_snapshot}.",
         booking_id=booking.id,
     )
@@ -460,8 +460,8 @@ async def advance_status(
         meta={"to": to_status},
     )
     _msg = {
-        BookingStatus.EN_ROUTE: ("Pandit on the way", "Your pandit is heading to you."),
-        BookingStatus.ARRIVED: ("Pandit has arrived", "Your pandit has reached the location."),
+        BookingStatus.EN_ROUTE: ("Panditji on the way", "Your Panditji is heading to you."),
+        BookingStatus.ARRIVED: ("Panditji has arrived", "Your Panditji has reached the location."),
         BookingStatus.IN_PROGRESS: ("Puja started", "Your puja is now in progress."),
         BookingStatus.COMPLETED: ("Puja completed", "Thank you — your puja is complete."),
     }.get(to_status)
@@ -618,8 +618,8 @@ async def manual_reassign(
         body=f"{booking.service_title_snapshot} ({booking.code}).", booking_id=booking.id,
     )
     await notify_customer(
-        session, booking.customer_id, kind="reassigned", title="Your pandit was updated",
-        body=f"{new_pandit.name or 'A pandit'} will perform your "
+        session, booking.customer_id, kind="reassigned", title="Your Panditji was updated",
+        body=f"{new_pandit.name or 'A Panditji'} will perform your "
         f"{booking.service_title_snapshot}.", booking_id=booking.id,
     )
     await session.flush()

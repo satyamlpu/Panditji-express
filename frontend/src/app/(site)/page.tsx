@@ -65,8 +65,8 @@ const SERVICE_IMAGES = [
 
 // Shown only if the CMS has no published FAQs yet (keeps the section complete).
 const FALLBACK_FAQS = [
-  { question: "How do I book a pandit?", answer: "Pick a puja, choose your city and date, and we match you with a verified, experienced pandit who confirms the details with you." },
-  { question: "Are the pandits verified?", answer: "Yes. Every pandit is identity-verified and experienced in the rituals they perform, and families rate them after each puja." },
+  { question: "How do I book a Panditji?", answer: "Pick a puja, choose your city and date, and we match you with a verified, experienced Panditji who confirms the details with you." },
+  { question: "Are the Panditjis verified?", answer: "Yes. Every Panditji is identity-verified and experienced in the rituals they perform, and families rate them after each puja." },
   { question: "Is the samagri included?", answer: "Where a puja lists samagri in its inclusions, we bring the complete kit — you don't need to arrange anything." },
   { question: "How is pricing shown?", answer: "Prices are transparent and shown up front on each puja. There are no hidden charges on the day of the ceremony." },
   { question: "Can I reschedule or cancel?", answer: "Yes — contact support before the scheduled time and we'll reschedule or cancel as per the policy for your booking." },
@@ -80,10 +80,10 @@ function section(sections: HomepageSection[], kind: string) {
 export async function generateMetadata(): Promise<Metadata> {
   const [settings, sections] = await Promise.all([fetchSettings(), fetchHomepage()]);
   const title =
-    "Pandit Ji Express — Book pandits for authentic pujas, samagri included";
+    "Pandit Ji Express — Book Panditjis for authentic pujas, samagri included";
   const description =
     settings.site?.tagline ||
-    "Book verified, experienced pandits for authentic pujas with transparent pricing and samagri included — at home, on time.";
+    "Book verified, experienced Panditjis for authentic pujas with transparent pricing and samagri included — at home, on time.";
   const img = section(sections, "hero")?.image_url || FALLBACK.hero;
   const ogImage = img.startsWith("http") ? img : `${SITE_URL}${img}`;
   return {
@@ -152,7 +152,7 @@ export default async function HomePage() {
             </h1>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-ash md:text-lg">
               {hero?.subheading ??
-                "Book verified pandits for authentic pujas at home — transparent pricing, complete samagri included, and on-time arrival."}
+                "Book verified Panditjis for authentic pujas at home — transparent pricing, complete samagri included, and on-time arrival."}
             </p>
 
             <HeroSearch
@@ -161,7 +161,7 @@ export default async function HomePage() {
             />
 
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-ink/80">
-              <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15} className="text-saffron" /> Verified pandits</span>
+              <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15} className="text-saffron" /> Verified Panditjis</span>
               <span className="inline-flex items-center gap-1.5"><HandCoins size={15} className="text-saffron" /> Transparent pricing</span>
               <span className="inline-flex items-center gap-1.5"><CalendarCheck size={15} className="text-saffron" /> On-time arrival</span>
             </div>
@@ -194,7 +194,7 @@ export default async function HomePage() {
               </span>
               <span className="text-xs font-semibold leading-tight text-ink">
                 Verified
-                <span className="block font-normal text-muted">pandits only</span>
+                <span className="block font-normal text-muted">Panditjis only</span>
               </span>
             </div>
           </div>
@@ -270,14 +270,14 @@ export default async function HomePage() {
               How it works
             </p>
             <h2 className="font-display text-3xl font-bold text-ink md:text-4xl">
-              Book a pandit in four simple steps
+              Book a Panditji in four simple steps
             </h2>
           </div>
           <ol className="mt-10 grid gap-6 sm:grid-cols-2 md:grid-cols-4">
             {[
               { icon: Search, t: "Select your puja", b: "Pick from Griha Pravesh, Satyanarayan, Havan and more — with transparent pricing." },
               { icon: MapPin, t: "Location & date", b: "Tell us your city and the date and time you'd like the ceremony." },
-              { icon: UserCheck, t: "Get matched", b: "We assign a verified pandit who fits your puja, language and city." },
+              { icon: UserCheck, t: "Get matched", b: "We assign a verified Panditji who fits your puja, language and city." },
               { icon: BadgeCheck, t: "Confirm booking", b: "Review, confirm and relax — samagri and the full vidhi are handled." },
             ].map((s, i) => (
               <li key={s.t} className="rounded-[20px] border border-line bg-surface p-5 shadow-soft">
@@ -303,7 +303,7 @@ export default async function HomePage() {
               <div className="relative aspect-[5/4]">
                 <Image
                   src="/images/aarti.png"
-                  alt="An experienced pandit performing aarti with diyas and marigold"
+                  alt="An experienced Panditji performing aarti with diyas and marigold"
                   fill
                   sizes="(max-width: 768px) 90vw, 520px"
                   className="object-cover"
@@ -323,13 +323,13 @@ export default async function HomePage() {
 
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-saffron-dark">
-              Our pandits
+              Our Panditjis
             </p>
             <h2 className="font-display text-3xl font-bold text-ink md:text-4xl">
               Verified, experienced, matched to you
             </h2>
             <p className="mt-4 max-w-md text-muted">
-              We verify every pandit&rsquo;s identity and ritual experience before they
+              We verify every Panditji&rsquo;s identity and ritual experience before they
               take a booking, then match you to the right one for your puja, language and
               city — so you can trust who comes home.
             </p>
@@ -349,7 +349,7 @@ export default async function HomePage() {
               ))}
             </ul>
             <Link href="/puja-services" className={buttonClasses("primary", "md", "mt-8")}>
-              Find a pandit <ArrowRight size={16} />
+              Find a Panditji <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -383,7 +383,7 @@ export default async function HomePage() {
           </div>
           <ul className="grid gap-x-8 gap-y-7 sm:grid-cols-2">
             {[
-              { icon: ShieldCheck, t: "Verified pandits", b: "Background-checked and experienced in the rituals they perform." },
+              { icon: ShieldCheck, t: "Verified Panditjis", b: "Background-checked and experienced in the rituals they perform." },
               { icon: HandCoins, t: "Transparent pricing", b: "Clear prices up front — no hidden charges on the day." },
               { icon: Flame, t: "Authentic rituals", b: "Every vidhi performed the traditional way, with the right samagri." },
               { icon: Clock, t: "Reliable scheduling", b: "On-time arrival, a confirmed date, and guidance throughout." },
@@ -561,7 +561,7 @@ export default async function HomePage() {
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-white/85">
                 {cta?.subheading ??
-                  "Tell us the occasion and your preferred date — we'll arrange an experienced pandit and confirm everything with you."}
+                  "Tell us the occasion and your preferred date — we'll arrange an experienced Panditji and confirm everything with you."}
               </p>
               <div className="mt-7 flex flex-wrap justify-center gap-3">
                 <Link href={cta?.cta_href ?? "/puja-services"} className={buttonClasses("primary", "lg")}>

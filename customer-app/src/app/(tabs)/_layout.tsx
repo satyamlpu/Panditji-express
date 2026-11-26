@@ -1,12 +1,13 @@
 import { Redirect, Tabs } from "expo-router";
-import { Text } from "react-native";
 import { useAuth } from "../../lib/auth";
-import { Loading } from "../../components/ui";
-import { colors } from "../../theme";
+import { Loading, GlassTabBar, type IconName } from "../../design";
 
-function Icon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>;
-}
+const TAB_ICONS: Record<string, IconName> = {
+  index: "home",
+  bookings: "bookings",
+  notifications: "alerts",
+  profile: "profile",
+};
 
 export default function TabsLayout() {
   const { token, loading } = useAuth();
@@ -15,32 +16,13 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.forest },
-        headerTitleStyle: { color: colors.white, fontWeight: "800" },
-        headerTintColor: colors.white,
-        tabBarActiveTintColor: colors.forest,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.line, height: 58, paddingBottom: 6, paddingTop: 6 },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <GlassTabBar {...props} icons={TAB_ICONS} />}
     >
-      <Tabs.Screen
-        name="index"
-        options={{ headerShown: false, title: "Home", tabBarIcon: ({ focused }) => <Icon emoji="🏠" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="bookings"
-        options={{ title: "Bookings", tabBarIcon: ({ focused }) => <Icon emoji="📿" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{ title: "Alerts", tabBarIcon: ({ focused }) => <Icon emoji="🔔" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{ title: "Profile", tabBarIcon: ({ focused }) => <Icon emoji="👤" focused={focused} /> }}
-      />
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="bookings" options={{ title: "Bookings" }} />
+      <Tabs.Screen name="notifications" options={{ title: "Alerts" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );
 }

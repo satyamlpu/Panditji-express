@@ -1,20 +1,35 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { KANPUR, LANGUAGES, type Pandit, type Service } from "../lib/model";
-import { Button, Card, Chip, Field, Loading, SectionHeader, StatusPill, WrapRow } from "../components/ui";
-import { colors } from "../theme";
+import {
+  Button,
+  Card,
+  Chip,
+  FormInput,
+  Icon,
+  InlineError,
+  Loading,
+  SectionHeader,
+  StatusIndicator,
+  Txt,
+  WrapRow,
+  spacing,
+  useColors,
+  haptics,
+} from "../design";
 
 export default function Onboard() {
   const { signOut } = useAuth();
+  const colors = useColors();
   const [me, setMe] = useState<Pandit | null>(null);
   const [services, setServices] = useState<Service[]>([]);
 
   const [name, setName] = useState("");
   const [city, setCity] = useState("Kanpur");
-  const [radius, setRadius] = useState("12");
+  const [radiusKm, setRadiusKm] = useState("12");
   const [langs, setLangs] = useState<string[]>(["Hindi"]);
   const [slugs, setSlugs] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -35,7 +50,7 @@ export default function Onboard() {
         setServices(svc);
         setName(p.name ?? "");
         setCity(p.city ?? "Kanpur");
-        if (p.service_radius_km) setRadius(String(p.service_radius_km));
+        if (p.service_radius_km) setRadiusKm(String(p.service_radius_km));
         if (p.languages?.length) setLangs(p.languages);
         if (p.capabilities?.length) setSlugs(p.capabilities.map((c) => c.slug));
       } catch {
@@ -45,6 +60,7 @@ export default function Onboard() {
   }, []);
 
   function toggle(list: string[], v: string, set: (x: string[]) => void) {
+    haptics.select();
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   }
 
@@ -61,10 +77,11 @@ export default function Onboard() {
         city: city.trim() || null,
         base_lat: KANPUR.lat,
         base_lng: KANPUR.lng,
-        service_radius_km: Number(radius) || 10,
+        service_radius_km: Number(radiusKm) || 10,
         service_slugs: slugs,
       });
       setMe(updated);
+      haptics.success();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not submit. Try again.");
     } finally {
@@ -78,54 +95,58 @@ export default function Onboard() {
   const canEdit = ["draft", "action_required", "rejected"].includes(me.status);
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <Card style={{ marginBottom: 8 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontSize: 18, fontWeight: "800", color: colors.ink }}>
+    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+      <Card>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }}>
+          <Txt variant="h3" style={{ flex: 1 }}>
             {me.name || "New partner"}
-          </Text>
-          <StatusPill status={me.status} />
+          </Txt>
+          <StatusIndicator status={me.status} />
         </View>
-        <Text style={{ color: colors.muted, marginTop: 4 }}>{me.phone}</Text>
+        <Txt variant="callout" color={colors.inkSecondary} style={{ marginTop: 4 }}>
+          {me.phone}
+        </Txt>
       </Card>
 
-      {pending && (
-        <Card style={{ marginTop: 12, borderColor: colors.gold + "55" }}>
-          <Text style={{ fontSize: 16, fontWeight: "800", color: colors.ink }}>⏳ Verification in progress</Text>
-          <Text style={{ color: colors.muted, marginTop: 8, lineHeight: 21 }}>
-            Our team is reviewing your profile and the pujas you offer. You&apos;ll be able to go online and
-            receive booking requests once you&apos;re approved. This usually takes a short while.
-          </Text>
-          <View style={{ height: 16 }} />
-          <Button label="Refresh status" variant="outline" onPress={() => router.replace("/onboard")} />
+      {pending ? (
+        <Card style={{ borderColor: colors.warning, borderWidth: 1.5 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Icon name="clock" size={18} color={colors.warning} />
+            <Txt variant="h3">Verification in progress</Txt>
+          </View>
+          <Txt variant="body" color={colors.inkSecondary} style={{ marginTop: spacing.sm }}>
+            Our team is reviewing your profile and the pujas you offer. You&apos;ll be able to go online and receive
+            booking requests once you&apos;re approved. This usually takes a short while.
+          </Txt>
+          <View style={{ height: spacing.lg }} />
+          <Button label="Refresh status" icon="refresh" variant="outline" onPress={() => router.replace("/onboard")} />
         </Card>
-      )}
+      ) : null}
 
-      {canEdit && (
+      {canEdit ? (
         <>
-          {me.status === "action_required" && (
-            <Card style={{ marginTop: 12, borderColor: colors.maroon + "55" }}>
-              <Text style={{ color: colors.maroon, fontWeight: "800" }}>Changes requested</Text>
-              <Text style={{ color: colors.muted, marginTop: 6 }}>
+          {me.status === "action_required" ? (
+            <Card style={{ borderColor: colors.error, borderWidth: 1.5 }}>
+              <Txt variant="bodyStrong" color={colors.error}>
+                Changes requested
+              </Txt>
+              <Txt variant="callout" color={colors.inkSecondary} style={{ marginTop: 4 }}>
                 Please review your details below and re-submit.
-              </Text>
+              </Txt>
             </Card>
-          )}
+          ) : null}
 
-          <SectionHeader title="Your details" />
+          <SectionHeader title="Your details" style={{ marginTop: spacing.sm }} />
           <Card>
-            <Field label="Full name" value={name} onChangeText={setName} placeholder="e.g. Pandit Sharma" />
-            <Field label="City" value={city} onChangeText={setCity} placeholder="Kanpur" />
-            <Field
-              label="Service radius (km)"
-              value={radius}
-              onChangeText={setRadius}
-              keyboardType="number-pad"
-              placeholder="12"
-            />
-            <Text style={{ color: colors.muted, fontSize: 12 }}>
-              📍 Base location is set to a demo point in Kanpur for this preview.
-            </Text>
+            <FormInput label="Full name" icon="profile" value={name} onChangeText={setName} placeholder="e.g. Panditji Sharma" />
+            <FormInput label="City" icon="location" value={city} onChangeText={setCity} placeholder="Kanpur" />
+            <FormInput label="Service radius (km)" icon="navigation" value={radiusKm} onChangeText={setRadiusKm} keyboardType="number-pad" placeholder="12" />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Icon name="location" size={13} color={colors.inkMuted} />
+              <Txt variant="caption" color={colors.inkMuted}>
+                Base location is a preview point in Kanpur for now.
+              </Txt>
+            </View>
           </Card>
 
           <SectionHeader title="Languages you speak" />
@@ -138,24 +159,27 @@ export default function Onboard() {
           <SectionHeader title="Pujas you can perform" />
           <WrapRow>
             {services.map((s) => (
-              <Chip
-                key={s.slug}
-                label={s.title}
-                selected={slugs.includes(s.slug)}
-                onPress={() => toggle(slugs, s.slug, setSlugs)}
-              />
+              <Chip key={s.slug} label={s.title} selected={slugs.includes(s.slug)} onPress={() => toggle(slugs, s.slug, setSlugs)} />
             ))}
           </WrapRow>
 
-          {error && <Text style={{ color: colors.tomato, marginTop: 14 }}>{error}</Text>}
+          {error ? <InlineError message={error} /> : null}
 
-          <View style={{ height: 18 }} />
+          <View style={{ height: spacing.xs }} />
           <Button label="Submit for verification" onPress={submit} loading={busy} />
         </>
-      )}
+      ) : null}
 
-      <View style={{ height: 20 }} />
-      <Button label="Sign out" variant="outline" onPress={async () => { await signOut(); router.replace("/login"); }} />
+      <View style={{ height: spacing.sm }} />
+      <Button
+        label="Sign out"
+        variant="ghost"
+        icon="signout"
+        onPress={async () => {
+          await signOut();
+          router.replace("/login");
+        }}
+      />
     </ScrollView>
   );
 }

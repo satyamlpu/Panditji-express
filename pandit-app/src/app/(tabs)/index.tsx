@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api, ApiError } from "../../lib/api";
 import {
@@ -10,17 +11,44 @@ import {
   type Offer,
   type Pandit,
 } from "../../lib/model";
-import { Button, Card, Empty, Loading, StatusPill } from "../../components/ui";
-import { colors, radius, shadow } from "../../theme";
+import {
+  Avatar,
+  Button,
+  Card,
+  EmptyState,
+  Icon,
+  InlineError,
+  Loading,
+  PriceDisplay,
+  Rating,
+  
+  StatusIndicator,
+  TAB_BAR_SPACE,
+  Txt,
+  palette,
+  radius,
+  spacing,
+  elevation,
+  useColors,
+  haptics,
+} from "../../design";
+
+function rupees(display: string): number {
+  const n = parseInt(display.replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 export default function Dashboard() {
+  const colors = useColors();
   const [me, setMe] = useState<Pandit | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [active, setActive] = useState<Booking | null>(null);
+  const [all, setAll] = useState<Booking[]>([]);
   const [toggling, setToggling] = useState(false);
   const [acting, setActing] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [, setTick] = useState(0); // drives the 1s countdown re-render
+  const [, setTick] = useState(0);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refresh = useCallback(async () => {
@@ -33,11 +61,10 @@ export default function Dashboard() {
       setMe(p);
 
       const bookings = await api.get<Booking[]>("/api/v1/mp/partner/bookings");
+      setAll(bookings);
       const act = bookings.find((b) => ACTIVE_STATES.includes(b.status)) ?? null;
       setActive(act);
 
-      // Only fetch offers when free and online. This call also refreshes the
-      // partner's heartbeat so dispatch keeps treating the app as live.
       if (p.availability === "online" && !act) {
         setOffers(await api.get<Offer[]>("/api/v1/mp/partner/booking-requests"));
       } else {
@@ -50,8 +77,6 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    // Initial fetch, then poll. refresh() only sets state after an awaited
-    // network call, so this is a legitimate subscribe-style effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     poll.current = setInterval(refresh, 3000);
@@ -71,6 +96,7 @@ export default function Dashboard() {
     try {
       const p = await api.patch<Pandit>("/api/v1/mp/partner/availability", { availability: next });
       setMe(p);
+      haptics.success();
       refresh();
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : "Could not change availability");
@@ -85,6 +111,7 @@ export default function Dashboard() {
     try {
       await api.post(`/api/v1/mp/partner/booking-requests/${bookingId}/${action}`);
       if (action === "accept") {
+        haptics.success();
         router.push(`/job/${bookingId}`);
       }
       await refresh();
@@ -101,182 +128,232 @@ export default function Dashboard() {
   const online = me.availability === "online";
   const busy = me.availability === "busy" || !!active;
 
+  // Earnings up front — real, derived from completed bookings.
+  const completed = all.filter((b) => b.status === "completed");
+  const total = completed.reduce((s, b) => s + rupees(b.price_display), 0);
+  const now = new Date();
+  const monthTotal = completed
+    .filter((b) => {
+      const d = new Date(b.confirmed_at ?? b.created_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    })
+    .reduce((s, b) => s + rupees(b.price_display), 0);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={["top"]}>
-      {/* Forest header */}
-      <View style={{ backgroundColor: colors.forest, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 16 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <View>
-            <Text style={{ color: colors.sunshine, fontWeight: "700", fontSize: 12 }}>Namaste 🙏</Text>
-            <Text style={{ color: colors.white, fontWeight: "900", fontSize: 20 }}>{me.name || "Partner"}</Text>
-            <Text style={{ color: "#cfe3d4", fontSize: 12, marginTop: 2 }}>
-              {me.city || "Kanpur"} · ⭐ {me.rating_avg?.toFixed(1) ?? "New"}
-              {me.rating_count ? ` (${me.rating_count})` : ""}
-            </Text>
-          </View>
-          <View
-            style={{
-              width: 46, height: 46, borderRadius: 23, backgroundColor: colors.forestDark,
-              alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <Text style={{ fontSize: 22 }}>🕉️</Text>
-          </View>
-        </View>
-      </View>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <LinearGradient colors={[palette.emeraldDeep, palette.emerald]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+        <SafeAreaView edges={["top"]}>
+          <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+              <Avatar name={me.name} size={46} />
+              <View style={{ flex: 1 }}>
+                <Txt variant="micro" color={palette.goldSoft}>
+                  NAMASTE
+                </Txt>
+                <Txt variant="h3" color={palette.white} numberOfLines={1}>
+                  {me.name || "Partner"}
+                </Txt>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: 2 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                    <Icon name="location" size={12} color="rgba(234,243,236,0.8)" />
+                    <Txt variant="caption" color="rgba(234,243,236,0.85)">
+                      {me.city || "Kanpur"}
+                    </Txt>
+                  </View>
+                  <Rating value={me.rating_avg} count={me.rating_count} size={13} />
+                </View>
+              </View>
+            </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-        {/* Online toggle */}
-        <Pressable
-          onPress={toggleOnline}
-          disabled={toggling || busy}
-          style={{
-            backgroundColor: online ? colors.onlineBg : colors.surface,
-            borderWidth: 1.5,
-            borderColor: online ? colors.online : colors.line,
-            borderRadius: radius.lg,
-            padding: 18,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            opacity: toggling || busy ? 0.7 : 1,
-            ...shadow,
-          }}
+            {/* Earnings up front */}
+            <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.lg }}>
+              <HeaderStat label="This month" value={inr(monthTotal)} />
+              <HeaderStat label="Total earned" value={inr(total)} />
+              <HeaderStat label="Completed" value={String(completed.length)} />
+            </View>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: TAB_BAR_SPACE, gap: spacing.md }}>
+        {/* Availability toggle */}
+        <Card
+          onPress={!busy ? toggleOnline : undefined}
+          style={{ borderColor: online ? colors.success : colors.border, borderWidth: 1.5 }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View
-              style={{
-                width: 12, height: 12, borderRadius: 6,
-                backgroundColor: online ? colors.online : colors.muted, marginRight: 12,
-              }}
-            />
-            <View>
-              <Text style={{ fontSize: 17, fontWeight: "800", color: colors.ink }}>
-                {busy ? "On a booking" : online ? "You're online" : "You're offline"}
-              </Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, marginTop: 2 }}>
-                {busy
-                  ? "Finish your active puja to change this"
-                  : online
-                    ? "Receiving booking requests nearby"
-                    : "Go online to start receiving requests"}
-              </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, flex: 1 }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: online ? colors.successTint : colors.surfaceAlt,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="power" size={22} color={online ? colors.success : colors.inkMuted} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Txt variant="h3">{busy ? "On a booking" : online ? "You're online" : "You're offline"}</Txt>
+                <Txt variant="caption" color={colors.inkSecondary}>
+                  {busy
+                    ? "Finish your active puja to change this"
+                    : online
+                      ? "Receiving booking requests nearby"
+                      : "Go online to start receiving requests"}
+                </Txt>
+              </View>
             </View>
+            {!busy ? (
+              <View
+                style={{
+                  paddingHorizontal: spacing.lg,
+                  paddingVertical: 9,
+                  borderRadius: radius.pill,
+                  backgroundColor: online ? colors.success : colors.primary,
+                  opacity: toggling ? 0.6 : 1,
+                }}
+              >
+                <Txt variant="label" color="#fff">
+                  {online ? "Go offline" : "Go online"}
+                </Txt>
+              </View>
+            ) : null}
           </View>
-          {!busy && (
-            <View
-              style={{
-                paddingHorizontal: 16, paddingVertical: 9, borderRadius: radius.pill,
-                backgroundColor: online ? colors.online : colors.forest,
-              }}
-            >
-              <Text style={{ color: colors.white, fontWeight: "800", fontSize: 13 }}>
-                {online ? "Go offline" : "Go online"}
-              </Text>
-            </View>
-          )}
-        </Pressable>
+        </Card>
 
-        {err && <Text style={{ color: colors.tomato, marginTop: 12 }}>{err}</Text>}
+        {err ? <InlineError message={err} /> : null}
 
         {/* Active booking */}
-        {active && (
-          <Card style={{ marginTop: 16, borderColor: colors.carrot + "66" }}>
+        {active ? (
+          <Card onPress={() => router.push(`/job/${active.id}`)} style={{ borderColor: colors.accent, borderWidth: 1.5 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontSize: 16, fontWeight: "800", color: colors.ink }}>Active puja</Text>
-              <StatusPill status={active.status} />
+              <Txt variant="h3">Active puja</Txt>
+              <StatusIndicator status={active.status} />
             </View>
-            <Text style={{ color: colors.ink, marginTop: 8, fontWeight: "700" }}>{active.service_title}</Text>
-            <Text style={{ color: colors.muted, marginTop: 2 }}>📍 {active.address_line}</Text>
-            <Text style={{ color: colors.ink, fontWeight: "800", marginTop: 6 }}>{active.price_display}</Text>
-            <View style={{ height: 12 }} />
-            <Button label="Open job →" variant="accent" onPress={() => router.push(`/job/${active.id}`)} />
+            <Txt variant="bodyStrong" style={{ marginTop: spacing.sm }}>
+              {active.service_title}
+            </Txt>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+              <Icon name="location" size={14} color={colors.inkMuted} />
+              <Txt variant="callout" color={colors.inkSecondary} style={{ flex: 1 }}>
+                {active.address_line}
+              </Txt>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md }}>
+              <PriceDisplay value={active.price_display} />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Txt variant="label" color={colors.primary}>
+                  Open job
+                </Txt>
+                <Icon name="forward" size={16} color={colors.primary} />
+              </View>
+            </View>
           </Card>
-        )}
+        ) : null}
 
-        {/* Offers */}
-        {!active && online && (
+        {/* Incoming requests */}
+        {!active && online ? (
           <>
-            <Text style={{ fontSize: 16, fontWeight: "800", color: colors.ink, marginTop: 22, marginBottom: 10 }}>
+            <Txt variant="h3" style={{ marginTop: spacing.sm }}>
               {offers.length ? "Incoming requests" : "Waiting for requests"}
-            </Text>
+            </Txt>
             {offers.length === 0 ? (
-              <Empty
-                icon="📡"
+              <EmptyState
+                icon="alerts"
                 title="No requests right now"
-                sub="You'll be notified the moment a nearby customer books a puja you offer."
+                body="You'll be notified the moment a nearby customer books a puja you offer."
               />
             ) : (
               offers.map((o) => {
                 const left = secondsLeft(o.expires_at);
+                const urgent = left <= 10;
                 return (
-                  <View
-                    key={o.booking_id}
-                    style={{
-                      backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1,
-                      borderColor: left <= 10 ? colors.tomato : colors.line, padding: 16, marginBottom: 12, ...shadow,
-                    }}
-                  >
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <Text style={{ fontSize: 16, fontWeight: "800", color: colors.ink, flex: 1 }}>
+                  <Card key={o.booking_id} style={{ borderColor: urgent ? colors.error : colors.border, borderWidth: urgent ? 1.5 : 1 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm }}>
+                      <Txt variant="bodyStrong" style={{ flex: 1 }}>
                         {o.service_title}
-                      </Text>
+                      </Txt>
                       <View
                         style={{
-                          backgroundColor: left <= 10 ? colors.tintRose : colors.tintSaffron,
-                          borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 8,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                          backgroundColor: urgent ? colors.errorTint : colors.warningTint,
+                          borderRadius: radius.pill,
+                          paddingHorizontal: 9,
+                          paddingVertical: 4,
                         }}
                       >
-                        <Text style={{ color: left <= 10 ? colors.tomato : colors.gold, fontWeight: "800", fontSize: 12 }}>
-                          ⏱ {left}s
-                        </Text>
+                        <Icon name="clock" size={13} color={urgent ? colors.error : colors.warning} />
+                        <Txt variant="caption" color={urgent ? colors.error : colors.warning}>
+                          {left}s
+                        </Txt>
                       </View>
                     </View>
-                    <Text style={{ color: colors.muted, marginTop: 6 }}>📍 {o.address_line}</Text>
-                    {o.landmark ? (
-                      <Text style={{ color: colors.muted, fontSize: 12.5 }}>Near {o.landmark}</Text>
-                    ) : null}
-                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-                      <Text style={{ color: colors.ink, fontWeight: "800", fontSize: 16 }}>{o.price_display}</Text>
-                      {o.distance_km != null && (
-                        <Text style={{ color: colors.muted, marginLeft: 10 }}>
-                          · {o.distance_km.toFixed(1)} km away
-                        </Text>
-                      )}
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
+                      <Icon name="location" size={14} color={colors.inkMuted} />
+                      <Txt variant="callout" color={colors.inkSecondary} style={{ flex: 1 }}>
+                        {o.address_line}
+                        {o.landmark ? ` · Near ${o.landmark}` : ""}
+                      </Txt>
                     </View>
-                    <View style={{ flexDirection: "row", marginTop: 14, gap: 10 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm }}>
+                      <PriceDisplay value={o.price_display} />
+                      {o.distance_km != null ? (
+                        <Txt variant="caption" color={colors.inkMuted}>
+                          {o.distance_km.toFixed(1)} km away
+                        </Txt>
+                      ) : null}
+                    </View>
+                    <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.md }}>
                       <View style={{ flex: 1 }}>
-                        <Button
-                          label="Decline"
-                          variant="outline"
-                          loading={acting === o.booking_id + "reject"}
-                          onPress={() => respond(o.booking_id, "reject")}
-                        />
+                        <Button label="Decline" variant="outline" loading={acting === o.booking_id + "reject"} onPress={() => respond(o.booking_id, "reject")} />
                       </View>
                       <View style={{ flex: 1.4 }}>
-                        <Button
-                          label="Accept"
-                          loading={acting === o.booking_id + "accept"}
-                          onPress={() => respond(o.booking_id, "accept")}
-                        />
+                        <Button label="Accept" variant="gradient" loading={acting === o.booking_id + "accept"} onPress={() => respond(o.booking_id, "accept")} />
                       </View>
                     </View>
-                  </View>
+                  </Card>
                 );
               })
             )}
           </>
-        )}
+        ) : null}
 
         {/* Offline hint */}
-        {!active && !online && (
-          <Empty
-            icon="🌙"
+        {!active && !online ? (
+          <EmptyState
+            icon="night"
             title="You're offline"
-            sub="Go online above to start receiving puja booking requests from customers near you."
+            body="Go online above to start receiving puja booking requests from customers near you."
           />
-        )}
+        ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </View>
+  );
+}
+
+function HeaderStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: "rgba(255,255,255,0.12)",
+        borderRadius: radius.md,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.sm,
+        ...elevation.none,
+      }}
+    >
+      <Txt variant="micro" color="rgba(234,243,236,0.8)" numberOfLines={1}>
+        {label.toUpperCase()}
+      </Txt>
+      <Txt variant="h3" color={palette.white} numberOfLines={1} style={{ marginTop: 2 }}>
+        {value}
+      </Txt>
+    </View>
   );
 }

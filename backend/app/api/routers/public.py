@@ -360,7 +360,7 @@ async def public_location_detail(
             title=f"Puja Services in {loc.city}",
             description=loc.seo_description
             or _truncate(loc.description, 160)
-            or f"Book pandits for authentic pujas in {loc.city}.",
+            or f"Book Panditjis for authentic pujas in {loc.city}.",
             canonical=f"/locations/{loc.slug}",
         ),
     )

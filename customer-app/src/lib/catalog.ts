@@ -1,7 +1,7 @@
 // Static catalog assets for the puja grid. Metro needs literal require() paths,
-// so photos are mapped per service slug. Slugs without a photo fall back to a
-// tasteful tinted "glyph tile" (see PUJA_GLYPH) so the grid stays consistent.
-import { colors } from "../theme";
+// so photos are mapped per service slug. Slugs without a photo render a designed
+// neutral placeholder (CatalogMedia), never an emoji.
+import type { IconName } from "../design";
 
 export const PUJA_IMAGES: Record<string, number> = {
   "ganesh-puja": require("../../assets/catalog/ganesh-puja.png"),
@@ -10,18 +10,16 @@ export const PUJA_IMAGES: Record<string, number> = {
   "griha-pravesh-puja": require("../../assets/catalog/kalash.png"),
 };
 
-export const PUJA_GLYPH: Record<string, { glyph: string; tint: string }> = {
-  rudrabhishek: { glyph: "🔱", tint: colors.tintBlue },
-  "satyanarayan-katha": { glyph: "🪔", tint: colors.tintSaffron },
-};
-
-export const DEFAULT_GLYPH = { glyph: "🕉️", tint: colors.tintSaffron };
+/** The bundled photo for a service slug, or undefined → designed placeholder. */
+export function pujaImage(slug: string): number | undefined {
+  return PUJA_IMAGES[slug];
+}
 
 export const HERO = require("../../assets/catalog/hero.png");
 export const OM = require("../../assets/catalog/om.png");
 
 // Optional samagri add-ons shown on the booking screen. These are arranged by
-// the pandit and settled directly with them — selection is a preference note,
+// the Panditji and settled directly with them — selection is a preference note,
 // not a charge, so no price is billed through the app.
 export interface Samagri {
   key: string;
@@ -35,30 +33,28 @@ export const SAMAGRI: Samagri[] = [
   { key: "kalash", name: "Brass Kalash", meta: "With coconut", img: require("../../assets/catalog/kalash.png") },
 ];
 
-// Home category chips (visual entry points; they scroll/filter the grid).
+// Home category chips (visual entry points; they filter the grid).
 export interface Category {
   key: string;
   label: string;
-  glyph: string;
-  tint: string;
+  icon: IconName;
 }
 export const CATEGORIES: Category[] = [
-  { key: "all", label: "All Pujas", glyph: "🕉️", tint: colors.tintSaffron },
-  { key: "havan", label: "Havan", glyph: "🔥", tint: colors.tintRose },
-  { key: "samagri", label: "Samagri", glyph: "🪔", tint: colors.tintGreen },
-  { key: "astro", label: "Astrology", glyph: "🪐", tint: colors.tintBlue },
+  { key: "all", label: "All Pujas", icon: "blessing" },
+  { key: "havan", label: "Havan", icon: "havan" },
+  { key: "samagri", label: "Samagri", icon: "samagri" },
+  { key: "astro", label: "Astrology", icon: "night" },
 ];
 
-// Promo banners (cosmetic, festival-themed).
-export interface Banner {
+// Seasonal highlights (cosmetic, festival-themed marketing — not user data).
+export interface Highlight {
   key: string;
   title: string;
   sub: string;
-  bg: string;
-  fg: string;
+  icon: IconName;
 }
-export const BANNERS: Banner[] = [
-  { key: "diwali", title: "Festive season is here", sub: "Book Lakshmi & Diwali pujas early", bg: colors.maroon, fg: colors.sunshine },
-  { key: "griha", title: "New home?", sub: "Griha Pravesh pandits in minutes", bg: colors.forest, fg: colors.sunshine },
-  { key: "astro", title: "Navagraha Shanti", sub: "Peace & prosperity havans", bg: colors.carrot, fg: colors.white },
+export const HIGHLIGHTS: Highlight[] = [
+  { key: "festive", title: "Festive season is here", sub: "Book Lakshmi & Diwali pujas early", icon: "blessing" },
+  { key: "griha", title: "Moving to a new home?", sub: "Griha Pravesh Panditjis near you", icon: "home" },
+  { key: "astro", title: "Navagraha Shanti", sub: "Peace & prosperity havans", icon: "havan" },
 ];
