@@ -48,7 +48,7 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
           </div>
           <p className="mt-3 max-w-xs text-sm text-muted">
             {settings.site?.tagline ??
-              "Book experienced pandits for authentic pujas — at home, on time."}
+              "Book experienced Panditjis for authentic pujas — at home, on time."}
           </p>
           {(contact.phone || contact.email) && (
             <div className="mt-4 space-y-1 text-sm text-ink">

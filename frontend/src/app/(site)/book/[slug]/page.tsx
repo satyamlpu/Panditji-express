@@ -20,7 +20,7 @@ export async function generateMetadata({
   if (!service) return { title: "Book a puja" };
   return {
     title: `Book ${service.title}`,
-    description: `Send a booking enquiry for ${service.title}. We confirm the date, pandit and samagri with you.`,
+    description: `Send a booking enquiry for ${service.title}. We confirm the date, Panditji and samagri with you.`,
     alternates: { canonical: `/book/${service.slug}` },
     // Booking forms are transactional; keep them out of the index.
     robots: { index: false, follow: true },
@@ -64,7 +64,7 @@ export default async function BookPage({
             Book {service.title}
           </h1>
           <p className="mt-2 max-w-xl text-muted">
-            Share your details and we&rsquo;ll confirm the date, pandit and
+            Share your details and we&rsquo;ll confirm the date, Panditji and
             samagri with you. No payment is taken online.
           </p>
           <div className="mt-6">

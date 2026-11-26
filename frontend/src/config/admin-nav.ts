@@ -44,7 +44,7 @@ export const MODULES: Record<ModuleId, ModuleMeta> = {
     home: "/admin/marketplace",
     icon: "app",
     description:
-      "Run the marketplace — customers, pandit partners, bookings, finance and support.",
+      "Run the marketplace — customers, Panditji partners, bookings, finance and support.",
   },
 };
 

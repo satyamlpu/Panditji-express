@@ -67,7 +67,7 @@ async def _opener_label(session: AsyncSession, ticket: SupportTicket) -> str | N
     p = (
         await session.execute(select(Pandit).where(Pandit.id == ticket.opener_id))
     ).scalar_one_or_none()
-    return f"{p.name or 'Pandit'} · {p.phone}" if p else None
+    return f"{p.name or 'Panditji'} · {p.phone}" if p else None
 
 
 async def ticket_dict(

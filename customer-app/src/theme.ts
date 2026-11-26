@@ -1,44 +1,39 @@
-// Pandit Ji Express brand palette (mirrors the web app), tuned for a
-// quick-commerce ("Blinkit"-style) layout: yellow splash, deep-green header,
-// clean white product cards on a soft neutral page.
+/**
+ * Legacy theme shim → maps the old flat `colors` names onto the new design-system
+ * palette so any not-yet-migrated import keeps compiling and stays on-brand.
+ * New code should import semantic tokens from `./design` (useTheme/useColors).
+ */
+import { palette, lightColors, radius as dsRadius, elevation, space as dsSpace } from "./design/tokens";
+
 export const colors = {
-  bg: "#f4f2ec", // soft page background so white cards pop
-  surface: "#ffffff",
-  surface2: "#faf4e6",
-  ink: "#1a2e22",
-  muted: "#6b7a70",
-  line: "#e9e3d4",
-  forest: "#18542a", // header + primary actions
-  forestDark: "#123f20",
-  carrot: "#f96015",
-  tomato: "#d52518",
-  sunshine: "#ffc926", // splash + highlights
-  cream: "#f3e8cc",
-  kiwi: "#9abc05",
-  gold: "#b8860b",
-  maroon: "#701f3d",
-  white: "#ffffff",
-
-  // Blinkit-style "Add" button
-  addBg: "#eaf4ec",
-  addBorder: "#18542a",
-  addText: "#18542a",
-  // tints for category / glyph tiles
-  tintSaffron: "#fff2d6",
-  tintBlue: "#e9f1ff",
-  tintRose: "#fdeaf0",
-  tintGreen: "#e9f4ec",
+  bg: lightColors.bg,
+  surface: lightColors.surface,
+  surface2: lightColors.surfaceAlt,
+  ink: lightColors.ink,
+  muted: lightColors.inkSecondary,
+  line: lightColors.border,
+  forest: palette.emerald,
+  forestDark: palette.emeraldDeep,
+  carrot: palette.gold,
+  tomato: palette.error,
+  sunshine: palette.gold,
+  cream: palette.goldTint,
+  kiwi: palette.emerald500,
+  gold: palette.gold,
+  maroon: palette.emeraldDeep,
+  white: palette.white,
+  addBg: palette.emeraldTint,
+  addBorder: palette.emerald,
+  addText: palette.emerald,
+  tintSaffron: palette.goldTint,
+  tintBlue: lightColors.infoTint,
+  tintRose: lightColors.errorTint,
+  tintGreen: palette.emeraldTint,
+  online: lightColors.success,
+  onlineBg: lightColors.successTint,
+  offlineBg: lightColors.surfaceAlt,
 };
 
-export const space = (n: number) => n * 4;
-
-export const radius = { sm: 10, md: 16, lg: 22, xl: 28, pill: 999 };
-
-// Reusable soft card shadow (works on web + native).
-export const shadow = {
-  shadowColor: "#2a2a1e",
-  shadowOpacity: 0.08,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 2,
-};
+export const space = dsSpace;
+export const radius = dsRadius;
+export const shadow = elevation.e1;

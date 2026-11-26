@@ -1,8 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { api, ApiError } from "../lib/api";
-import { Button, Card, Empty, Field, Loading } from "../components/ui";
-import { colors } from "../theme";
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  FormInput,
+  Icon,
+  InlineError,
+  Loading,
+  SectionHeader,
+  Txt,
+  spacing,
+  useColors,
+  haptics,
+} from "../design";
 
 // The booking flow currently uses this Kanpur-centre demo coordinate; saved
 // addresses reuse it until GPS / geocoding is added (a later increment).
@@ -19,8 +32,9 @@ interface Address {
 }
 
 export default function Addresses() {
+  const colors = useColors();
   const [items, setItems] = useState<Address[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [label, setLabel] = useState("");
   const [line, setLine] = useState("");
   const [landmark, setLandmark] = useState("");
@@ -28,18 +42,11 @@ export default function Addresses() {
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(() => {
-    api
-      .get<Address[]>("/api/v1/mp/customer/addresses")
-      .then(setItems)
-      .catch(() => setLoadError("Could not load your addresses."));
+    api.get<Address[]>("/api/v1/mp/customer/addresses").then(setItems).catch(() => setLoadError(true));
   }, []);
   useEffect(() => {
     load();
   }, [load]);
-  const retry = () => {
-    setLoadError(null);
-    load();
-  };
 
   const add = async () => {
     if (line.trim().length < 3) {
@@ -61,6 +68,7 @@ export default function Addresses() {
       setLabel("");
       setLine("");
       setLandmark("");
+      haptics.success();
     } catch (e) {
       setFormError(e instanceof ApiError ? e.message : "Could not save this address.");
     } finally {
@@ -69,43 +77,48 @@ export default function Addresses() {
   };
 
   if (!items) {
-    if (loadError) {
-      return (
-        <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <Text style={{ color: colors.muted, marginBottom: 16, textAlign: "center" }}>{loadError}</Text>
-          <Button label="Retry" variant="outline" onPress={retry} />
-        </View>
-      );
-    }
+    if (loadError) return <ErrorState body="Could not load your addresses." onRetry={load} />;
     return <Loading />;
   }
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16 }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Text style={{ fontWeight: "800", fontSize: 16, color: colors.ink, marginBottom: 12 }}>
-          Add an address
-        </Text>
-        <Field label="Label (optional)" value={label} onChangeText={setLabel} placeholder="Home, Office…" />
-        <Field label="Address line" value={line} onChangeText={setLine} placeholder="House, street, area" />
-        <Field label="Landmark (optional)" value={landmark} onChangeText={setLandmark} placeholder="Near…" />
-        {formError ? <Text style={{ color: colors.tomato, marginBottom: 8 }}>{formError}</Text> : null}
+    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+      <Card>
+        <SectionHeader title="Add an address" />
+        <FormInput label="Label (optional)" icon="home" value={label} onChangeText={setLabel} placeholder="Home, Office…" />
+        <FormInput label="Address line" icon="location" value={line} onChangeText={setLine} placeholder="House, street, area" />
+        <FormInput label="Landmark (optional)" value={landmark} onChangeText={setLandmark} placeholder="Near…" />
+        {formError ? <View style={{ marginBottom: spacing.md }}><InlineError message={formError} /></View> : null}
         <Button label={saving ? "Saving…" : "Save address"} onPress={add} loading={saving} />
-        <Text style={{ color: colors.muted, fontSize: 11.5, marginTop: 8 }}>
-          📍 Location defaults to Kanpur centre until GPS is added.
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.sm }}>
+          <Icon name="location" size={13} color={colors.inkMuted} />
+          <Txt variant="caption" color={colors.inkMuted}>
+            Location defaults to Kanpur centre until GPS is added.
+          </Txt>
+        </View>
       </Card>
 
       {items.length === 0 ? (
-        <Empty text="No saved addresses yet. Add one above." />
+        <EmptyState icon="location" title="No saved addresses" body="Add one above to speed up your next booking." />
       ) : (
         items.map((a) => (
-          <Card key={a.id} style={{ marginBottom: 10 }}>
-            <Text style={{ fontWeight: "800", color: colors.ink }}>{a.label ?? "Address"}</Text>
-            <Text style={{ color: colors.muted, marginTop: 2 }}>{a.line}</Text>
-            {a.landmark ? (
-              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>Near {a.landmark}</Text>
-            ) : null}
+          <Card key={a.id}>
+            <View style={{ flexDirection: "row", gap: spacing.md }}>
+              <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primaryTint, alignItems: "center", justifyContent: "center" }}>
+                <Icon name="location" size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Txt variant="bodyStrong">{a.label ?? "Address"}</Txt>
+                <Txt variant="callout" color={colors.inkSecondary} style={{ marginTop: 2 }}>
+                  {a.line}
+                </Txt>
+                {a.landmark ? (
+                  <Txt variant="caption" color={colors.inkMuted} style={{ marginTop: 2 }}>
+                    Near {a.landmark}
+                  </Txt>
+                ) : null}
+              </View>
+            </View>
           </Card>
         ))
       )}

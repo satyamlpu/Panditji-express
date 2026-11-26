@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Pandit Ji Express",
   },
   description:
-    "Book verified, experienced pandits for authentic pujas with transparent pricing and samagri included.",
+    "Book verified, experienced Panditjis for authentic pujas with transparent pricing and samagri included.",
   openGraph: {
     type: "website",
     siteName: "Pandit Ji Express",
