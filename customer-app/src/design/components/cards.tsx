@@ -37,7 +37,7 @@ export function CatalogMedia({
   }
   return (
     <LinearGradient
-      colors={[palette.emeraldTint, palette.goldTint]}
+      colors={[palette.crimsonTint, palette.goldTint]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[dims, { borderRadius: r, alignItems: "center", justifyContent: "center" }, style]}

@@ -80,7 +80,7 @@ export default function Earnings() {
         ) : (
           <>
             {/* Headline earnings */}
-            <LinearGradient colors={[palette.emerald, palette.emeraldDeep]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.xl, padding: spacing.xl }}>
+            <LinearGradient colors={[palette.crimson, palette.crimsonDeep]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.xl, padding: spacing.xl }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <Icon name="wallet" size={16} color={palette.goldSoft} />
                 <Txt variant="label" color={palette.goldSoft}>

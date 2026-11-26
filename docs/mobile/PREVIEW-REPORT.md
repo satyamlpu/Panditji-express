@@ -93,6 +93,14 @@ logged as a follow-up.
    — forward-compatible with PR #11's discovery enrichment.
 4. **Dark mode enabled** (`userInterfaceStyle: "automatic"`) — the token system already
    supported it.
+5. **Brand re-theme to the real logo** — the apps were emerald-green, but the real Pandit
+   Ji Express logo/website brand (v2.0) is **Kumkum Crimson `#9A1C24` + Agni Saffron +
+   Swarna Gold on Parchment Ivory `#FBF5EA`** (maroon diya + gold flame). The whole design
+   system (both apps, light + dark, every screen via tokens) is now re-themed: a crimson→
+   maroon signature gradient for headers/hero/CTAs/splash, gold mark + ratings + ornaments,
+   ivory surfaces; success stays green. **Follow-up:** the EAS launcher-icon / splash
+   **image assets** are still the default Expo art — regenerate them from
+   `frontend/public/logo-icon.svg` before the APK build so the installed app shows the real logo.
 
 Checks after fixes: `npx tsc --noEmit` ✅, `npx expo lint` ✅ 0 problems, `npx expo-doctor`
 ✅ (version checks pass; the RN-Directory network check can fail transiently) — both apps.

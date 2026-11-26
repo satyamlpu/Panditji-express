@@ -30,7 +30,7 @@ export default function Index() {
 
   return (
     <LinearGradient
-      colors={[palette.emeraldDeep, "#043A2C", palette.emerald]}
+      colors={[palette.crimsonDeep, "#5E0F16", palette.crimson]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{ flex: 1, alignItems: "center", justifyContent: "center" }}

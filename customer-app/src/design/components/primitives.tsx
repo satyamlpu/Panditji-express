@@ -171,7 +171,7 @@ export function Button({
     <PressableScale onPress={onPress} disabled={isOff} haptic={haptic} style={[shape, { backgroundColor: bg }, style]}>
       {variant === "gradient" ? (
         <LinearGradient
-          colors={[palette.emerald, palette.emeraldDeep]}
+          colors={[palette.crimson, palette.crimsonDeep]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >

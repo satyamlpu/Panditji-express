@@ -74,7 +74,7 @@ export default function Login() {
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <LinearGradient colors={[palette.emeraldDeep, palette.emerald]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <LinearGradient colors={[palette.crimsonDeep, palette.crimson]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
             <SafeAreaView edges={["top"]}>
               <View style={{ alignItems: "center", paddingTop: spacing.huge, paddingBottom: spacing.huge + 12 }}>
                 <View
