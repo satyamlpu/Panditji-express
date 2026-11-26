@@ -8,9 +8,13 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.panditjiexpress.partner",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.panditjiexpress.partner",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -26,7 +30,19 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@sentry/react-native"
-    ]
+      "@sentry/react-native",
+      "expo-status-bar"
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "c45a1991-1796-4768-9cb9-3f85fb8520ab"
+      }
+    },
+    "owner": "sbsharma3434"
   }
 }
