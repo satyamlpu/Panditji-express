@@ -98,9 +98,16 @@ logged as a follow-up.
    Swarna Gold on Parchment Ivory `#FBF5EA`** (maroon diya + gold flame). The whole design
    system (both apps, light + dark, every screen via tokens) is now re-themed: a crimson→
    maroon signature gradient for headers/hero/CTAs/splash, gold mark + ratings + ornaments,
-   ivory surfaces; success stays green. **Follow-up:** the EAS launcher-icon / splash
-   **image assets** are still the default Expo art — regenerate them from
-   `frontend/public/logo-icon.svg` before the APK build so the installed app shows the real logo.
+   ivory surfaces; success stays green.
+6. **Real logo everywhere the Om glyph was** — the in-app brand mark (splash + login,
+   both apps) now renders the **actual Pandit Ji Express diya logo** (maroon lamp + ivory
+   "प" + gold flame) as a `BrandLogo` react-native-svg component (vector paths from
+   `frontend/public/logo-icon.svg`), framed by `BrandBadge`. The **launcher icon, splash
+   image and favicon** assets (`icon.png`, `splash-icon.png`, `favicon.png`,
+   `android-icon-foreground.png`) for both apps were regenerated from the logo (1024px
+   maroon app-icon), so the installed app shows the real logo. _Minor polish for the store
+   build:_ the Android adaptive config can later use a transparent diya foreground + maroon
+   background color (needs the `app.json` android block from PR #12).
 
 Checks after fixes: `npx tsc --noEmit` ✅, `npx expo lint` ✅ 0 problems, `npx expo-doctor`
 ✅ (version checks pass; the RN-Directory network check can fail transiently) — both apps.

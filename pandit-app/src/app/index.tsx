@@ -1,9 +1,9 @@
 import { Redirect } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Animated, Text, View } from "react-native";
+import { Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../lib/auth";
-import { palette, radius, Txt, useReducedMotion } from "../design";
+import { BrandBadge, palette, Txt, useReducedMotion } from "../design";
 
 // Premium emerald splash, then route by auth state.
 export default function Splash() {
@@ -36,20 +36,7 @@ export default function Splash() {
       style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
     >
       <Animated.View style={{ alignItems: "center", opacity: fade, transform: [{ translateY: rise }] }}>
-        <View
-          style={{
-            width: 104,
-            height: 104,
-            borderRadius: radius.xl,
-            backgroundColor: "rgba(255,255,255,0.08)",
-            borderWidth: 1,
-            borderColor: palette.gold,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ fontSize: 56, lineHeight: 64, color: palette.gold, fontWeight: "600" }}>ॐ</Text>
-        </View>
+        <BrandBadge size={112} />
         <Txt variant="display" color={palette.white} style={{ marginTop: 22 }}>
           Pandit Ji Partner
         </Txt>
