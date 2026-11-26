@@ -40,6 +40,7 @@ interface Pandit {
   name: string | null;
   languages: string[];
   distance_km: number;
+  eta_minutes?: number | null;
   rating_avg: number | null;
   rating_count: number;
 }
@@ -128,7 +129,7 @@ export default function Home() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Emerald header */}
-      <LinearGradient colors={[palette.emeraldDeep, palette.emerald]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+      <LinearGradient colors={[palette.crimsonDeep, palette.crimson]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
         <SafeAreaView edges={["top"]}>
           <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
@@ -154,7 +155,7 @@ export default function Home() {
         {/* Hero */}
         <View style={{ padding: spacing.lg }}>
           <LinearGradient
-            colors={[palette.emerald, palette.emeraldDeep]}
+            colors={[palette.crimson, palette.crimsonDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ borderRadius: radius.xl, padding: spacing.xl, overflow: "hidden" }}
@@ -246,6 +247,7 @@ export default function Home() {
                   name={p.name}
                   languages={p.languages}
                   distanceKm={p.distance_km}
+                  etaMinutes={p.eta_minutes}
                   ratingAvg={p.rating_avg}
                   ratingCount={p.rating_count}
                 />

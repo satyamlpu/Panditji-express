@@ -119,9 +119,11 @@ export function Button({
   const fg =
     variant === "outline" || variant === "ghost"
       ? colors.primary
-      : variant === "gradient" || variant === "primary" || variant === "danger"
-        ? colors.onPrimary
-        : colors.primary;
+      : variant === "gradient"
+        ? palette.white // the emerald gradient is always dark — keep text light in both schemes
+        : variant === "primary" || variant === "danger"
+          ? colors.onPrimary
+          : colors.primary;
   const bg =
     variant === "primary"
       ? colors.primary
@@ -144,7 +146,7 @@ export function Button({
       }}
     >
       {loading ? (
-        <ActivityIndicator color={variant === "gradient" || variant === "primary" || variant === "danger" ? colors.onPrimary : colors.primary} />
+        <ActivityIndicator color={variant === "gradient" ? palette.white : variant === "primary" || variant === "danger" ? colors.onPrimary : colors.primary} />
       ) : (
         <>
           {icon ? <Icon name={icon} size={fontSize + 3} color={secFg} /> : null}
@@ -169,7 +171,7 @@ export function Button({
     <PressableScale onPress={onPress} disabled={isOff} haptic={haptic} style={[shape, { backgroundColor: bg }, style]}>
       {variant === "gradient" ? (
         <LinearGradient
-          colors={[palette.emerald, palette.emeraldDeep]}
+          colors={[palette.crimson, palette.crimsonDeep]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >

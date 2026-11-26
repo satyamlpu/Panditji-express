@@ -21,6 +21,7 @@ import {
   spacing,
   radius,
   useColors,
+  useStatusBarStyle,
   haptics,
   type IconName,
 } from "../../design";
@@ -35,6 +36,7 @@ interface Me {
 export default function Profile() {
   const { signOut } = useAuth();
   const colors = useColors();
+  useStatusBarStyle("dark");
   const [me, setMe] = useState<Me | null>(null);
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("");
