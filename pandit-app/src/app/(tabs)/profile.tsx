@@ -23,12 +23,14 @@ import {
   radius,
   spacing,
   useColors,
+  useStatusBarStyle,
   type IconName,
 } from "../../design";
 
 export default function Profile() {
   const { signOut } = useAuth();
   const colors = useColors();
+  useStatusBarStyle("dark");
   const [me, setMe] = useState<Pandit | null>(null);
 
   useEffect(() => {

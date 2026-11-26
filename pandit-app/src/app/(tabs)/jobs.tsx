@@ -14,10 +14,12 @@ import {
   Txt,
   spacing,
   useColors,
+  useStatusBarStyle,
 } from "../../design";
 
 export default function Jobs() {
   const colors = useColors();
+  useStatusBarStyle("dark");
   const [rows, setRows] = useState<Booking[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 

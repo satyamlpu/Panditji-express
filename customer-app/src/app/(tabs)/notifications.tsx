@@ -11,6 +11,7 @@ import {
   TAB_BAR_SPACE,
   spacing,
   useColors,
+  useStatusBarStyle,
   type IconName,
 } from "../../design";
 
@@ -34,6 +35,7 @@ function iconFor(kind: string): IconName {
 
 export default function Notifications() {
   const colors = useColors();
+  useStatusBarStyle("dark");
   const [items, setItems] = useState<Notice[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 

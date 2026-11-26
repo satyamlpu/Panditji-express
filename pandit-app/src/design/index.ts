@@ -4,6 +4,7 @@
  */
 export * from "./tokens";
 export * from "./theme";
+export * from "./statusbar";
 export * from "./haptics";
 export * from "./icons";
 export { Glass } from "./glass";

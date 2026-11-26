@@ -11,6 +11,7 @@ import {
   TAB_BAR_SPACE,
   spacing,
   useColors,
+  useStatusBarStyle,
 } from "../../design";
 
 interface Booking {
@@ -29,6 +30,7 @@ function timeAgo(iso: string): string {
 
 export default function Bookings() {
   const colors = useColors();
+  useStatusBarStyle("dark");
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 

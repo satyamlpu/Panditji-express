@@ -40,6 +40,7 @@ interface Pandit {
   name: string | null;
   languages: string[];
   distance_km: number;
+  eta_minutes?: number | null;
   rating_avg: number | null;
   rating_count: number;
 }
@@ -246,6 +247,7 @@ export default function Home() {
                   name={p.name}
                   languages={p.languages}
                   distanceKm={p.distance_km}
+                  etaMinutes={p.eta_minutes}
                   ratingAvg={p.rating_avg}
                   ratingCount={p.rating_count}
                 />

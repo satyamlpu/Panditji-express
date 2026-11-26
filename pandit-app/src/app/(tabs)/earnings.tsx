@@ -18,6 +18,7 @@ import {
   radius,
   spacing,
   useColors,
+  useStatusBarStyle,
 } from "../../design";
 
 function rupees(display: string): number {
@@ -28,6 +29,7 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 export default function Earnings() {
   const colors = useColors();
+  useStatusBarStyle("dark");
   const [rows, setRows] = useState<Booking[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 

@@ -91,6 +91,7 @@ export function PanditCard({
   name,
   languages,
   distanceKm,
+  etaMinutes,
   ratingAvg,
   ratingCount,
   onPress,
@@ -99,6 +100,8 @@ export function PanditCard({
   name?: string | null;
   languages?: string[] | null;
   distanceKm?: number | null;
+  /** Indicative ETA from the discovery endpoint (straight-line estimate); shown only when present. */
+  etaMinutes?: number | null;
   ratingAvg?: number | null;
   ratingCount?: number;
   onPress?: () => void;
@@ -124,6 +127,14 @@ export function PanditCard({
                 <Icon name="location" size={12} color={colors.inkMuted} />
                 <Txt variant="caption" color={colors.inkSecondary}>
                   {distanceKm.toFixed(1)} km away
+                </Txt>
+              </View>
+            ) : null}
+            {etaMinutes != null ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                <Icon name="clock" size={12} color={colors.inkMuted} />
+                <Txt variant="caption" color={colors.inkSecondary}>
+                  ~{etaMinutes} min away
                 </Txt>
               </View>
             ) : null}
