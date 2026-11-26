@@ -30,9 +30,15 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-status-bar"
     ],
     "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
       "eas": {
         "projectId": "6cef0738-6a0e-4053-b7b4-26b6f7be3f85"
       }
