@@ -1,13 +1,35 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { api, ApiError } from "../../lib/api";
 import { KANPUR, nextStep, type Booking } from "../../lib/model";
-import { Button, Card, Loading, StatusPill } from "../../components/ui";
-import { colors, radius } from "../../theme";
+import {
+  Button,
+  Card,
+  Icon,
+  InlineError,
+  Loading,
+  PriceDisplay,
+  StatusIndicator,
+  Txt,
+  radius,
+  spacing,
+  useColors,
+  haptics,
+} from "../../design";
+
+// The lifecycle the partner advances through, shown as a step tracker.
+const FLOW = [
+  { status: "confirmed", label: "Confirmed" },
+  { status: "en_route", label: "On the way" },
+  { status: "arrived", label: "Arrived" },
+  { status: "in_progress", label: "Puja in progress" },
+  { status: "completed", label: "Completed" },
+];
 
 export default function Job() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const colors = useColors();
   const [b, setB] = useState<Booking | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -16,7 +38,7 @@ export default function Job() {
   const [err, setErr] = useState<string | null>(null);
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
   const locTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const frac = useRef(0); // demo: how far along base→destination we've "travelled"
+  const frac = useRef(0);
 
   const refresh = useCallback(async () => {
     try {
@@ -30,8 +52,6 @@ export default function Job() {
   }, [id]);
 
   useEffect(() => {
-    // Initial fetch, then poll. refresh() only sets state after an awaited
-    // network call, so this is a legitimate subscribe-style effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     poll.current = setInterval(refresh, 4000);
@@ -43,17 +63,11 @@ export default function Job() {
 
   const pingLocation = useCallback(async () => {
     if (!b) return;
-    // Demo: move a quarter of the remaining way from the Kanpur base toward the
-    // customer each ping, so the customer's live ETA visibly counts down.
     frac.current = Math.min(1, frac.current + 0.25);
     const lat = KANPUR.lat + (b.dest_lat - KANPUR.lat) * frac.current;
     const lng = KANPUR.lng + (b.dest_lng - KANPUR.lng) * frac.current;
     try {
-      const r = await api.post<{ eta_minutes: number }>("/api/v1/mp/partner/location", {
-        lat,
-        lng,
-        accuracy_m: 20,
-      });
+      const r = await api.post<{ eta_minutes: number }>("/api/v1/mp/partner/location", { lat, lng, accuracy_m: 20 });
       setEta(r.eta_minutes);
     } catch {
       /* location only allowed while active; ignore otherwise */
@@ -66,6 +80,7 @@ export default function Job() {
       locTimer.current = null;
       setSharing(false);
     } else {
+      haptics.select();
       setSharing(true);
       pingLocation();
       locTimer.current = setInterval(pingLocation, 5000);
@@ -78,6 +93,7 @@ export default function Job() {
     try {
       const updated = await api.post<Booking>(`/api/v1/mp/partner/bookings/${id}/status`, { to_status: to });
       setB(updated);
+      haptics.success();
       if (to === "completed" && locTimer.current) {
         clearInterval(locTimer.current);
         locTimer.current = null;
@@ -92,10 +108,12 @@ export default function Job() {
 
   if (notFound) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <Text style={{ fontSize: 40, marginBottom: 10 }}>🔍</Text>
-        <Text style={{ fontWeight: "800", color: colors.ink, fontSize: 16 }}>Booking not found</Text>
-        <View style={{ height: 16 }} />
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", padding: spacing.xxl }}>
+        <Icon name="search" size={34} color={colors.inkMuted} />
+        <Txt variant="h3" style={{ marginTop: spacing.md }}>
+          Booking not found
+        </Txt>
+        <View style={{ height: spacing.lg, alignSelf: "stretch" }} />
         <Button label="Back to home" variant="outline" onPress={() => router.replace("/(tabs)")} />
       </View>
     );
@@ -104,79 +122,133 @@ export default function Job() {
 
   const step = nextStep(b.status);
   const done = b.status === "completed";
+  const currentIdx = FLOW.findIndex((f) => f.status === b.status);
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
       <Card>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontSize: 19, fontWeight: "800", color: colors.ink }}>{b.service_title}</Text>
-          <StatusPill status={b.status} />
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }}>
+          <Txt variant="h2" style={{ flex: 1 }}>
+            {b.service_title}
+          </Txt>
+          <StatusIndicator status={b.status} />
         </View>
-        <Text style={{ color: colors.muted, marginTop: 4 }}>{b.code} · {b.price_display}</Text>
-        <View style={{ height: 12 }} />
-        <Text style={{ color: colors.ink, fontWeight: "700" }}>📍 {b.address_line}</Text>
-        {b.landmark ? <Text style={{ color: colors.muted, marginTop: 2 }}>Near {b.landmark}</Text> : null}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm }}>
+          <PriceDisplay value={b.price_display} size="sm" />
+          <Txt variant="caption" color={colors.inkMuted}>· {b.code}</Txt>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border }}>
+          <Icon name="location" size={16} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Txt variant="bodyStrong">{b.address_line}</Txt>
+            {b.landmark ? (
+              <Txt variant="caption" color={colors.inkSecondary}>
+                Near {b.landmark}
+              </Txt>
+            ) : null}
+          </View>
+        </View>
       </Card>
 
-      {/* Live location sharing (available while active) */}
-      {!done && (
-        <Card style={{ marginTop: 14, borderColor: sharing ? colors.online + "66" : colors.line }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={{ fontWeight: "800", color: colors.ink }}>
-                {sharing ? "Sharing live location" : "Share live location"}
-              </Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, marginTop: 3 }}>
+      {/* Lifecycle tracker */}
+      <Card>
+        <Txt variant="label" color={colors.inkSecondary} style={{ marginBottom: spacing.md }}>
+          PUJA PROGRESS
+        </Txt>
+        {FLOW.map((f, i) => {
+          const reached = currentIdx >= i && currentIdx !== -1;
+          const isCurrent = currentIdx === i;
+          return (
+            <View key={f.status} style={{ flexDirection: "row", gap: spacing.md }}>
+              <View style={{ alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    backgroundColor: reached ? colors.primary : colors.surfaceAlt,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: isCurrent ? 2 : 0,
+                    borderColor: colors.accent,
+                  }}
+                >
+                  {reached ? <Icon name="check" size={13} color={colors.onPrimary} /> : null}
+                </View>
+                {i < FLOW.length - 1 ? (
+                  <View style={{ width: 2, flex: 1, minHeight: 18, backgroundColor: reached && currentIdx > i ? colors.primary : colors.border, marginVertical: 2 }} />
+                ) : null}
+              </View>
+              <Txt
+                variant={isCurrent ? "bodyStrong" : "callout"}
+                color={reached ? colors.ink : colors.inkMuted}
+                style={{ paddingBottom: i < FLOW.length - 1 ? spacing.md : 0, paddingTop: 1 }}
+              >
+                {f.label}
+              </Txt>
+            </View>
+          );
+        })}
+      </Card>
+
+      {/* Live location sharing */}
+      {!done ? (
+        <Card style={{ borderColor: sharing ? colors.success : colors.border, borderWidth: sharing ? 1.5 : 1 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.md }}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Icon name="navigation" size={16} color={sharing ? colors.success : colors.inkSecondary} />
+                <Txt variant="bodyStrong">{sharing ? "Sharing live location" : "Share live location"}</Txt>
+              </View>
+              <Txt variant="caption" color={colors.inkSecondary} style={{ marginTop: 3 }}>
                 {sharing
                   ? eta != null
                     ? `Customer sees ~${eta} min ETA`
                     : "Updating the customer's tracking…"
                   : "Lets the customer track your arrival (demo position)."}
-              </Text>
+              </Txt>
             </View>
-            <View style={{ width: 118 }}>
-              <Button
-                label={sharing ? "Stop" : "Start"}
-                variant={sharing ? "danger" : "primary"}
-                onPress={toggleShare}
-              />
+            <View style={{ width: 110 }}>
+              <Button label={sharing ? "Stop" : "Start"} variant={sharing ? "danger" : "primary"} size="sm" onPress={toggleShare} />
             </View>
           </View>
         </Card>
-      )}
+      ) : null}
 
-      {err && <Text style={{ color: colors.tomato, marginTop: 14, textAlign: "center" }}>{err}</Text>}
+      {err ? <InlineError message={err} /> : null}
 
       {/* Advance / completion */}
-      <View style={{ marginTop: 18 }}>
-        {step ? (
-          <Button label={step.label} variant="accent" onPress={() => advance(step.to)} loading={busy} />
-        ) : done ? (
-          <Card style={{ borderColor: colors.online + "66", alignItems: "center" }}>
-            <Text style={{ fontSize: 34 }}>✅</Text>
-            <Text style={{ fontWeight: "800", color: colors.ink, marginTop: 6, fontSize: 16 }}>Puja completed</Text>
-            <Text style={{ color: colors.muted, marginTop: 4, textAlign: "center" }}>
-              Great work! The earning has been added to your account.
-            </Text>
-            <View style={{ height: 14 }} />
-            <View style={{ alignSelf: "stretch" }}>
-              <Button label="Back to home" onPress={() => router.replace("/(tabs)")} />
-            </View>
-          </Card>
-        ) : (
-          <Text style={{ color: colors.muted, textAlign: "center" }}>This booking is {b.status}.</Text>
-        )}
-      </View>
-
-      {/* Step hint */}
-      {!done && (
-        <View style={{ marginTop: 20, backgroundColor: colors.surface2, borderRadius: radius.md, padding: 14 }}>
-          <Text style={{ color: colors.muted, fontSize: 12.5, lineHeight: 19 }}>
-            Flow: Confirmed → On the way → Arrived → Puja in progress → Completed. Advance each step as you go so
-            the customer stays updated.
-          </Text>
-        </View>
+      {step ? (
+        <Button label={step.label} variant="gradient" iconRight="forward" onPress={() => advance(step.to)} loading={busy} />
+      ) : done ? (
+        <Card style={{ borderColor: colors.success, borderWidth: 1.5, alignItems: "center" }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.successTint, alignItems: "center", justifyContent: "center" }}>
+            <Icon name="checkCircle" size={30} color={colors.success} />
+          </View>
+          <Txt variant="h3" style={{ marginTop: spacing.md }}>
+            Puja completed
+          </Txt>
+          <Txt variant="callout" color={colors.inkSecondary} style={{ textAlign: "center", marginTop: 4 }}>
+            Great work! The earning has been added to your account.
+          </Txt>
+          <View style={{ height: spacing.lg, alignSelf: "stretch" }} />
+          <View style={{ alignSelf: "stretch" }}>
+            <Button label="Back to home" onPress={() => router.replace("/(tabs)")} />
+          </View>
+        </Card>
+      ) : (
+        <Txt variant="callout" color={colors.inkSecondary} style={{ textAlign: "center" }}>
+          This booking is {b.status.replace(/_/g, " ")}.
+        </Txt>
       )}
+
+      {!done ? (
+        <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: radius.md, padding: spacing.md }}>
+          <Txt variant="caption" color={colors.inkSecondary}>
+            Advance each step as you go so the customer stays updated: On the way → Arrived → Puja in progress → Completed.
+          </Txt>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }

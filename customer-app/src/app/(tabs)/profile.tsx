@@ -1,10 +1,29 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { api, ApiError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
-import { Button, Card, Field, Loading } from "../../components/ui";
-import { colors } from "../../theme";
+import {
+  AppHeader,
+  Avatar,
+  Button,
+  Card,
+  FormInput,
+  Icon,
+  InlineError,
+  Loading,
+  ErrorState,
+  PressableScale,
+  SectionHeader,
+  TAB_BAR_SPACE,
+  Txt,
+  spacing,
+  radius,
+  useColors,
+  haptics,
+  type IconName,
+} from "../../design";
 
 interface Me {
   id: string;
@@ -15,11 +34,13 @@ interface Me {
 
 export default function Profile() {
   const { signOut } = useAuth();
+  const colors = useColors();
   const [me, setMe] = useState<Me | null>(null);
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const loadProfile = useCallback(() => {
@@ -30,25 +51,14 @@ export default function Profile() {
         setName(m.name ?? "");
         setLanguage(m.language ?? "");
       })
-      .catch(() => setError("Could not load your profile."));
+      .catch(() => setLoadError(true));
   }, []);
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
-  const retry = () => {
-    setError(null);
-    loadProfile();
-  };
 
   if (!me) {
-    if (error) {
-      return (
-        <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <Text style={{ color: colors.muted, marginBottom: 16, textAlign: "center" }}>{error}</Text>
-          <Button label="Retry" variant="outline" onPress={retry} />
-        </View>
-      );
-    }
+    if (loadError) return <ErrorState body="Could not load your profile." onRetry={loadProfile} />;
     return <Loading />;
   }
 
@@ -67,6 +77,7 @@ export default function Profile() {
       setName(updated.name ?? "");
       setLanguage(updated.language ?? "");
       setSaved(true);
+      haptics.success();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not save your changes.");
     } finally {
@@ -75,62 +86,116 @@ export default function Profile() {
   };
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16 }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Text style={{ color: colors.muted, fontSize: 13 }}>Phone</Text>
-        <Text style={{ fontSize: 18, fontWeight: "800", color: colors.ink, marginBottom: 14 }}>
-          {me.phone}
-        </Text>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.surface }}>
+        <AppHeader title="Profile" />
+      </SafeAreaView>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: TAB_BAR_SPACE, gap: spacing.md }}>
+        {/* Identity */}
+        <Card>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+            <Avatar name={me.name} size={56} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="h3">{me.name || "Add your name"}</Txt>
+              <Txt variant="callout" color={colors.inkSecondary}>
+                {me.phone}
+              </Txt>
+            </View>
+          </View>
+        </Card>
 
-        <Field
-          label="Name"
-          value={name}
-          onChangeText={(t) => {
-            setName(t);
-            setSaved(false);
-          }}
-          placeholder="Your name"
-        />
-        <Field
-          label="Preferred language"
-          value={language}
-          onChangeText={(t) => {
-            setLanguage(t);
-            setSaved(false);
-          }}
-          placeholder="e.g. Hindi"
-        />
+        {/* Editable details */}
+        <Card>
+          <SectionHeader title="Your details" />
+          <FormInput
+            label="Name"
+            icon="profile"
+            value={name}
+            onChangeText={(t) => {
+              setName(t);
+              setSaved(false);
+            }}
+            placeholder="Your name"
+          />
+          <FormInput
+            label="Preferred language"
+            icon="language"
+            value={language}
+            onChangeText={(t) => {
+              setLanguage(t);
+              setSaved(false);
+            }}
+            placeholder="e.g. Hindi"
+          />
+          {error ? <View style={{ marginBottom: spacing.md }}><InlineError message={error} /></View> : null}
+          {saved ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: spacing.md }}>
+              <Icon name="checkCircle" size={16} color={colors.success} />
+              <Txt variant="callout" color={colors.success}>
+                Changes saved
+              </Txt>
+            </View>
+          ) : null}
+          <Button label={saving ? "Saving…" : "Save changes"} onPress={save} loading={saving} disabled={!dirty} />
+        </Card>
 
-        {error ? <Text style={{ color: colors.tomato, marginBottom: 8 }}>{error}</Text> : null}
-        {saved ? <Text style={{ color: colors.forest, marginBottom: 8, fontWeight: "700" }}>Saved ✓</Text> : null}
+        {/* Links */}
+        <Card padded={false}>
+          <LinkRow icon="location" label="Saved addresses" onPress={() => router.push("/addresses")} first />
+          <LinkRow icon="support" label="Help & support" onPress={() => router.push("/support")} />
+          <LinkRow icon="alerts" label="Notifications" onPress={() => router.push("/(tabs)/notifications")} />
+        </Card>
 
         <Button
-          label={saving ? "Saving…" : "Save changes"}
-          onPress={save}
-          loading={saving}
-          disabled={!dirty}
+          label="Sign out"
+          variant="outline"
+          icon="signout"
+          onPress={async () => {
+            await signOut();
+            router.replace("/login");
+          }}
         />
-      </Card>
+        <Txt variant="caption" color={colors.inkMuted} style={{ textAlign: "center", marginTop: spacing.sm }}>
+          Pandit Ji Express · Customer app
+        </Txt>
+      </ScrollView>
+    </View>
+  );
+}
 
-      <View style={{ marginBottom: 12 }}>
-        <Button label="Saved addresses" variant="outline" onPress={() => router.push("/addresses")} />
-      </View>
-
-      <View style={{ marginBottom: 12 }}>
-        <Button label="Help & support" variant="outline" onPress={() => router.push("/support")} />
-      </View>
-
-      <Button
-        label="Sign out"
-        variant="accent"
-        onPress={async () => {
-          await signOut();
-          router.replace("/login");
-        }}
-      />
-      <Text style={{ color: colors.muted, textAlign: "center", marginTop: 20, fontSize: 12 }}>
-        Pandit Ji Express · Customer app
-      </Text>
-    </ScrollView>
+function LinkRow({
+  icon,
+  label,
+  onPress,
+  first,
+}: {
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  first?: boolean;
+}) {
+  const colors = useColors();
+  return (
+    <PressableScale
+      onPress={onPress}
+      haptic="select"
+      scaleTo={0.99}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.md,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: colors.border,
+        borderRadius: radius.lg,
+      }}
+    >
+      <Icon name={icon} size={20} color={colors.primary} />
+      <Txt variant="bodyStrong" style={{ flex: 1 }}>
+        {label}
+      </Txt>
+      <Icon name="chevron" size={18} color={colors.inkMuted} />
+    </PressableScale>
   );
 }

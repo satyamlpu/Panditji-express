@@ -1,9 +1,17 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
-import { Card, Empty, Loading, StatusPill } from "../../components/ui";
-import { colors } from "../../theme";
+import {
+  AppHeader,
+  BookingCard,
+  EmptyState,
+  SkeletonList,
+  TAB_BAR_SPACE,
+  spacing,
+  useColors,
+} from "../../design";
 
 interface Booking {
   id: string;
@@ -14,8 +22,17 @@ interface Booking {
   created_at: string;
 }
 
+function timeAgo(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
 export default function Bookings() {
+  const colors = useColors();
   const [bookings, setBookings] = useState<Booking[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(() => api.get<Booking[]>("/api/v1/mp/customer/bookings").then(setBookings).catch(() => setBookings([])), []);
 
   useFocusEffect(
     useCallback(() => {
@@ -30,34 +47,45 @@ export default function Bookings() {
     }, []),
   );
 
-  if (!bookings) return <Loading />;
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16 }}>
-      {bookings.length === 0 ? (
-        <Empty text="No bookings yet. Book a puja from the Home tab." />
-      ) : (
-        bookings.map((b) => (
-          <Pressable key={b.id} onPress={() => router.push(`/booking/${b.id}`)}>
-            <Card style={{ marginBottom: 12 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: "700", color: colors.ink }}>
-                    {b.service_title}
-                  </Text>
-                  <Text style={{ color: colors.muted, marginTop: 2, fontSize: 12 }}>
-                    {b.code} · {b.price_display}
-                  </Text>
-                  <View style={{ marginTop: 8 }}>
-                    <StatusPill status={b.status} />
-                  </View>
-                </View>
-                <Text style={{ color: colors.carrot, fontWeight: "700" }}>›</Text>
-              </View>
-            </Card>
-          </Pressable>
-        ))
-      )}
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.surface }}>
+        <AppHeader title="Your bookings" subtitle="Track and manage your pujas" />
+      </SafeAreaView>
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.lg, paddingBottom: TAB_BAR_SPACE, gap: spacing.md, flexGrow: 1 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
+        {bookings === null ? (
+          <SkeletonList count={4} />
+        ) : bookings.length === 0 ? (
+          <EmptyState
+            icon="bookings"
+            title="No bookings yet"
+            body="Book a puja from the Home tab and it will show up here."
+            actionLabel="Browse pujas"
+            onAction={() => router.push("/(tabs)")}
+          />
+        ) : (
+          bookings.map((b) => (
+            <BookingCard
+              key={b.id}
+              title={b.service_title}
+              code={b.code}
+              price={b.price_display}
+              status={b.status}
+              meta={timeAgo(b.created_at)}
+              onPress={() => router.push(`/booking/${b.id}`)}
+            />
+          ))
+        )}
+      </ScrollView>
+    </View>
   );
 }

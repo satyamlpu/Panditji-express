@@ -1,12 +1,14 @@
 import { Redirect, Tabs } from "expo-router";
-import { Text } from "react-native";
 import { useAuth } from "../../lib/auth";
-import { Loading } from "../../components/ui";
-import { colors } from "../../theme";
+import { Loading, GlassTabBar, type IconName } from "../../design";
 
-function Icon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>;
-}
+// Partner tab structure is preserved: Home · My pujas · Earnings · Profile.
+const TAB_ICONS: Record<string, IconName> = {
+  index: "home",
+  jobs: "pujas",
+  earnings: "earnings",
+  profile: "profile",
+};
 
 export default function TabsLayout() {
   const { token, loading } = useAuth();
@@ -15,32 +17,13 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.forest },
-        headerTitleStyle: { color: colors.white, fontWeight: "800" },
-        headerTintColor: colors.white,
-        tabBarActiveTintColor: colors.forest,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.line, height: 58, paddingBottom: 6, paddingTop: 6 },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "700" },
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <GlassTabBar {...props} icons={TAB_ICONS} />}
     >
-      <Tabs.Screen
-        name="index"
-        options={{ headerShown: false, title: "Home", tabBarIcon: ({ focused }) => <Icon emoji="🏠" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="jobs"
-        options={{ title: "My pujas", tabBarIcon: ({ focused }) => <Icon emoji="📿" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="earnings"
-        options={{ title: "Earnings", tabBarIcon: ({ focused }) => <Icon emoji="💰" focused={focused} /> }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{ title: "Profile", tabBarIcon: ({ focused }) => <Icon emoji="👤" focused={focused} /> }}
-      />
+      <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="jobs" options={{ title: "My pujas" }} />
+      <Tabs.Screen name="earnings" options={{ title: "Earnings" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );
 }

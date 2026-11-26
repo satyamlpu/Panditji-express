@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { api } from "../lib/api";
-import { Button, Card, Empty, Loading } from "../components/ui";
-import { colors } from "../theme";
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Loading,
+  NotificationCard,
+  spacing,
+  useColors,
+  type IconName,
+} from "../design";
 
 interface Notice {
   id: string;
@@ -13,24 +21,26 @@ interface Notice {
   created_at: string;
 }
 
+function iconFor(kind: string): IconName {
+  if (/book|dispatch|offer|assign|request/i.test(kind)) return "pujas";
+  if (/pay|payout|ledger|earn/i.test(kind)) return "earnings";
+  if (/verif|kyc|approve/i.test(kind)) return "shield";
+  if (/review|rating/i.test(kind)) return "rating";
+  return "alerts";
+}
+
 export default function Notifications() {
+  const colors = useColors();
   const [items, setItems] = useState<Notice[] | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [marking, setMarking] = useState(false);
 
   const load = useCallback(() => {
-    api
-      .get<Notice[]>("/api/v1/mp/partner/notifications")
-      .then(setItems)
-      .catch(() => setLoadError("Could not load notifications."));
+    api.get<Notice[]>("/api/v1/mp/partner/notifications").then(setItems).catch(() => setLoadError(true));
   }, []);
   useEffect(() => {
     load();
   }, [load]);
-  const retry = () => {
-    setLoadError(null);
-    load();
-  };
 
   const markAll = async () => {
     setMarking(true);
@@ -45,43 +55,32 @@ export default function Notifications() {
   };
 
   if (!items) {
-    if (loadError) {
-      return (
-        <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <Text style={{ color: colors.muted, marginBottom: 16, textAlign: "center" }}>{loadError}</Text>
-          <Button label="Retry" variant="outline" onPress={retry} />
-        </View>
-      );
-    }
+    if (loadError) return <ErrorState body="Could not load notifications." onRetry={() => { setLoadError(false); load(); }} />;
     return <Loading />;
   }
 
   const unread = items.filter((n) => !n.read).length;
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}>
       {unread > 0 ? (
-        <View style={{ marginBottom: 12 }}>
-          <Button
-            label={marking ? "Marking…" : `Mark all read (${unread})`}
-            variant="outline"
-            onPress={markAll}
-            loading={marking}
-          />
+        <View style={{ marginBottom: spacing.sm }}>
+          <Button label={marking ? "Marking…" : `Mark all read (${unread})`} variant="outline" icon="check" onPress={markAll} loading={marking} />
         </View>
       ) : null}
 
       {items.length === 0 ? (
-        <Empty icon="🔔" title="No notifications" sub="Booking offers and updates will show up here." />
+        <EmptyState icon="alerts" title="No notifications" body="Booking offers and updates will show up here." />
       ) : (
         items.map((n) => (
-          <Card key={n.id} style={{ marginBottom: 10, opacity: n.read ? 0.65 : 1 }}>
-            <Text style={{ fontWeight: "800", color: colors.ink }}>{n.title}</Text>
-            {n.body ? <Text style={{ color: colors.muted, marginTop: 3 }}>{n.body}</Text> : null}
-            <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>
-              {new Date(n.created_at).toLocaleString()}
-            </Text>
-          </Card>
+          <NotificationCard
+            key={n.id}
+            title={n.title}
+            body={n.body}
+            read={n.read}
+            icon={iconFor(n.kind)}
+            time={new Date(n.created_at).toLocaleString()}
+          />
         ))
       )}
     </ScrollView>
