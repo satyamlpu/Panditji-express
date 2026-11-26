@@ -12,6 +12,7 @@ export interface CategoryAdmin {
 export interface ServicePayload {
   slug: string;
   title: string;
+  title_hi?: string | null;
   summary?: string | null;
   description?: string | null;
   price_rupees?: number | null;
@@ -19,6 +20,8 @@ export interface ServicePayload {
   inclusions?: string[];
   samagri?: string[];
   category_id?: string | null;
+  thumbnail_media_id?: string | null;
+  thumbnail_alt?: string | null;
   is_featured?: boolean;
   sort_order?: number;
   status?: string;

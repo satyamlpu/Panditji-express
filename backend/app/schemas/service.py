@@ -10,6 +10,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.constants import ContentStatus
+from app.schemas.media import ThumbnailPublic
 
 SLUG_RE = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
 
@@ -25,6 +26,7 @@ class SeoIn(BaseModel):
 class ServiceCreate(SeoIn):
     slug: str = Field(pattern=SLUG_RE, max_length=120)
     title: str = Field(min_length=2, max_length=160)
+    title_hi: str | None = Field(default=None, max_length=160)
     summary: str | None = Field(default=None, max_length=400)
     description: str | None = None
     price_rupees: int | None = Field(default=None, ge=0, le=100_000_000)
@@ -32,6 +34,8 @@ class ServiceCreate(SeoIn):
     inclusions: list[str] = Field(default_factory=list)
     samagri: list[str] = Field(default_factory=list)
     category_id: str | None = None
+    thumbnail_media_id: str | None = None
+    thumbnail_alt: str | None = Field(default=None, max_length=300)
     is_featured: bool = False
     sort_order: int = 0
     status: str = ContentStatus.DRAFT
@@ -54,6 +58,7 @@ class ServiceUpdate(BaseModel):
 
     slug: str | None = Field(default=None, pattern=SLUG_RE, max_length=120)
     title: str | None = Field(default=None, min_length=2, max_length=160)
+    title_hi: str | None = Field(default=None, max_length=160)
     summary: str | None = Field(default=None, max_length=400)
     description: str | None = None
     price_rupees: int | None = Field(default=None, ge=0, le=100_000_000)
@@ -61,6 +66,8 @@ class ServiceUpdate(BaseModel):
     inclusions: list[str] | None = None
     samagri: list[str] | None = None
     category_id: str | None = None
+    thumbnail_media_id: str | None = None
+    thumbnail_alt: str | None = Field(default=None, max_length=300)
     is_featured: bool | None = None
     sort_order: int | None = None
     status: str | None = None
@@ -90,6 +97,7 @@ class ServiceOut(BaseModel):
     id: str
     slug: str
     title: str
+    title_hi: str | None
     summary: str | None
     description: str | None
     price_rupees: int | None
@@ -98,6 +106,8 @@ class ServiceOut(BaseModel):
     inclusions: list[str]
     samagri: list[str]
     category: CategoryRef | None
+    thumbnail: ThumbnailPublic | None
+    thumbnail_media_id: str | None
     is_featured: bool
     sort_order: int
     status: str
@@ -116,9 +126,11 @@ class ServicePublicListItem(BaseModel):
 
     slug: str
     title: str
+    title_hi: str | None = None
     summary: str | None
     price_rupees: int | None
     price_display: str
     duration_label: str | None
     category: CategoryRef | None
+    thumbnail: ThumbnailPublic | None = None
     is_featured: bool

@@ -6,14 +6,23 @@ export interface CategoryRef {
   name: string;
 }
 
+/** Compact thumbnail embedded in service/category payloads (public + admin). */
+export interface Thumbnail {
+  url: string;
+  thumb_url: string | null;
+  alt: string | null;
+}
+
 export interface ServiceListItem {
   slug: string;
   title: string;
+  title_hi?: string | null;
   summary: string | null;
   price_rupees: number | null;
   price_display: string;
   duration_label: string | null;
   category: CategoryRef | null;
+  thumbnail: Thumbnail | null;
   is_featured: boolean;
 }
 
@@ -33,6 +42,7 @@ export interface SeoResolved {
 export interface ServiceDetail {
   slug: string;
   title: string;
+  title_hi?: string | null;
   summary: string | null;
   description: string | null;
   price_rupees: number | null;
@@ -42,6 +52,7 @@ export interface ServiceDetail {
   samagri: string[];
   is_featured: boolean;
   category: CategoryRef | null;
+  thumbnail: Thumbnail | null;
   faqs: FaqPublic[];
   seo: SeoResolved;
 }
@@ -51,20 +62,24 @@ export interface CategoryPublic {
   name: string;
   description: string | null;
   service_count: number;
+  thumbnail: Thumbnail | null;
 }
 
 export interface ServiceCard {
   slug: string;
   title: string;
+  title_hi?: string | null;
   summary: string | null;
   price_display: string;
   duration_label: string | null;
+  thumbnail: Thumbnail | null;
 }
 
 export interface CategoryDetail {
   slug: string;
   name: string;
   description: string | null;
+  thumbnail: Thumbnail | null;
   services: ServiceCard[];
   seo: SeoResolved;
 }
@@ -122,6 +137,7 @@ export interface ServiceAdmin extends ServiceListItem {
   description: string | null;
   inclusions: string[];
   samagri: string[];
+  thumbnail_media_id: string | null;
   sort_order: number;
   status: "draft" | "published" | "unpublished";
   published_at: string | null;
@@ -132,6 +148,59 @@ export interface ServiceAdmin extends ServiceListItem {
   canonical_url: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** Media Library asset. */
+export interface MediaAsset {
+  id: string;
+  url: string;
+  thumb_url: string | null;
+  filename: string;
+  content_type: string;
+  byte_size: number;
+  width: number | null;
+  height: number | null;
+  alt_text: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MediaUploadResult extends MediaAsset {
+  warnings: string[];
+}
+
+export interface ContentRevision {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  version: number;
+  action: string;
+  snapshot: Record<string, unknown> | null;
+  actor_email: string | null;
+  created_at: string;
+}
+
+export interface AuditEntry {
+  id: string;
+  action: string;
+  actor_email: string | null;
+  entity: string | null;
+  entity_id: string | null;
+  ip: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface SyncStatus {
+  revalidation_configured: boolean;
+  frontend_revalidate_url: string;
+  revalidation_reachable: boolean;
+  revalidation_detail: string;
+  revalidation_secret_is_default: boolean;
+  last_result: { ok: boolean; detail: string; tags: string[]; at: number } | null;
+  database: string;
+  media_storage_backend: string;
+  environment: string;
 }
 
 export interface Paged<T> {

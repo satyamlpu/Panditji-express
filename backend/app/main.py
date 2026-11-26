@@ -18,6 +18,7 @@ from app.api.routers import (
     admin_pages,
     admin_services,
     admin_settings,
+    admin_system,
     admin_testimonials,
     auth,
     public,
@@ -89,6 +90,7 @@ app.include_router(admin_pages.router)
 app.include_router(admin_banners.router)
 app.include_router(admin_settings.router)
 app.include_router(admin_media.router)
+app.include_router(admin_system.router)
 app.include_router(admin_enquiries.router)
 app.include_router(public.router)
 

@@ -69,6 +69,7 @@ export const ICONS = {
   support: Headset,
   analytics: ChartNoAxesCombined,
   security: ShieldCheck,
+  activity: Activity,
   // Shell chrome
   logout: LogOut,
   bell: Bell,

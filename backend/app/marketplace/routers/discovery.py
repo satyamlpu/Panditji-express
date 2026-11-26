@@ -84,9 +84,17 @@ async def services(session: AsyncSession = Depends(get_session)) -> list[dict]:
         {
             "slug": s.slug,
             "title": s.title,
+            "title_hi": s.title_hi,
             "summary": s.summary,
             "price_display": price_display(s.price_paise),
             "duration_label": s.duration_label,
+            # Centralised thumbnail (same Media Library asset as the website) so
+            # service imagery is a single source of truth across web + apps.
+            "thumbnail": (
+                {"url": s.thumbnail_url, "thumb_url": None, "alt": s.thumbnail_alt}
+                if s.thumbnail_url
+                else None
+            ),
         }
         for s in rows
     ]

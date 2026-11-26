@@ -7,6 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.constants import ContentStatus
+from app.schemas.media import ThumbnailPublic
 from app.schemas.service import SLUG_RE, SeoIn
 
 
@@ -15,6 +16,8 @@ class CategoryCreate(SeoIn):
     name: str = Field(min_length=2, max_length=120)
     description: str | None = None
     sort_order: int = 0
+    thumbnail_media_id: str | None = None
+    thumbnail_alt: str | None = Field(default=None, max_length=300)
     status: str = ContentStatus.DRAFT
 
     @field_validator("status")
@@ -30,6 +33,8 @@ class CategoryUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=120)
     description: str | None = None
     sort_order: int | None = None
+    thumbnail_media_id: str | None = None
+    thumbnail_alt: str | None = Field(default=None, max_length=300)
     status: str | None = None
     seo_title: str | None = Field(default=None, max_length=70)
     seo_description: str | None = Field(default=None, max_length=320)
@@ -58,6 +63,8 @@ class CategoryOut(BaseModel):
     og_title: str | None
     og_description: str | None
     canonical_url: str | None
+    thumbnail: ThumbnailPublic | None = None
+    thumbnail_media_id: str | None = None
     service_count: int | None = None
     created_at: datetime
     updated_at: datetime

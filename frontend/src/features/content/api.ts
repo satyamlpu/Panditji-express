@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import type { Thumbnail } from "@/lib/types";
 
 type Status = "draft" | "published" | "unpublished";
 
@@ -12,6 +13,9 @@ export interface CategoryAdmin {
   status: Status;
   seo_title: string | null;
   seo_description: string | null;
+  thumbnail: Thumbnail | null;
+  thumbnail_media_id: string | null;
+  thumbnail_alt?: string | null;
   service_count: number | null;
 }
 export const categoriesApi = {

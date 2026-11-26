@@ -21,8 +21,23 @@ class Service(UUIDPk, Timestamps, Publishable, SeoFields, Base):
 
     slug: Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
     title: Mapped[str] = mapped_column(nullable=False)
+    # Optional Devanagari / Hindi name shown alongside the English title.
+    title_hi: Mapped[str | None] = mapped_column(nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Thumbnail. ``thumbnail_media_id`` links to the Media Library asset (enables
+    # usage checks before an image is deleted); ``thumbnail_url`` / _alt are the
+    # denormalised display URL + alt text so public reads need no join and old
+    # rows (both null) simply fall back to a neutral placeholder.
+    thumbnail_media_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(),
+        ForeignKey("media_asset.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    thumbnail_url: Mapped[str | None] = mapped_column(nullable=True)
+    thumbnail_alt: Mapped[str | None] = mapped_column(nullable=True)
 
     # Money in paise. None means "price on request".
     price_paise: Mapped[int | None] = mapped_column(Integer, nullable=True)
