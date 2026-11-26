@@ -17,7 +17,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.errors import ForbiddenError
 from app.marketplace.models import OtpCode
+from app.marketplace.sms import send_otp_sms
 
 OTP_TTL_MINUTES = 5
 MAX_VERIFY_ATTEMPTS = 5
@@ -36,7 +38,29 @@ def _hash(phone: str, code: str) -> str:
 
 
 async def issue_otp(session: AsyncSession, phone: str, kind: str) -> str:
-    code = f"{secrets.randbelow(900000) + 100000}"
+    """Issue an OTP under the configured provider.
+
+    - "mock" (dev/staging): a fixed test code (``OTP_TEST_CODE``) is stored and
+      no SMS is sent. When an allowlist (``OTP_TEST_NUMBERS``) is configured,
+      only those numbers may request one.
+    - "sms" (production): a random code is stored and sent via MSG91; delivery
+      fails closed (raises) when the provider is unavailable, rolling back the
+      stored code with the request transaction.
+
+    Expiry, single-use and verify-attempt limits are identical in both modes.
+    """
+    mode = settings.otp_effective_mode
+    if mode == "mock":
+        allow = settings.otp_test_number_set
+        if allow and phone not in allow:
+            raise ForbiddenError(
+                "This number is not an authorized test number for the testing "
+                "environment."
+            )
+        code = settings.otp_test_code
+    else:  # "sms"
+        code = f"{secrets.randbelow(900000) + 100000}"
+
     session.add(
         OtpCode(
             phone=phone,
@@ -46,6 +70,10 @@ async def issue_otp(session: AsyncSession, phone: str, kind: str) -> str:
         )
     )
     await session.flush()
+
+    if mode == "sms":
+        await send_otp_sms(phone, code)  # fail-closed on delivery failure
+
     return code
 
 

@@ -41,10 +41,12 @@ async def otp_request(
         entity_id=payload.phone,
         ip=ip,
     )
-    # In production the code is sent by SMS and never returned.
+    # Mock provider (dev/staging) returns the code so testing needs no SMS;
+    # the real SMS provider never returns it.
+    mock = settings.otp_effective_mode == "mock"
     return OtpRequestOut(
-        message="OTP sent.",
-        dev_code=None if settings.is_production else code,
+        message="Enter the test code to continue." if mock else "OTP sent.",
+        dev_code=code if mock else None,
     )
 
 
