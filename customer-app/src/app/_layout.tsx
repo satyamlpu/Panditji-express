@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../lib/auth";
 import { I18nProvider } from "../lib/i18n";
 import { OfflineBanner } from "../components/OfflineBanner";
+import { EnvBanner } from "../components/EnvBanner";
 import { ThemeProvider, palette } from "../design";
 import "../lib/observability";
 
@@ -34,6 +35,7 @@ function RootLayout() {
               <Stack.Screen name="booking/[id]" options={{ title: "Your booking" }} />
             </Stack>
             <OfflineBanner />
+            <EnvBanner />
           </AuthProvider>
         </I18nProvider>
       </ThemeProvider>

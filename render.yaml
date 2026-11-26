@@ -36,3 +36,49 @@ services:
         value: https://frontend-umber-six-66.vercel.app/api/revalidate
       - key: SITE_URL
         value: https://frontend-umber-six-66.vercel.app
+
+  # ── Staging / internal testing backend ────────────────────────────────────
+  # Isolated environment for the testing APKs. Uses the MOCK OTP provider
+  # (fixed code 123456, no SMS, allowlisted numbers) so the apps can be tested
+  # end-to-end for free. APP_ENV=staging — NOT production, so the mock provider
+  # is permitted; production still requires real SMS and fails closed.
+  # Public URL: https://panditji-backend-staging.onrender.com
+  # Deploy: Render → Blueprint → this repo (free plan). Set the two `sync: false`
+  # vars (isolated test DATABASE_URL, OTP_TEST_NUMBERS allowlist) in the dashboard.
+  - type: web
+    name: panditji-backend-staging
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: APP_ENV
+        value: staging
+      - key: DEBUG
+        value: "false"
+      # Mock OTP provider — free testing, no SMS credits.
+      - key: OTP_MODE
+        value: mock
+      - key: OTP_TEST_CODE
+        value: "123456"
+      # Comma-separated E.164 allowlist of authorized test numbers — set in the
+      # dashboard so only these numbers can request the test code.
+      - key: OTP_TEST_NUMBERS
+        sync: false
+      # ISOLATED test database — a separate DB/schema from production, set in
+      # the dashboard. Never point this at the production database.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      - key: REVALIDATE_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://frontend-umber-six-66.vercel.app
