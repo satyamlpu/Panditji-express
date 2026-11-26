@@ -1,7 +1,7 @@
 """security: lock down the Supabase Data API (revoke anon/authenticated) + RLS
 
 Revision ID: e7a1b2c3d4f5
-Revises: 54a335ac54d9
+Revises: 54a335ac54d9, d4f7b1a9c2e8
 Create Date: 2026-11-24 12:00:00.000000
 
 Context
@@ -25,7 +25,10 @@ from collections.abc import Sequence
 from alembic import op
 
 revision: str = "e7a1b2c3d4f5"
-down_revision: str | None = "54a335ac54d9"
+# Merge reconciliation (release/full x main): this lock-down now also depends on
+# the CMS media migration d4f7b1a9c2e8 (PR #16) so that media_asset/content_revision
+# exist before RLS is enabled on every public table. Unifies the two heads into one.
+down_revision: str | tuple[str, ...] | None = ("54a335ac54d9", "d4f7b1a9c2e8")
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -128,13 +128,25 @@ class Settings(BaseSettings):
     # Hard cap on a single uploaded KYC file, in bytes. Default 10 MB.
     verification_max_upload_bytes: int = 10 * 1024 * 1024
 
-    # Public Media Library (website images). Uses the same storage backend switch
-    # as KYC but a separate dir/bucket, and is served through a cache-friendly
-    # public proxy endpoint (so it works on ephemeral/serverless filesystems and
-    # can sit behind a CDN in production). Images only; a single hard size cap.
-    media_storage_local_dir: str = "./uploads/media"
+    # Public marketing media / Media Library (service/category thumbnails,
+    # homepage/banner images). Unlike KYC, these ARE served from a public URL —
+    # kept in a SEPARATE store from the private KYC bucket above. "local" writes
+    # under MEDIA_LOCAL_DIR and serves via the /uploads mount; "supabase" stores
+    # objects in a PUBLIC Supabase Storage bucket (survives serverless).
+    media_storage_backend: str = "local"
+    media_local_dir: str = "./uploads/media"
     supabase_media_bucket: str = "media-public"
-    media_max_upload_bytes: int = 3 * 1024 * 1024
+    # Optional CDN / public base URL placed in front of media (e.g. a Supabase
+    # public object URL or a CDN). When blank, local media is served from the
+    # backend's own origin.
+    media_public_base_url: str = ""
+    # Hard cap on a single uploaded marketing image, in bytes. Default 8 MB.
+    media_max_upload_bytes: int = 8 * 1024 * 1024
+    # Legacy alias (release/full): the directory the public media proxy endpoint
+    # (/api/v1/public/media/{id}) and marketplace.storage.get_media_storage read
+    # from. Same default dir as media_local_dir, so the proxy read path keeps
+    # working alongside the Media Library's direct-URL serving.
+    media_storage_local_dir: str = "./uploads/media"
 
     @field_validator("database_url")
     @classmethod
@@ -208,6 +220,22 @@ class Settings(BaseSettings):
                 "STORAGE_BACKEND=local in production — KYC uploads will not "
                 "persist on an ephemeral/serverless filesystem. Set "
                 "STORAGE_BACKEND=supabase with a private bucket."
+            )
+        if self.media_storage_backend.lower() == "local":
+            logging.getLogger("panditji.config").warning(
+                "MEDIA_STORAGE_BACKEND=local in production — uploaded service/"
+                "category thumbnails will not persist on an ephemeral/serverless "
+                "filesystem. Set MEDIA_STORAGE_BACKEND=supabase with a PUBLIC bucket."
+            )
+        # On-demand revalidation is what lets published content appear without a
+        # redeploy. If it is unconfigured in production, edits only surface on the
+        # slow time-based ISR fallback — the classic "my changes don't show up".
+        if not self.frontend_revalidate_url:
+            logging.getLogger("panditji.config").warning(
+                "FRONTEND_REVALIDATE_URL is unset in production — published CMS "
+                "changes will NOT appear on the public site until the time-based "
+                "ISR window elapses. Point it at the deployed frontend's "
+                "/api/revalidate and set a matching REVALIDATE_SECRET."
             )
         # Verbose error bodies (see app/core/errors.py) must never leak in prod.
         self.debug = False

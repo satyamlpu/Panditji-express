@@ -14,6 +14,7 @@ from app.models.media import MediaAsset
 from app.models.page import Page
 from app.models.redirect import Redirect
 from app.models.refresh_token import RefreshToken
+from app.models.revision import ContentRevision
 from app.models.service import Service
 from app.models.setting import Setting
 from app.models.testimonial import Testimonial
@@ -23,6 +24,7 @@ __all__ = [
     "AuditLog",
     "BookingEnquiry",
     "Category",
+    "ContentRevision",
     "Faq",
     "HomepageSection",
     "Location",

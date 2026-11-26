@@ -1,44 +1,49 @@
-"""Admin Media Library: centralized website image uploads.
+"""Admin: the Media Library — upload, list, edit alt text, and safe delete of
+PUBLIC marketing images (service/category thumbnails, homepage/banner art).
 
-Images are stored in object storage (a local dir in dev, a Supabase bucket in
-prod) under a server-generated key, recorded as ``MediaAsset`` rows, and served
-read-only through a cache-friendly **public proxy** (``/api/v1/public/media/
-{id}``) so they survive ephemeral/serverless filesystems and can sit behind a
-CDN later. Raster images only (PNG/JPEG/WEBP/GIF); SVG is rejected (it can carry
-script). Deletion is blocked while an image is still referenced by site content.
+Each upload is validated (content-type + real Pillow decode + size cap),
+re-encoded into optimised WebP display/thumb variants with the original
+preserved, recorded as a :class:`MediaAsset`, and stored in the configured
+PUBLIC media store (local ``/uploads`` in dev, public Supabase bucket in prod).
+Kept entirely separate from the private KYC document store.
 
-The ``POST`` here is the same endpoint the inline image pickers on content pages
-call; it still returns ``{url, path, ...}`` so those keep working unchanged.
+Admin-only (router dependency). Deletion is refused while an image is attached
+to a PUBLISHED service or category; references from drafts are detached first.
 """
 
 from __future__ import annotations
 
-import contextlib
-import json
+import re
+import secrets
+import uuid
 
-from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, Form, Query, Request, UploadFile
 from fastapi import File as FileParam
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.admin_util import parse_uuid
 from app.api.deps import CurrentAdmin, client_ip, require_admin
 from app.core.config import settings
-from app.core.constants import Audit
+from app.core.constants import Audit, ContentStatus
 from app.core.errors import APIError, NotFoundError
 from app.db.session import get_session
-from app.marketplace.storage import (
-    MEDIA_CONTENT_TYPES,
-    StorageError,
-    build_media_key,
-    get_media_storage,
-)
-from app.models.banner import HomepageSection
+from app.models.category import Category
 from app.models.media import MediaAsset
-from app.models.setting import Setting
-from app.schemas.common import MessageResponse
-from app.schemas.media import MediaAltUpdate, MediaAssetOut
+from app.models.service import Service
+from app.schemas.media import (
+    MediaAssetOut,
+    MediaListResponse,
+    MediaUpdate,
+    MediaUploadResult,
+    MediaUsage,
+)
 from app.services.audit import audit
+from app.services.media_storage import (
+    ALLOWED_IMAGE_TYPES,
+    MediaError,
+    get_media_store,
+    optimise_image,
+)
 
 router = APIRouter(
     prefix="/api/v1/admin/media",
@@ -47,77 +52,43 @@ router = APIRouter(
 )
 
 
-def _public_path(media_id: str) -> str:
-    return f"/api/v1/public/media/{media_id}"
+def _slug_stem(filename: str | None) -> str:
+    stem = re.sub(r"\.[^.]+$", "", filename or "image")
+    stem = re.sub(r"[^a-zA-Z0-9]+", "-", stem).strip("-").lower()
+    return (stem or "image")[:40]
 
 
-def _out(row: MediaAsset, request: Request) -> MediaAssetOut:
-    path = _public_path(str(row.id))
+def _serialize(asset: MediaAsset) -> MediaAssetOut:
     return MediaAssetOut(
-        id=str(row.id),
-        path=path,
-        url=str(request.base_url).rstrip("/") + path,
-        filename=row.filename,
-        content_type=row.content_type,
-        size_bytes=row.size_bytes,
-        alt_text=row.alt_text,
-        created_at=row.created_at,
+        id=str(asset.id),
+        url=asset.url,
+        thumb_url=asset.thumb_url,
+        filename=asset.filename,
+        content_type=asset.content_type,
+        byte_size=asset.byte_size,
+        width=asset.width,
+        height=asset.height,
+        alt_text=asset.alt_text,
+        created_at=asset.created_at,
+        updated_at=asset.updated_at,
     )
 
 
-async def _load(session: AsyncSession, mid: str) -> MediaAsset:
-    row = (
-        await session.execute(
-            select(MediaAsset).where(MediaAsset.id == parse_uuid(mid, "Media"))
-        )
-    ).scalar_one_or_none()
-    if row is None:
-        raise NotFoundError("Media not found")
-    return row
-
-
-def _safe_filename(name: str | None) -> str:
-    """Keep only a display-safe basename; never used to build a storage path."""
-    base = (name or "image").replace("\\", "/").rsplit("/", 1)[-1].strip()
-    return (base or "image")[:200]
-
-
-@router.get("", response_model=list[MediaAssetOut])
-async def list_media(
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-    q: str | None = Query(default=None, description="Search filename / alt text"),
-) -> list[MediaAssetOut]:
-    stmt = select(MediaAsset)
-    if q and q.strip():
-        like = f"%{q.strip()}%"
-        stmt = stmt.where(
-            or_(MediaAsset.filename.ilike(like), MediaAsset.alt_text.ilike(like))
-        )
-    stmt = stmt.order_by(MediaAsset.created_at.desc())
-    rows = (await session.execute(stmt)).scalars().all()
-    return [_out(r, request) for r in rows]
-
-
-@router.post("", status_code=201)
+@router.post("", status_code=201, response_model=MediaUploadResult)
 async def upload_image(
     request: Request,
     file: UploadFile = FileParam(...),
+    alt: str | None = Form(default=None),
     admin: CurrentAdmin = Depends(require_admin),
     session: AsyncSession = Depends(get_session),
-) -> dict:
-    content_type = (file.content_type or "").lower()
-    ext = MEDIA_CONTENT_TYPES.get(content_type)
-    if ext is None:
+) -> MediaUploadResult:
+    if (file.content_type or "").lower() not in ALLOWED_IMAGE_TYPES:
         raise APIError(
-            "Unsupported file type. Upload a PNG, JPEG, WEBP or GIF image.",
+            "Unsupported file type. Upload a JPG, PNG or WebP image.",
             code="unsupported_media",
             status_code=415,
         )
-
     data = await file.read()
-    if not data:
-        raise APIError("Empty file.", code="empty_file", status_code=400)
     if len(data) > settings.media_max_upload_bytes:
         mb = settings.media_max_upload_bytes // (1024 * 1024)
         raise APIError(
@@ -126,61 +97,142 @@ async def upload_image(
             status_code=413,
         )
 
-    key = build_media_key(ext)
     try:
-        stored_key = await get_media_storage().save(key, data, content_type)
-    except StorageError:
+        opt = optimise_image(data, file.content_type or "")
+    except MediaError as exc:
+        raise APIError(str(exc), code="invalid_image", status_code=400) from exc
+
+    store = get_media_store()
+    token = secrets.token_hex(12)
+    stem = _slug_stem(file.filename)
+    display_key = f"{token}_{stem}.webp"
+    thumb_key = f"thumb/{token}_{stem}.webp"
+    original_key = f"orig/{token}_{stem}.{opt.original_ext}"
+    try:
+        store.save(display_key, opt.display, "image/webp")
+        store.save(thumb_key, opt.thumb, "image/webp")
+        store.save(original_key, opt.original, file.content_type or "image/jpeg")
+    except MediaError as exc:
         raise APIError(
             "Could not store the image. Please try again.",
             code="storage_error",
             status_code=502,
-        ) from None
+        ) from exc
 
-    row = MediaAsset(
-        filename=_safe_filename(file.filename),
-        content_type=content_type,
-        size_bytes=len(data),
-        storage_key=stored_key,
-        uploaded_by=admin.email,
+    base = str(request.base_url)
+    asset = MediaAsset(
+        storage_backend=(settings.media_storage_backend or "local").lower(),
+        storage_key=display_key,
+        original_key=original_key,
+        thumb_key=thumb_key,
+        url=store.public_url(display_key, base),
+        thumb_url=store.public_url(thumb_key, base),
+        filename=(file.filename or "image")[:200],
+        content_type="image/webp",
+        byte_size=len(opt.display),
+        width=opt.width,
+        height=opt.height,
+        alt_text=(alt or None),
     )
-    session.add(row)
+    session.add(asset)
     await session.flush()
-
     await audit(
         session,
         action=Audit.CREATE,
         actor_id=admin.id,
         actor_email=admin.email,
         entity="media",
-        entity_id=str(row.id),
+        entity_id=str(asset.id),
         ip=client_ip(request),
-        meta={"filename": row.filename, "size_bytes": row.size_bytes},
+        meta={"filename": asset.filename, "bytes": len(data)},
+    )
+    out = _serialize(asset)
+    return MediaUploadResult(**out.model_dump(), warnings=opt.warnings)
+
+
+@router.get("", response_model=MediaListResponse)
+async def list_media(
+    session: AsyncSession = Depends(get_session),
+    q: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=24, ge=1, le=100),
+) -> MediaListResponse:
+    where = []
+    if q:
+        like = f"%{q.strip()}%"
+        where.append(or_(MediaAsset.filename.ilike(like), MediaAsset.alt_text.ilike(like)))
+    total = (
+        await session.execute(select(func.count()).select_from(MediaAsset).where(*where))
+    ).scalar_one()
+    rows = (
+        await session.execute(
+            select(MediaAsset)
+            .where(*where)
+            .order_by(MediaAsset.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+    ).scalars().all()
+    return MediaListResponse(
+        items=[_serialize(a) for a in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
     )
 
-    out = _out(row, request)
-    # Superset of the legacy {path, url} contract the inline pickers rely on.
-    return {
-        "id": out.id,
-        "url": out.url,
-        "path": out.path,
-        "filename": out.filename,
-        "content_type": out.content_type,
-        "size_bytes": out.size_bytes,
-        "alt_text": out.alt_text,
-        "created_at": out.created_at.isoformat(),
-    }
+
+async def _load(session: AsyncSession, media_id: str) -> MediaAsset:
+    try:
+        uid = uuid.UUID(media_id)
+    except ValueError:
+        raise NotFoundError("Media not found") from None
+    asset = (
+        await session.execute(select(MediaAsset).where(MediaAsset.id == uid))
+    ).scalar_one_or_none()
+    if asset is None:
+        raise NotFoundError("Media not found")
+    return asset
 
 
-@router.patch("/{mid}", response_model=MediaAssetOut)
-async def update_alt(
-    mid: str,
-    payload: MediaAltUpdate,
+async def _usage(
+    session: AsyncSession, media_id: uuid.UUID
+) -> tuple[list[Service], list[Category]]:
+    services = (
+        await session.execute(
+            select(Service).where(Service.thumbnail_media_id == media_id)
+        )
+    ).scalars().all()
+    categories = (
+        await session.execute(
+            select(Category).where(Category.thumbnail_media_id == media_id)
+        )
+    ).scalars().all()
+    return list(services), list(categories)
+
+
+@router.get("/{media_id}/usage", response_model=MediaUsage)
+async def media_usage(
+    media_id: str, session: AsyncSession = Depends(get_session)
+) -> MediaUsage:
+    asset = await _load(session, media_id)
+    services, categories = await _usage(session, asset.id)
+    return MediaUsage(
+        services=[s.title for s in services],
+        categories=[c.name for c in categories],
+    )
+
+
+@router.patch("/{media_id}", response_model=MediaAssetOut)
+async def update_media(
+    media_id: str,
+    payload: MediaUpdate,
     request: Request,
     admin: CurrentAdmin = Depends(require_admin),
     session: AsyncSession = Depends(get_session),
 ) -> MediaAssetOut:
-    row = await _load(session, mid)
-    row.alt_text = (payload.alt_text or "").strip() or None
+    asset = await _load(session, media_id)
+    if payload.alt_text is not None:
+        asset.alt_text = payload.alt_text or None
     await session.flush()
     await audit(
         session,
@@ -188,77 +240,57 @@ async def update_alt(
         actor_id=admin.id,
         actor_email=admin.email,
         entity="media",
-        entity_id=str(row.id),
+        entity_id=str(asset.id),
         ip=client_ip(request),
     )
-    return _out(row, request)
+    return _serialize(asset)
 
 
-async def _usage(session: AsyncSession, media_id: str) -> list[str]:
-    """Where, if anywhere, the image's public path is still referenced.
-
-    Matches on the stable ``/api/v1/public/media/{id}`` path (host-independent),
-    which is a substring of whatever absolute URL was stored. Covers homepage
-    section images and any site setting (logo, default OG image, …) that embeds
-    the image. Best-effort, deliberately conservative: a hit blocks deletion.
-    """
-    path = _public_path(media_id)
-    used: list[str] = []
-
-    sections = (
-        await session.execute(
-            select(HomepageSection.heading, HomepageSection.image_url).where(
-                HomepageSection.image_url.ilike(f"%{path}%")
-            )
-        )
-    ).all()
-    for heading, _ in sections:
-        used.append(f"Homepage section: {heading or 'untitled'}")
-
-    settings_rows = (await session.execute(select(Setting))).scalars().all()
-    for s in settings_rows:
-        try:
-            blob = json.dumps(s.value)
-        except (TypeError, ValueError):
-            blob = str(s.value)
-        if path in blob:
-            used.append(f"Setting: {s.key}")
-
-    return used
-
-
-@router.delete("/{mid}", response_model=MessageResponse)
+@router.delete("/{media_id}")
 async def delete_media(
-    mid: str,
+    media_id: str,
     request: Request,
     admin: CurrentAdmin = Depends(require_admin),
     session: AsyncSession = Depends(get_session),
-) -> MessageResponse:
-    row = await _load(session, mid)
+) -> dict:
+    asset = await _load(session, media_id)
+    services, categories = await _usage(session, asset.id)
 
-    used = await _usage(session, str(row.id))
-    if used:
+    # Refuse while attached to anything PUBLISHED (live on the site).
+    live = [s for s in services if s.status == ContentStatus.PUBLISHED] + [
+        c for c in categories if c.status == ContentStatus.PUBLISHED
+    ]
+    if live:
         raise APIError(
-            "This image is still in use and cannot be deleted. Remove it from: "
-            + "; ".join(used),
+            "This image is used by a published service or category. "
+            "Replace it there before deleting.",
             code="media_in_use",
             status_code=409,
         )
 
-    # Remove the bytes best-effort; a missing object must not block the row
-    # delete (storage and DB can drift on a serverless/ephemeral filesystem).
-    with contextlib.suppress(StorageError):
-        await get_media_storage().delete(row.storage_key)
+    # Detach from any draft/unpublished references first (engine-independent).
+    for s in services:
+        s.thumbnail_media_id = None
+        s.thumbnail_url = None
+        s.thumbnail_alt = None
+    for c in categories:
+        c.thumbnail_media_id = None
+        c.thumbnail_url = None
+        c.thumbnail_alt = None
 
+    store = get_media_store()
+    for key in (asset.storage_key, asset.thumb_key, asset.original_key):
+        if key:
+            store.delete(key)
+    await session.delete(asset)
+    await session.flush()
     await audit(
         session,
         action=Audit.DELETE,
         actor_id=admin.id,
         actor_email=admin.email,
         entity="media",
-        entity_id=str(row.id),
+        entity_id=media_id,
         ip=client_ip(request),
     )
-    await session.delete(row)
-    await session.flush()
-    return MessageResponse(message="Image deleted")
+    return {"message": "Media deleted"}

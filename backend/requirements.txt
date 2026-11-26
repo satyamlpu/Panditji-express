@@ -15,6 +15,10 @@ argon2-cffi>=23.1
 email-validator>=2.2
 httpx>=0.28
 
+# Image processing for the Media Library (validate + optimise uploads to WebP).
+# Pillow 11+ ships prebuilt cp314 wheels, so no source build is needed.
+Pillow>=11
+
 # Prod (PostgreSQL) — the app normalises DATABASE_URL to the psycopg 3 driver.
 psycopg[binary]>=3.2
 

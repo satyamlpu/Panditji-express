@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import client_ip
 from app.api.serializers import service_public
+from app.api.serializers import thumbnail as _thumb
 from app.core.config import settings
 from app.core.constants import ContentStatus
 from app.core.errors import APIError, NotFoundError
@@ -152,9 +153,11 @@ def _service_card(service: Service) -> ServiceCardPublic:
     return ServiceCardPublic(
         slug=service.slug,
         title=service.title,
+        title_hi=service.title_hi,
         summary=service.summary,
         price_display=price_display(service.price_paise),
         duration_label=service.duration_label,
+        thumbnail=_thumb(service),
     )
 
 
@@ -247,6 +250,8 @@ async def public_service_detail(
         samagri=service.samagri or [],
         is_featured=service.is_featured,
         category=await _category_ref(session, service),
+        thumbnail=_thumb(service),
+        title_hi=service.title_hi,
         faqs=[FaqPublic(question=f.question, answer=f.answer) for f in faqs],
         seo=seo,
     )
@@ -274,7 +279,11 @@ async def public_categories(
         ).scalar_one()
         out.append(
             CategoryPublic(
-                slug=c.slug, name=c.name, description=c.description, service_count=count
+                slug=c.slug,
+                name=c.name,
+                description=c.description,
+                service_count=count,
+                thumbnail=_thumb(c),
             )
         )
     return out
@@ -354,6 +363,7 @@ async def public_category_detail(
         slug=cat.slug,
         name=cat.name,
         description=cat.description,
+        thumbnail=_thumb(cat),
         services=[_service_card(s) for s in services],
         seo=_page_seo(
             seo_title=cat.seo_title,

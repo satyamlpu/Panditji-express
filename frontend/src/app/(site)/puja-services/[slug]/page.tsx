@@ -5,6 +5,7 @@ import { Check, Clock, Package } from "lucide-react";
 import { buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
+import { Thumb } from "@/components/site/Thumb";
 import { fetchRedirect, fetchService } from "@/lib/serverApi";
 import { SITE_URL } from "@/lib/config";
 
@@ -124,6 +125,13 @@ export default async function ServiceDetailPage({
         <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_340px] lg:items-start">
           {/* Main content */}
           <div>
+            {service.thumbnail?.url && (
+              <Thumb
+                thumbnail={service.thumbnail}
+                alt={service.title}
+                className="mb-6 shadow-soft"
+              />
+            )}
             {service.category && (
               <Link
                 href={`/puja-categories/${service.category.slug}`}
@@ -135,6 +143,9 @@ export default async function ServiceDetailPage({
             <h1 className="mt-1 font-display text-3xl font-bold text-ink md:text-4xl">
               {service.title}
             </h1>
+            {service.title_hi && (
+              <p className="mt-1 font-display text-xl text-muted">{service.title_hi}</p>
+            )}
             {service.summary && (
               <p className="mt-3 max-w-2xl text-lg text-muted">{service.summary}</p>
             )}

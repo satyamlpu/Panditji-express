@@ -5,8 +5,10 @@ The premium design system shared by both Expo apps (`customer-app/` and
 **byte-identically** into each app (see [Mirroring](#mirroring)).
 
 > Identity: Apple-HIG structure + tasteful frosted glass + Rapido-style booking
-> simplicity + a premium Indian-spiritual palette (deep emerald + sacred gold on
-> warm ivory). Native system fonts, restrained weights, generous spacing.
+> simplicity, built on the **real Pandit Ji Express brand (v2.0)** — Kumkum
+> Crimson + Agni Saffron + Swarna Gold on Parchment Ivory, matching the logo
+> (maroon diya + gold flame). Native system fonts, restrained weights, generous
+> spacing.
 
 ---
 
@@ -39,18 +41,23 @@ compiles and stays on-brand.
 
 ## Tokens
 
-### Palette (primitive)
+### Palette (primitive) — brand v2.0 (matches the logo)
 | Role | Light | Dark |
 |------|-------|------|
-| Deep emerald | `#064E3B` | — |
-| Primary emerald | `#059669` | `#10B981` |
-| Sacred gold | `#D4AF37` | `#E6C565` |
-| Page bg (ivory/night) | `#F8F9F6` | `#0B1511` |
-| Surface | `#FFFFFF` | `#14211B` |
-| Text | `#101C17` | `#ECF3EE` |
-| Secondary text | `#718078` | `#9FB2A7` |
-| Border | `#E2E8E3` | `#27372F` |
-| Error / Warning / Success | `#DC2626` / `#D97706` / `#16A34A` | lightened variants |
+| Deep maroon (gradient end / headers) | `#6A1018` | — |
+| Kumkum Crimson (primary) | `#9A1C24` | `#B23540` |
+| Agni Saffron (accent) | `#D2600C` | — |
+| Swarna Gold (ornament / flame / stars) | `#F5AE1E` | `#E8C876` |
+| Page bg (ivory/night) | `#FBF5EA` | `#17100D` |
+| Surface | `#FFFFFF` | `#211712` |
+| Text (Kohl Charcoal) | `#1B1512` | `#F6ECE0` |
+| Secondary text (Ash) | `#5A4D44` | `#C6B4A5` |
+| Border | `#EAD9C4` | `#392A20` |
+| Error / Warning / Success | `#DC2626` / `#D97706` / `#1C7A3F` | lightened variants |
+
+The signature gradient (headers, hero, CTAs, splash) is Kumkum Crimson → deep
+maroon; gold is reserved for the ॐ/flame mark, ratings and ornament accents.
+Success stays green (verified / completed / online), per the brand guidelines.
 
 Screens **never** use raw hex. They read **semantic tokens** via `useColors()` /
 `useTheme()` (`colors.primary`, `colors.surface`, `colors.ink`, `colors.border`,

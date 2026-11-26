@@ -17,7 +17,7 @@ function RootLayout() {
             <StatusBar style="light" />
             <Stack
               screenOptions={{
-                headerStyle: { backgroundColor: palette.emeraldDeep },
+                headerStyle: { backgroundColor: palette.crimsonDeep },
                 headerTintColor: palette.white,
                 headerTitleStyle: { color: palette.white, fontWeight: "700" },
                 headerShadowVisible: false,

@@ -226,13 +226,25 @@ export default async function HomePage() {
                 className="group flex flex-col overflow-hidden rounded-[20px] border border-line bg-surface shadow-soft transition duration-200 hover:-translate-y-0.5 hover:shadow-soft-lg"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={SERVICE_IMAGES[i % SERVICE_IMAGES.length]}
-                    alt={s.title}
-                    fill
-                    sizes="(max-width: 768px) 45vw, 260px"
-                    className="object-cover transition duration-500 group-hover:scale-[1.06]"
-                  />
+                  {s.thumbnail?.url ? (
+                    // CMS-managed thumbnail (served from the backend origin) — a
+                    // plain img avoids next/image remote config across envs.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={s.thumbnail.url}
+                      alt={s.thumbnail.alt || s.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.06]"
+                    />
+                  ) : (
+                    <Image
+                      src={SERVICE_IMAGES[i % SERVICE_IMAGES.length]}
+                      alt={s.title}
+                      fill
+                      sizes="(max-width: 768px) 45vw, 260px"
+                      className="object-cover transition duration-500 group-hover:scale-[1.06]"
+                    />
+                  )}
                 </div>
                 <div className="flex flex-1 flex-col p-4">
                   <h3 className="line-clamp-1 font-display text-[15px] font-bold text-ink">

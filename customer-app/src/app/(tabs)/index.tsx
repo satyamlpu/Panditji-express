@@ -31,15 +31,20 @@ import {
 interface Service {
   slug: string;
   title: string;
+  title_hi?: string | null;
   summary: string | null;
   price_display: string;
   duration_label: string | null;
+  // Centrally managed thumbnail from the Media Library (same asset as the
+  // website). When absent, fall back to the bundled catalog photo / placeholder.
+  thumbnail?: { url: string; thumb_url: string | null; alt: string | null } | null;
 }
 interface Pandit {
   id: string;
   name: string | null;
   languages: string[];
   distance_km: number;
+  eta_minutes?: number | null;
   rating_avg: number | null;
   rating_count: number;
 }
@@ -128,7 +133,7 @@ export default function Home() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* Emerald header */}
-      <LinearGradient colors={[palette.emeraldDeep, palette.emerald]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+      <LinearGradient colors={[palette.crimsonDeep, palette.crimson]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
         <SafeAreaView edges={["top"]}>
           <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
@@ -154,7 +159,7 @@ export default function Home() {
         {/* Hero */}
         <View style={{ padding: spacing.lg }}>
           <LinearGradient
-            colors={[palette.emerald, palette.emeraldDeep]}
+            colors={[palette.crimson, palette.crimsonDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ borderRadius: radius.xl, padding: spacing.xl, overflow: "hidden" }}
@@ -226,7 +231,7 @@ export default function Home() {
                     title={s.title}
                     meta={s.duration_label}
                     price={s.price_display}
-                    source={pujaImage(s.slug)}
+                    source={s.thumbnail?.url ? { uri: s.thumbnail.url } : pujaImage(s.slug)}
                     onPress={() => router.push(`/book/${s.slug}`)}
                   />
                 </View>
@@ -246,6 +251,7 @@ export default function Home() {
                   name={p.name}
                   languages={p.languages}
                   distanceKm={p.distance_km}
+                  etaMinutes={p.eta_minutes}
                   ratingAvg={p.rating_avg}
                   ratingCount={p.rating_count}
                 />

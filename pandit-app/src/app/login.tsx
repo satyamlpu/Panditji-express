@@ -1,12 +1,13 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api, ApiError, setToken } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import type { Pandit } from "../lib/model";
 import {
+  BrandBadge,
   Button,
   FormInput,
   InlineError,
@@ -74,24 +75,10 @@ export default function Login() {
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <LinearGradient colors={[palette.emeraldDeep, palette.emerald]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <LinearGradient colors={[palette.crimsonDeep, palette.crimson]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
             <SafeAreaView edges={["top"]}>
               <View style={{ alignItems: "center", paddingTop: spacing.huge, paddingBottom: spacing.huge + 12 }}>
-                <View
-                  style={{
-                    width: 78,
-                    height: 78,
-                    borderRadius: radius.xl,
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    borderWidth: 1,
-                    borderColor: palette.gold,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: spacing.lg,
-                  }}
-                >
-                  <Text style={{ fontSize: 40, lineHeight: 46, color: palette.gold, fontWeight: "600" }}>ॐ</Text>
-                </View>
+                <BrandBadge size={84} style={{ marginBottom: spacing.lg }} />
                 <Txt variant="h1" color={palette.white}>
                   Pandit Ji Partner
                 </Txt>

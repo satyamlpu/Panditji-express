@@ -18,6 +18,7 @@ import {
   radius,
   spacing,
   useColors,
+  useStatusBarStyle,
 } from "../../design";
 
 function rupees(display: string): number {
@@ -28,6 +29,7 @@ const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 export default function Earnings() {
   const colors = useColors();
+  useStatusBarStyle("dark");
   const [rows, setRows] = useState<Booking[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -78,7 +80,7 @@ export default function Earnings() {
         ) : (
           <>
             {/* Headline earnings */}
-            <LinearGradient colors={[palette.emerald, palette.emeraldDeep]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.xl, padding: spacing.xl }}>
+            <LinearGradient colors={[palette.crimson, palette.crimsonDeep]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: radius.xl, padding: spacing.xl }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <Icon name="wallet" size={16} color={palette.goldSoft} />
                 <Txt variant="label" color={palette.goldSoft}>

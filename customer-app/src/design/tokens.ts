@@ -12,52 +12,56 @@
 import { Platform } from "react-native";
 
 /* ── Primitive palette ──────────────────────────────────────────────────────
- * Premium Indian-spiritual identity: deep emerald + sacred gold on warm ivory. */
+ * Pandit Ji Express brand v2.0 — matches the real logo & website: Kumkum
+ * Crimson (primary) + Agni Saffron + Swarna Gold on Parchment Ivory. The diya
+ * flame in the logo drives the gold accents; success stays green (verified). */
 export const palette = {
-  // Emerald family
-  emeraldDeep: "#064E3B", // deep emerald — headers, hero, dark primary
-  emerald700: "#047857",
-  emerald: "#059669", // primary emerald — CTAs, active state
-  emerald500: "#10B981",
-  emerald400: "#34D399",
-  emeraldTint: "#E7F3EE", // soft emerald wash (chips, selected)
-  emeraldTintDk: "#123A2C",
+  // Kumkum Crimson family — primary brand (headers, hero, CTAs, active state)
+  crimsonDeep: "#6A1018", // deep maroon — gradient end / dark headers
+  crimson700: "#7A141B", // pressed / hover
+  crimson: "#9A1C24", // primary brand
+  crimson500: "#B23540",
+  crimson400: "#C85862",
+  crimsonTint: "#F7E8E6", // soft crimson wash (chips, selected)
+  crimsonTintDk: "#3A1518",
 
-  // Sacred gold family
-  gold: "#D4AF37",
-  goldSoft: "#E6C565",
-  goldTint: "#FBF3DC",
-  goldTintDk: "#3A3016",
+  // Saffron + Swarna Gold — accents, ornaments, the diya flame
+  saffron: "#D2600C",
+  saffronDark: "#B0500A",
+  gold: "#F5AE1E",
+  goldSoft: "#E8C876",
+  goldTint: "#FBF0D9",
+  goldTintDk: "#3A2E12",
 
-  // Warm neutrals (light)
-  ivory: "#F8F9F6", // page background
+  // Warm neutrals (light) — Parchment Ivory + Kohl Charcoal
+  ivory: "#FBF5EA", // page background
   surface: "#FFFFFF",
-  surfaceAlt: "#F1F3EE", // subtle raised/alt surface
-  ink: "#101C17", // primary text
-  inkSecondary: "#718078", // secondary text
-  inkMuted: "#9AA79F",
-  border: "#E2E8E3",
-  borderStrong: "#CBD5CE",
+  surfaceAlt: "#FAF2E4", // subtle raised/alt surface
+  ink: "#1B1512", // Kohl Charcoal — primary text
+  inkSecondary: "#5A4D44", // Ash — secondary text
+  inkMuted: "#8A7B70",
+  border: "#EAD9C4", // warm ivory border
+  borderStrong: "#DCC7AB",
 
-  // Dark neutrals
-  night: "#0B1511", // page background (dark)
-  nightSurface: "#14211B",
-  nightSurfaceAlt: "#1C2C25",
-  nightInk: "#ECF3EE",
-  nightInkSecondary: "#9FB2A7",
-  nightInkMuted: "#6F8279",
-  nightBorder: "#27372F",
-  nightBorderStrong: "#35493E",
+  // Dark neutrals — warm charcoal / brown
+  night: "#17100D", // page background (dark)
+  nightSurface: "#211712",
+  nightSurfaceAlt: "#2C1F18",
+  nightInk: "#F6ECE0",
+  nightInkSecondary: "#C6B4A5",
+  nightInkMuted: "#8F7E71",
+  nightBorder: "#392A20",
+  nightBorderStrong: "#4A382C",
 
-  // Status
+  // Status (success stays green per brand — verified / completed / online)
   error: "#DC2626",
   errorTint: "#FDECEC",
   errorTintDk: "#3A1715",
   warning: "#D97706",
   warningTint: "#FBF0DF",
   warningTintDk: "#3A2A12",
-  success: "#16A34A",
-  successTint: "#E7F6EC",
+  success: "#1C7A3F",
+  successTint: "#E7F3EA",
   successTintDk: "#13301F",
   info: "#2563EB",
   infoTint: "#E8F0FE",
@@ -116,24 +120,24 @@ export const lightColors: SemanticColors = {
   bg: palette.ivory,
   surface: palette.surface,
   surfaceAlt: palette.surfaceAlt,
-  glass: "rgba(255,255,255,0.72)",
-  glassBorder: "rgba(16,28,23,0.08)",
-  scrim: "rgba(8,16,12,0.45)",
+  glass: "rgba(255,255,255,0.74)",
+  glassBorder: "rgba(27,21,18,0.08)",
+  scrim: "rgba(20,10,8,0.5)",
 
-  primary: palette.emerald,
-  primaryStrong: palette.emeraldDeep,
-  primaryPressed: palette.emerald700,
+  primary: palette.crimson,
+  primaryStrong: palette.crimsonDeep,
+  primaryPressed: palette.crimson700,
   onPrimary: palette.white,
-  primaryTint: palette.emeraldTint,
+  primaryTint: palette.crimsonTint,
 
   accent: palette.gold,
   accentTint: palette.goldTint,
-  onAccent: "#3A2E05",
+  onAccent: "#4A3500",
 
   ink: palette.ink,
   inkSecondary: palette.inkSecondary,
   inkMuted: palette.inkMuted,
-  onDark: "#EAF3EC",
+  onDark: "#FBEFE0",
 
   border: palette.border,
   borderStrong: palette.borderStrong,
@@ -155,15 +159,15 @@ export const darkColors: SemanticColors = {
   bg: palette.night,
   surface: palette.nightSurface,
   surfaceAlt: palette.nightSurfaceAlt,
-  glass: "rgba(20,33,27,0.66)",
+  glass: "rgba(33,23,18,0.66)",
   glassBorder: "rgba(255,255,255,0.08)",
-  scrim: "rgba(0,0,0,0.6)",
+  scrim: "rgba(0,0,0,0.62)",
 
-  primary: palette.emerald500,
-  primaryStrong: palette.emerald,
-  primaryPressed: palette.emerald400,
-  onPrimary: "#04231A",
-  primaryTint: palette.emeraldTintDk,
+  primary: palette.crimson500,
+  primaryStrong: palette.crimson,
+  primaryPressed: palette.crimson400,
+  onPrimary: palette.white,
+  primaryTint: palette.crimsonTintDk,
 
   accent: palette.goldSoft,
   accentTint: palette.goldTintDk,
@@ -172,7 +176,7 @@ export const darkColors: SemanticColors = {
   ink: palette.nightInk,
   inkSecondary: palette.nightInkSecondary,
   inkMuted: palette.nightInkMuted,
-  onDark: "#EAF3EC",
+  onDark: "#FBEFE0",
 
   border: palette.nightBorder,
   borderStrong: palette.nightBorderStrong,

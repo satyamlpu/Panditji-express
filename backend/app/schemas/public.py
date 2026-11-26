@@ -6,6 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.media import ThumbnailPublic
 from app.schemas.service import CategoryRef
 
 
@@ -28,6 +29,7 @@ class SeoResolved(BaseModel):
 class ServiceDetailPublic(BaseModel):
     slug: str
     title: str
+    title_hi: str | None = None
     summary: str | None
     description: str | None
     price_rupees: int | None
@@ -37,6 +39,7 @@ class ServiceDetailPublic(BaseModel):
     samagri: list[str]
     is_featured: bool
     category: CategoryRef | None
+    thumbnail: ThumbnailPublic | None = None
     faqs: list[FaqPublic]
     seo: SeoResolved
 
@@ -46,20 +49,24 @@ class CategoryPublic(BaseModel):
     name: str
     description: str | None
     service_count: int
+    thumbnail: ThumbnailPublic | None = None
 
 
 class ServiceCardPublic(BaseModel):
     slug: str
     title: str
+    title_hi: str | None = None
     summary: str | None
     price_display: str
     duration_label: str | None
+    thumbnail: ThumbnailPublic | None = None
 
 
 class CategoryDetailPublic(BaseModel):
     slug: str
     name: str
     description: str | None
+    thumbnail: ThumbnailPublic | None = None
     services: list[ServiceCardPublic]
     seo: SeoResolved
 

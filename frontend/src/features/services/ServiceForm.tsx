@@ -14,12 +14,15 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError } from "@/lib/api";
 import { categoriesApi, servicesApi } from "@/features/services/api";
+import { MediaPicker, type ThumbnailValue } from "@/components/admin/MediaPicker";
+import { RevisionHistory } from "@/components/admin/RevisionHistory";
 import type { ServiceAdmin } from "@/lib/types";
 
 const slugRe = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const schema = z.object({
   title: z.string().min(2, "Title is required"),
+  title_hi: z.string().max(160).optional(),
   slug: z
     .string()
     .min(1, "Slug is required")
@@ -61,6 +64,11 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
   const qc = useQueryClient();
   const isEdit = Boolean(initial);
   const [slugTouched, setSlugTouched] = useState(isEdit);
+  const [thumb, setThumb] = useState<ThumbnailValue>({
+    mediaId: initial?.thumbnail_media_id ?? null,
+    previewUrl: initial?.thumbnail?.url ?? null,
+    alt: initial?.thumbnail?.alt ?? "",
+  });
 
   const categories = useQuery({
     queryKey: ["admin", "categories"],
@@ -77,6 +85,7 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
     resolver: zodResolver(schema),
     defaultValues: {
       title: initial?.title ?? "",
+      title_hi: initial?.title_hi ?? "",
       slug: initial?.slug ?? "",
       summary: initial?.summary ?? "",
       description: initial?.description ?? "",
@@ -104,7 +113,10 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
   async function onSubmit(v: Values) {
     const payload = {
       title: v.title,
+      title_hi: v.title_hi || null,
       slug: v.slug,
+      thumbnail_media_id: thumb.mediaId,
+      thumbnail_alt: thumb.alt || null,
       summary: v.summary || null,
       description: v.description || null,
       price_rupees: v.price_rupees === "" || v.price_rupees == null ? null : Number(v.price_rupees),
@@ -150,6 +162,9 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
           <L label="Title" error={errors.title?.message} required>
             <Input {...register("title")} placeholder="e.g. Satyanarayan Katha" />
           </L>
+          <L label="Hindi name" error={errors.title_hi?.message} hint="Optional — shown in Devanagari">
+            <Input {...register("title_hi")} placeholder="सत्यनारायण कथा" />
+          </L>
           <L
             label="Slug"
             error={errors.slug?.message}
@@ -171,6 +186,10 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
           <L label="Full description" error={errors.description?.message}>
             <Textarea {...register("description")} className="min-h-32" placeholder="Describe the puja…" />
           </L>
+        </Section>
+
+        <Section title="Thumbnail">
+          <MediaPicker value={thumb} onChange={setThumb} label="Service thumbnail" />
         </Section>
 
         <Section title="Pricing & details">
@@ -250,11 +269,31 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
         <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
           <Eye size={14} /> Live preview
         </div>
-        <div className="rounded-card border border-line bg-surface p-5 shadow-soft">
+        <div className="overflow-hidden rounded-card border border-line bg-surface shadow-soft">
+          <div className="aspect-video w-full overflow-hidden bg-surface-2">
+            {thumb.previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={thumb.previewUrl}
+                alt={thumb.alt || values.title || "Thumbnail"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs text-muted">
+                No thumbnail — a neutral placeholder will show
+              </div>
+            )}
+          </div>
+          <div className="p-5">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-lg font-semibold text-ink">
-              {values.title || "Service title"}
-            </h3>
+            <div>
+              <h3 className="font-display text-lg font-semibold text-ink">
+                {values.title || "Service title"}
+              </h3>
+              {values.title_hi && (
+                <p className="text-sm text-muted">{values.title_hi}</p>
+              )}
+            </div>
             {values.is_featured && <Badge tone="sun">Popular</Badge>}
           </div>
           {values.summary && <p className="mt-2 text-sm text-muted">{values.summary}</p>}
@@ -268,6 +307,7 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
             <Badge tone={values.status === "published" ? "forest" : "draft"}>
               {values.status}
             </Badge>
+          </div>
           </div>
         </div>
 
@@ -285,6 +325,10 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
             {values.seo_description || values.summary || "Add a summary or meta description."}
           </p>
         </div>
+
+        {isEdit && initial && (
+          <RevisionHistory entityType="service" entityId={initial.id} />
+        )}
       </aside>
     </form>
   );
