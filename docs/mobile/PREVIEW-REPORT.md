@@ -128,8 +128,15 @@ Checks after fixes: `npx tsc --noEmit` ✅, `npx expo lint` ✅ 0 problems, `npx
   ```
   The `preview` profile builds an internal-distribution APK pointing at
   `EXPO_PUBLIC_API_BASE=https://panditji-express2.vercel.app`.
-- **Not executed here** — an EAS cloud build needs the owner's EAS account/credentials and
-  build minutes. Ready to run on approval. **iOS builds kept paused** as requested.
+- **Builds launched** (on approval) — EAS config (`eas.json` + app IDs/projectIds,
+  matching PR #12) was added to this branch and the Android `preview` APK builds were
+  queued under the `sbsharma3434` EAS account (remote-managed Android keystore):
+  - Customer: https://expo.dev/accounts/sbsharma3434/projects/customer-app/builds/d2454990-2568-4b74-9e29-961613a6c88f
+  - Partner:  https://expo.dev/accounts/sbsharma3434/projects/pandit-app/builds/0a89fe39-fc25-44ff-a30b-4cedf602c6f1
+  Each is a fresh build of the redesigned (maroon/gold) UI; the APKs point at the
+  **production** backend (`EXPO_PUBLIC_API_BASE=https://panditji-express2.vercel.app`),
+  so booking flows need that backend migrated to head (incl. `preferred_pandit_id`).
+  **iOS builds kept paused** as requested.
 
 ## 7. Production deployment readiness
 - **Mobile apps:** code-complete, typechecked, linted, doctor-clean, verified end-to-end on
