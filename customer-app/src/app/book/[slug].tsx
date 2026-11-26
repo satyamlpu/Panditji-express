@@ -33,6 +33,7 @@ interface Service {
   summary: string | null;
   price_display: string;
   duration_label: string | null;
+  thumbnail?: { url: string; thumb_url: string | null; alt: string | null } | null;
 }
 interface Pandit {
   id: string;
@@ -137,7 +138,11 @@ export default function BookScreen() {
         {/* Service summary */}
         <Card>
           <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
-            <CatalogMedia source={pujaImage(service.slug)} size={68} icon="blessing" />
+            <CatalogMedia
+              source={service.thumbnail?.url ? { uri: service.thumbnail.url } : pujaImage(service.slug)}
+              size={68}
+              icon="blessing"
+            />
             <View style={{ flex: 1 }}>
               <Txt variant="bodyStrong" numberOfLines={2}>
                 {service.title}

@@ -31,9 +31,13 @@ import {
 interface Service {
   slug: string;
   title: string;
+  title_hi?: string | null;
   summary: string | null;
   price_display: string;
   duration_label: string | null;
+  // Centrally managed thumbnail from the Media Library (same asset as the
+  // website). When absent, fall back to the bundled catalog photo / placeholder.
+  thumbnail?: { url: string; thumb_url: string | null; alt: string | null } | null;
 }
 interface Pandit {
   id: string;
@@ -226,7 +230,7 @@ export default function Home() {
                     title={s.title}
                     meta={s.duration_label}
                     price={s.price_display}
-                    source={pujaImage(s.slug)}
+                    source={s.thumbnail?.url ? { uri: s.thumbnail.url } : pujaImage(s.slug)}
                     onPress={() => router.push(`/book/${s.slug}`)}
                   />
                 </View>
