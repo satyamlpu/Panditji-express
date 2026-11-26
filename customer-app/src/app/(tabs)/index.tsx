@@ -55,7 +55,7 @@ export default function Home() {
       {/* Green header + search strip */}
       <View style={{ backgroundColor: colors.forest }}>
         <GreenHeader
-          etaText="Pandit in 15 min"
+          etaText="Panditji in 15 min"
           location="Home · Gomti Nagar, Kanpur"
           onProfile={() => router.push("/(tabs)/profile")}
         />
@@ -120,7 +120,7 @@ export default function Home() {
           </View>
 
           <Text style={{ textAlign: "center", color: colors.muted, fontSize: 12, marginTop: 6 }}>
-            🙏 Verified pandits · Transparent pricing · Samagri on request
+            🙏 Verified Panditjis · Transparent pricing · Samagri on request
           </Text>
         </ScrollView>
       )}

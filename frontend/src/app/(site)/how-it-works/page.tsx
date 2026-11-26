@@ -16,7 +16,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "How it works",
   description:
-    "Booking a puja with Pandit Ji Express is simple: choose a puja, send an enquiry, and we confirm the pandit, date and samagri with you.",
+    "Booking a puja with Pandit Ji Express is simple: choose a puja, send an enquiry, and we confirm the Panditji, date and samagri with you.",
   alternates: { canonical: "/how-it-works" },
 };
 
@@ -34,12 +34,12 @@ const STEPS = [
   {
     icon: PhoneCall,
     title: "We confirm the details",
-    body: "Our team contacts you to assign an experienced pandit and confirm the date, timing and samagri.",
+    body: "Our team contacts you to assign an experienced Panditji and confirm the date, timing and samagri.",
   },
   {
     icon: Sparkles,
     title: "Puja performed at home",
-    body: "The pandit arrives on time and performs the vidhi as per tradition, guiding your family throughout.",
+    body: "The Panditji arrives on time and performs the vidhi as per tradition, guiding your family throughout.",
   },
 ];
 

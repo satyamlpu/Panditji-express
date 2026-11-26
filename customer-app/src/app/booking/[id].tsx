@@ -126,23 +126,23 @@ export default function BookingDetail() {
         <Text style={{ color: colors.muted, marginTop: 6 }}>📍 {b.address_line}</Text>
         {b.assigned_pandit ? (
           <Text style={{ color: colors.ink, marginTop: 8, fontWeight: "600" }}>
-            Pandit: {b.assigned_pandit.name ?? "Assigned"}
+            Panditji: {b.assigned_pandit.name ?? "Assigned"}
           </Text>
         ) : null}
       </Card>
 
       {dispatching && (
         <Card style={{ marginBottom: 14 }}>
-          <Text style={{ color: colors.ink, fontWeight: "700" }}>Finding a pandit nearby…</Text>
+          <Text style={{ color: colors.ink, fontWeight: "700" }}>Finding a Panditji nearby…</Text>
           <Text style={{ color: colors.muted, marginTop: 4 }}>
-            We&apos;re offering your request to the closest available pandit.
+            We&apos;re offering your request to the closest available Panditji.
           </Text>
         </Card>
       )}
 
       {b.status === "no_partner_available" && (
         <Card style={{ marginBottom: 14, borderColor: colors.tomato + "55" }}>
-          <Text style={{ color: colors.tomato, fontWeight: "700" }}>No pandit available</Text>
+          <Text style={{ color: colors.tomato, fontWeight: "700" }}>No Panditji available</Text>
           <Text style={{ color: colors.muted, marginTop: 4 }}>
             Please try again shortly or choose a scheduled time.
           </Text>
@@ -163,7 +163,7 @@ export default function BookingDetail() {
             </>
           ) : (
             <Text style={{ color: colors.muted, marginTop: 6 }}>
-              Waiting for the pandit to share their location…
+              Waiting for the Panditji to share their location…
             </Text>
           )}
         </Card>
@@ -181,7 +181,7 @@ export default function BookingDetail() {
 
       {b.status === "completed" && !reviewed && (
         <Card style={{ marginTop: 14 }}>
-          <Text style={{ fontWeight: "700", color: colors.ink, marginBottom: 8 }}>Rate your pandit</Text>
+          <Text style={{ fontWeight: "700", color: colors.ink, marginBottom: 8 }}>Rate your Panditji</Text>
           <View style={{ flexDirection: "row", marginBottom: 12 }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <Pressable key={n} onPress={() => setRating(n)}>

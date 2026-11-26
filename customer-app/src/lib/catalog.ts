@@ -59,6 +59,6 @@ export interface Banner {
 }
 export const BANNERS: Banner[] = [
   { key: "diwali", title: "Festive season is here", sub: "Book Lakshmi & Diwali pujas early", bg: colors.maroon, fg: colors.sunshine },
-  { key: "griha", title: "New home?", sub: "Griha Pravesh pandits in minutes", bg: colors.forest, fg: colors.sunshine },
+  { key: "griha", title: "New home?", sub: "Griha Pravesh Panditjis in minutes", bg: colors.forest, fg: colors.sunshine },
   { key: "astro", title: "Navagraha Shanti", sub: "Peace & prosperity havans", bg: colors.carrot, fg: colors.white },
 ];

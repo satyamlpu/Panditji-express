@@ -114,7 +114,7 @@ export default function Onboard() {
 
           <SectionHeader title="Your details" />
           <Card>
-            <Field label="Full name" value={name} onChangeText={setName} placeholder="e.g. Pandit Sharma" />
+            <Field label="Full name" value={name} onChangeText={setName} placeholder="e.g. Panditji Sharma" />
             <Field label="City" value={city} onChangeText={setCity} placeholder="Kanpur" />
             <Field
               label="Service radius (km)"

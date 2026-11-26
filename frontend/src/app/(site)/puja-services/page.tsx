@@ -9,7 +9,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Puja Services — browse and book pujas",
   description:
-    "Explore our full catalogue of pujas with transparent pricing, inclusions and samagri. Book an experienced pandit for your occasion.",
+    "Explore our full catalogue of pujas with transparent pricing, inclusions and samagri. Book an experienced Panditji for your occasion.",
   alternates: { canonical: "/puja-services" },
   openGraph: {
     title: "Puja Services — Pandit Ji Express",
@@ -30,7 +30,7 @@ export default async function CatalogPage() {
       <PageHero
         eyebrow="Puja Services"
         title="Browse our pujas"
-        description="Transparent pricing, clear inclusions and samagri — choose a puja and book an experienced pandit."
+        description="Transparent pricing, clear inclusions and samagri — choose a puja and book an experienced Panditji."
       />
       <div className="container-pad py-8">
         <Breadcrumbs

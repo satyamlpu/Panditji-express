@@ -84,8 +84,8 @@ export default function BookScreen() {
         <View style={styles.eta}>
           <Text style={{ fontSize: 20 }}>⚡</Text>
           <View style={{ marginLeft: 10 }}>
-            <Text style={{ fontWeight: "800", color: colors.ink }}>Pandit in 15 minutes</Text>
-            <Text style={{ color: colors.muted, fontSize: 12 }}>We&apos;ll match the nearest verified pandit</Text>
+            <Text style={{ fontWeight: "800", color: colors.ink }}>Panditji in 15 minutes</Text>
+            <Text style={{ color: colors.muted, fontSize: 12 }}>We&apos;ll match the nearest verified Panditji</Text>
           </View>
         </View>
 
@@ -114,7 +114,7 @@ export default function BookScreen() {
             <Text style={styles.secTitle}>Available near you</Text>
             {pandits.slice(0, 3).map((p) => (
               <View key={p.id} style={styles.sheet}>
-                <Text style={{ fontWeight: "800", color: colors.ink }}>{p.name ?? "Verified pandit"}</Text>
+                <Text style={{ fontWeight: "800", color: colors.ink }}>{p.name ?? "Verified Panditji"}</Text>
                 <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
                   {p.distance_km} km away
                   {p.rating_avg ? ` · ★ ${p.rating_avg} (${p.rating_count})` : ""}
@@ -127,7 +127,7 @@ export default function BookScreen() {
         {pandits && pandits.length === 0 && (
           <View style={[styles.sheet, { marginTop: 14 }]}>
             <Text style={{ color: colors.muted, fontSize: 13 }}>
-              No pandit is online near this demo location right now — you can still place the request.
+              No Panditji is online near this demo location right now — you can still place the request.
             </Text>
           </View>
         )}
@@ -135,7 +135,7 @@ export default function BookScreen() {
         {/* Before you book — samagri add-ons */}
         <Text style={styles.secTitle}>Before you book</Text>
         <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 12 }}>
-          Optional samagri — arranged by your pandit and paid directly to them.
+          Optional samagri — arranged by your Panditji and paid directly to them.
         </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16, paddingHorizontal: 16 }}>
           {SAMAGRI.map((s) => (
@@ -190,7 +190,7 @@ export default function BookScreen() {
           style={({ pressed }) => [styles.placeBtn, { opacity: busy ? 0.6 : pressed ? 0.9 : 1 }]}
         >
           <Text style={{ color: colors.white, fontWeight: "800", fontSize: 16 }}>
-            {busy ? "Finding pandit…" : "Find a pandit now  →"}
+            {busy ? "Finding Panditji…" : "Find a Panditji now  →"}
           </Text>
         </Pressable>
       </View>
