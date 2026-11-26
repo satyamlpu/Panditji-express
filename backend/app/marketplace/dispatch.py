@@ -193,6 +193,18 @@ async def _rank_candidates(
         return (p.offers_accepted / p.offers_received) if p.offers_received else 0.5
 
     scored.sort(key=lambda t: (round(t[1], 3), -accept_rate(t[0]), t[0].offers_received))
+
+    # Customer-selected pandit: if the booking names a preferred partner and they
+    # are among the eligible candidates, offer them first. If they decline or
+    # expire (or aren't currently eligible), dispatch falls through to the normal
+    # nearest-first order — so a chosen-pandit booking still gets served.
+    if booking.preferred_pandit_id is not None:
+        idx = next(
+            (i for i, (p, _) in enumerate(scored) if p.id == booking.preferred_pandit_id),
+            None,
+        )
+        if idx is not None and idx > 0:
+            scored.insert(0, scored.pop(idx))
     return scored
 
 
