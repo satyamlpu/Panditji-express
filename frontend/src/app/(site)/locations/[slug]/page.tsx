@@ -47,7 +47,7 @@ export default async function LocationPage({
         title={`Pujas in ${loc.city}`}
         description={
           loc.description ??
-          `Book experienced pandits for authentic pujas across ${loc.city}.`
+          `Book experienced Panditjis for authentic pujas across ${loc.city}.`
         }
       />
       <div className="container-pad py-8">

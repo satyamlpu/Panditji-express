@@ -27,7 +27,7 @@ async function qrSvg(url: string): Promise<string | null> {
 export const metadata: Metadata = {
   title: "Download the apps",
   description:
-    "Download the Pandit Ji Express Customer and Pandit Partner apps for Android and iOS.",
+    "Download the Pandit Ji Express Customer and Panditji Partner apps for Android and iOS.",
   alternates: { canonical: "/download" },
 };
 
@@ -136,7 +136,7 @@ function AppCard({
 const FAQS = [
   {
     q: "Is the app free to download?",
-    a: "Yes. Both the Customer and Pandit Partner apps are free to download. You only pay for the pujas you book.",
+    a: "Yes. Both the Customer and Panditji Partner apps are free to download. You only pay for the pujas you book.",
   },
   {
     q: "The app isn't available for my platform yet — what do I do?",
@@ -160,7 +160,7 @@ export default async function DownloadPage() {
       <PageHero
         eyebrow="Get the app"
         title="Download Pandit Ji Express"
-        description="Book verified pandits on the go, or manage your bookings as a partner — on Android and iOS."
+        description="Book verified Panditjis on the go, or manage your bookings as a partner — on Android and iOS."
       />
       <div className="container-pad py-8">
         <Breadcrumbs
@@ -175,12 +175,12 @@ export default async function DownloadPage() {
             releases={releases}
             app="customer"
             title="Customer app"
-            blurb="Discover nearby pandits, book pujas, track your booking and pay securely."
+            blurb="Discover nearby Panditjis, book pujas, track your booking and pay securely."
           />
           <AppCard
             releases={releases}
             app="partner"
-            title="Pandit Partner app"
+            title="Panditji Partner app"
             blurb="Receive booking requests, manage availability, complete pujas and track earnings."
           />
         </div>

@@ -183,7 +183,7 @@ export function ServiceForm({ initial }: { initial?: ServiceAdmin }) {
             </L>
           </div>
           <L label="Inclusions" hint="One item per line">
-            <Textarea {...register("inclusions")} placeholder={"Experienced pandit\nFull vidhi & katha\nAarti & prasad"} />
+            <Textarea {...register("inclusions")} placeholder={"Experienced Panditji\nFull vidhi & katha\nAarti & prasad"} />
           </L>
           <L label="Samagri" hint="One item per line">
             <Textarea {...register("samagri")} placeholder={"Complete samagri kit\nFlowers & fruits"} />

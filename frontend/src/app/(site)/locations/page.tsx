@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Service areas",
   description:
-    "Cities and areas where Pandit Ji Express arranges experienced pandits for pujas.",
+    "Cities and areas where Pandit Ji Express arranges experienced Panditjis for pujas.",
   alternates: { canonical: "/locations" },
 };
 
@@ -23,7 +23,7 @@ export default async function LocationsPage() {
       <PageHero
         eyebrow="Service areas"
         title="Where we serve"
-        description="We arrange experienced pandits for pujas across these areas. Don't see your city? Send an enquiry and we'll do our best to help."
+        description="We arrange experienced Panditjis for pujas across these areas. Don't see your city? Send an enquiry and we'll do our best to help."
       />
       <div className="container-pad py-8">
         <Breadcrumbs

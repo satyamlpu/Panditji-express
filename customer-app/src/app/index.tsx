@@ -39,7 +39,7 @@ export default function Index() {
         India&apos;s last-minute puja app
       </Text>
       <Text style={{ position: "absolute", bottom: 44, color: colors.forestDark, opacity: 0.7, fontSize: 12 }}>
-        Book verified pandits in minutes
+        Book verified Panditjis in minutes
       </Text>
     </View>
   );

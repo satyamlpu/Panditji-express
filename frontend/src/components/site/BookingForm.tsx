@@ -69,7 +69,7 @@ export function BookingForm({
           Thank you — enquiry received
         </h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-          Our team will contact you shortly to confirm the date, pandit and
+          Our team will contact you shortly to confirm the date, Panditji and
           samagri for your {serviceTitle}.
         </p>
       </div>
