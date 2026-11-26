@@ -8,9 +8,13 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.panditjiexpress.customer",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.panditjiexpress.customer",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -27,6 +31,12 @@
       "expo-router",
       "expo-secure-store",
       "@sentry/react-native"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6cef0738-6a0e-4053-b7b4-26b6f7be3f85"
+      }
+    },
+    "owner": "sbsharma3434"
   }
 }
