@@ -2,6 +2,10 @@
 # Render → New → Blueprint → connect this repo. Frontend stays on Vercel.
 # Secrets (DATABASE_URL = Supabase pooler, REVALIDATE_SECRET = shared with the
 # frontend) are set in the Render dashboard, never committed here.
+#
+# This file is PRODUCTION. For the free internal testing backend, deploy the
+# separate staging-only blueprint instead: render.staging.yaml (set it as the
+# "Blueprint Path" when creating the Render Blueprint).
 services:
   - type: web
     name: panditji-backend
@@ -36,65 +40,3 @@ services:
         value: https://frontend-umber-six-66.vercel.app/api/revalidate
       - key: SITE_URL
         value: https://frontend-umber-six-66.vercel.app
-
-  # ── Staging / internal testing backend ────────────────────────────────────
-  # Isolated environment for the testing APKs. Uses the MOCK OTP provider
-  # (fixed code 123456, no SMS, allowlisted numbers) so the apps can be tested
-  # end-to-end for free. APP_ENV=staging — NOT production, so the mock provider
-  # is permitted; production still requires real SMS and fails closed.
-  # Public URL: https://panditji-backend-staging.onrender.com
-  # Deploy: Render → Blueprint → this repo (free plan). The blueprint also
-  # provisions the isolated test database below and wires DATABASE_URL to it, so
-  # the ONLY var you set by hand is OTP_TEST_NUMBERS (your test phone number).
-  # Migrations run automatically on start (startCommand), so tables always exist.
-  - type: web
-    name: panditji-backend-staging
-    runtime: python
-    rootDir: backend
-    plan: free
-    region: singapore
-    buildCommand: pip install -r requirements.txt
-    # Apply DB migrations before serving (idempotent — a no-op when already at
-    # head). Runs on the free plan without a pre-deploy command.
-    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.7"
-      - key: APP_ENV
-        value: staging
-      - key: DEBUG
-        value: "false"
-      # Mock OTP provider — free testing, no SMS credits.
-      - key: OTP_MODE
-        value: mock
-      - key: OTP_TEST_CODE
-        value: "123456"
-      # Comma-separated E.164 allowlist of authorized test numbers — set this in
-      # the dashboard so only your test number(s) can request the test code,
-      # e.g. +919000000001,+919000000002
-      - key: OTP_TEST_NUMBERS
-        sync: false
-      # Isolated test database — auto-provisioned + wired by this blueprint
-      # (see the `databases:` section). Never shares data with production.
-      - key: DATABASE_URL
-        fromDatabase:
-          name: panditji-staging-db
-          property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      - key: PAYMENT_WEBHOOK_SECRET
-        generateValue: true
-      - key: REVALIDATE_SECRET
-        generateValue: true
-      - key: CORS_ORIGINS
-        value: https://frontend-umber-six-66.vercel.app
-
-# ── Isolated test database for staging (free plan) ──────────────────────────
-# Separate from production — created and linked automatically by the blueprint.
-databases:
-  - name: panditji-staging-db
-    plan: free
-    databaseName: panditji_staging
-    user: panditji
-    region: singapore

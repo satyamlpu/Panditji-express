@@ -43,9 +43,13 @@ keeps real SMS.
 The testing APKs point at `https://panditji-backend-staging.onrender.com`. Bring
 it up with the committed Render blueprint (free plan) — it is **one-click**:
 
-1. Render → **New → Blueprint** → connect this repo. It reads `render.yaml`,
-   which defines **`panditji-backend-staging`** plus an **isolated free test
-   database** (`panditji-staging-db`) and wires them together.
+1. Render → **New → Blueprint** → connect this repo, then set:
+   - **Branch** → the branch with the testing config (`feat/mock-otp-testing-env`,
+     or `main` once the testing PR is merged).
+   - **Blueprint Path** → **`render.staging.yaml`** (the staging-only blueprint).
+     > The default `render.yaml` is **production** — it would ask for a prod DB.
+     > Use `render.staging.yaml` so only the testing backend + its free test
+     > database are created.
 2. The blueprint prompts for the one var it can't guess:
    - `OTP_TEST_NUMBERS` — comma-separated E.164 allowlist of the number(s) you
      will test with, e.g. `+919000000001,+919000000002`.
