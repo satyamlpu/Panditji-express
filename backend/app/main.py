@@ -28,12 +28,12 @@ from app.core.errors import register_exception_handlers
 from app.core.middleware import SecurityHeadersMiddleware
 from app.core.observability import init_observability
 from app.marketplace.routers import admin as mp_admin
-from app.marketplace.routers import admin_customers as mp_admin_customers
 from app.marketplace.routers import admin_audit as mp_admin_audit
+from app.marketplace.routers import admin_customers as mp_admin_customers
 from app.marketplace.routers import admin_finance as mp_admin_finance
-from app.marketplace.routers import admin_partners as mp_admin_partners
-from app.marketplace.routers import admin_ops as mp_admin_ops
 from app.marketplace.routers import admin_finance_reports as mp_admin_finance_reports
+from app.marketplace.routers import admin_ops as mp_admin_ops
+from app.marketplace.routers import admin_partners as mp_admin_partners
 from app.marketplace.routers import admin_service_areas as mp_admin_service_areas
 from app.marketplace.routers import admin_support as mp_admin_support
 from app.marketplace.routers import admin_system_health as mp_admin_system_health
