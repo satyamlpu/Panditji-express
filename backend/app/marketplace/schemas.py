@@ -449,6 +449,26 @@ class CustomerAdminOut(BaseModel):
 
 class CustomerListOut(BaseModel):
     items: list[CustomerAdminOut]
+# ── Partner management CRM (admin) ───────────────────────────────────────────
+class PartnerAdminRow(BaseModel):
+    id: str
+    name: str | None
+    phone: str
+    city: str | None
+    status: str
+    availability: str
+    capability_count: int
+    rating_avg: float | None
+    rating_count: int
+    completed_count: int
+    acceptance_rate: float | None
+    outstanding_paise: int
+    outstanding_display: str
+    created_at: datetime
+
+
+class PartnerListOut(BaseModel):
+    items: list[PartnerAdminRow]
     total: int
     page: int
     page_size: int
@@ -477,3 +497,63 @@ class CustomerExportOut(BaseModel):
     tickets: list[TicketOut]
     exported_at: datetime
     exported_by: str
+class PartnerPerformance(BaseModel):
+    offers_received: int
+    offers_accepted: int
+    acceptance_rate: float | None
+    completed_count: int
+    cancelled_count: int
+    active_count: int
+    rating_avg: float | None
+    rating_count: int
+
+
+class PartnerEarnings(BaseModel):
+    lifetime_earned_paise: int
+    lifetime_earned_display: str
+    paid_out_paise: int
+    paid_out_display: str
+    outstanding_paise: int
+    outstanding_display: str
+
+
+class PartnerOverview(BaseModel):
+    id: str
+    name: str | None
+    phone: str
+    city: str | None
+    status: str
+    availability: str
+    languages: list[str] | None
+    base_lat: float | None
+    base_lng: float | None
+    service_radius_km: float
+    verification_reason: str | None
+    reviewed_by: str | None
+    created_at: datetime
+    capabilities: list[CapabilityRef]
+    performance: PartnerPerformance
+    earnings: PartnerEarnings
+
+
+class PartnerEarningRow(BaseModel):
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_code: str | None
+    settled: bool
+    created_at: datetime
+
+
+class PartnerPayoutRow(BaseModel):
+    amount_paise: int
+    amount_display: str
+    bookings_count: int
+    status: str
+    created_at: datetime
+
+
+class PartnerEarningsDetail(BaseModel):
+    summary: PartnerEarnings
+    entries: list[PartnerEarningRow]
+    payouts: list[PartnerPayoutRow]
