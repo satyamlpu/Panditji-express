@@ -665,7 +665,14 @@ export const mpApi = {
     api.post<{ amount_display: string }>(`${BASE}/finance/payouts`, { pandit_id }),
 
   // Reviews
-  reviews: () => api.get<Review[]>(`${BASE}/reviews`),
+  reviews: (params: { reported?: boolean; hidden?: boolean; rating?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.reported !== undefined) qs.set("reported", String(params.reported));
+    if (params.hidden !== undefined) qs.set("hidden", String(params.hidden));
+    if (params.rating !== undefined) qs.set("rating", String(params.rating));
+    const s = qs.toString();
+    return api.get<Review[]>(`${BASE}/reviews${s ? `?${s}` : ""}`);
+  },
   moderateReview: (id: string, hidden: boolean) =>
     api.post<Review>(`${BASE}/reviews/${id}/moderate`, { hidden }),
 
