@@ -179,6 +179,112 @@ export interface TicketDetail extends Ticket {
   messages: TicketMessage[];
 }
 
+export interface PartnerRow {
+  id: string;
+  name: string | null;
+  phone: string;
+  city: string | null;
+  status: string;
+  availability: string;
+  capability_count: number;
+  rating_avg: number | null;
+  rating_count: number;
+  completed_count: number;
+  acceptance_rate: number | null;
+  outstanding_paise: number;
+  outstanding_display: string;
+  created_at: string;
+}
+
+export interface PartnerList {
+  items: PartnerRow[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface PartnerPerformance {
+  offers_received: number;
+  offers_accepted: number;
+  acceptance_rate: number | null;
+  completed_count: number;
+  cancelled_count: number;
+  active_count: number;
+  rating_avg: number | null;
+  rating_count: number;
+}
+
+export interface PartnerEarningsSummary {
+  lifetime_earned_paise: number;
+  lifetime_earned_display: string;
+  paid_out_paise: number;
+  paid_out_display: string;
+  outstanding_paise: number;
+  outstanding_display: string;
+}
+
+export interface PartnerOverview {
+  id: string;
+  name: string | null;
+  phone: string;
+  city: string | null;
+  status: string;
+  availability: string;
+  languages: string[] | null;
+  base_lat: number | null;
+  base_lng: number | null;
+  service_radius_km: number;
+  verification_reason: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+  capabilities: CapabilityRef[];
+  performance: PartnerPerformance;
+  earnings: PartnerEarningsSummary;
+}
+
+export interface PartnerEarningRow {
+  entry_type: string;
+  amount_paise: number;
+  amount_display: string;
+  booking_code: string | null;
+  settled: boolean;
+  created_at: string;
+}
+
+export interface PartnerPayoutRow {
+  amount_paise: number;
+  amount_display: string;
+  bookings_count: number;
+  status: string;
+  created_at: string;
+}
+
+export interface PartnerEarningsDetail {
+  summary: PartnerEarningsSummary;
+  entries: PartnerEarningRow[];
+  payouts: PartnerPayoutRow[];
+}
+
+export interface PartnerBookingRow {
+  id: string;
+  code: string;
+  status: string;
+  service_title: string;
+  price_display: string;
+  mode: string;
+  created_at: string;
+}
+
+export interface PartnerListParams {
+  q?: string;
+  status?: string;
+  availability?: string;
+  sort?: string;
+  order?: "asc" | "desc";
+  page?: number;
+  page_size?: number;
+}
+
 const BASE = "/api/v1/mp/admin";
 
 export const mpApi = {
@@ -239,4 +345,25 @@ export const mpApi = {
       status,
       resolution,
     }),
+
+  // Partner management (360)
+  partners: (params: PartnerListParams = {}) => {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set("q", params.q);
+    if (params.status) qs.set("status", params.status);
+    if (params.availability) qs.set("availability", params.availability);
+    if (params.sort) qs.set("sort", params.sort);
+    if (params.order) qs.set("order", params.order);
+    qs.set("page", String(params.page ?? 1));
+    qs.set("page_size", String(params.page_size ?? 25));
+    return api.get<PartnerList>(`${BASE}/partners?${qs.toString()}`);
+  },
+  partnerOverview: (id: string) =>
+    api.get<PartnerOverview>(`${BASE}/partners/${id}/overview`),
+  partnerBookings: (id: string) =>
+    api.get<PartnerBookingRow[]>(`${BASE}/partners/${id}/bookings`),
+  partnerReviews: (id: string) =>
+    api.get<Review[]>(`${BASE}/partners/${id}/reviews`),
+  partnerEarnings: (id: string) =>
+    api.get<PartnerEarningsDetail>(`${BASE}/partners/${id}/earnings`),
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -118,6 +119,12 @@ function PartnersInner() {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusDot status={p.status} />
+                  <Link
+                    href={`/admin/marketplace/partners/${p.id}`}
+                    className="rounded-pill border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-2"
+                  >
+                    360
+                  </Link>
                   <Button variant="outline" size="sm" onClick={() => setReviewId(p.id)}>
                     Review
                   </Button>
