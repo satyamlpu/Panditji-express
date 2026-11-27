@@ -127,7 +127,9 @@ App version `1.0.0`, Android `versionCode 1`, profile `testing`, internal APK.
    sources" for the installer).
 2. Open the app — confirm the orange **⚠ TESTING ENVIRONMENT** strip is visible.
 3. On the login screen enter an **allowlisted** number (one of the numbers you
-   put in `OTP_TEST_NUMBERS`), in the app's normal format.
+   put in `OTP_TEST_NUMBERS`). Formatting is forgiving — the allowlist matches
+   on the last 10 digits, so `+91…`, spaces, a leading `0` or bare 10 digits all
+   work, in the app and in `OTP_TEST_NUMBERS`.
 4. Request OTP → enter the test code **`123456`** → continue.
    - A number **not** on the allowlist is rejected ("not an authorized test
      number") — this is expected.

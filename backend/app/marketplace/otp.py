@@ -16,7 +16,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.config import canon_phone, settings
 from app.core.errors import ForbiddenError
 from app.marketplace.models import OtpCode
 from app.marketplace.sms import send_otp_sms
@@ -52,7 +52,7 @@ async def issue_otp(session: AsyncSession, phone: str, kind: str) -> str:
     mode = settings.otp_effective_mode
     if mode == "mock":
         allow = settings.otp_test_number_set
-        if allow and phone not in allow:
+        if allow and canon_phone(phone) not in allow:
             raise ForbiddenError(
                 "This number is not an authorized test number for the testing "
                 "environment."

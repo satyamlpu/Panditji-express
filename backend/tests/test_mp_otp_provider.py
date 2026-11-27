@@ -40,6 +40,17 @@ async def test_mock_allowlist_blocks_unlisted_numbers(client: AsyncClient, monke
     assert blocked.json()["error"]["code"] == "forbidden"
 
 
+async def test_mock_allowlist_matches_regardless_of_formatting(client: AsyncClient, monkeypatch):
+    # Allowlist written with +91; the app may send spaces / 0-prefix / bare 10
+    # digits — all must match (canonicalised to the last 10 digits).
+    monkeypatch.setattr(settings, "otp_mode", "mock")
+    monkeypatch.setattr(settings, "otp_test_numbers", "+919812345678")
+    for sent in ("+919812345678", "+91 98123 45678", "09812345678", "9812345678"):
+        r = await client.post(OTP_REQ, json={"phone": sent, "kind": "customer"})
+        assert r.status_code == 200, f"{sent} should be allowed"
+        assert r.json()["dev_code"] == "123456"
+
+
 async def test_sms_mode_fails_closed_without_provider(client: AsyncClient, monkeypatch):
     monkeypatch.setattr(settings, "otp_mode", "sms")
     monkeypatch.setattr(settings, "msg91_auth_key", "")  # no provider

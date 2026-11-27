@@ -8,10 +8,23 @@ needs of a content-driven public site + admin.
 from __future__ import annotations
 
 import logging
+import re
 from functools import lru_cache
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def canon_phone(p: str) -> str:
+    """Canonical form of a phone for lenient test-allowlist matching.
+
+    Reduces to the national subscriber number (last 10 digits), so the same
+    number compares equal whether written ``+919812345678``, ``+91 98123 45678``,
+    ``09812345678`` or ``9812345678``. Shorter inputs return their own digits.
+    """
+    digits = re.sub(r"\D", "", p)
+    return digits[-10:] if len(digits) >= 10 else digits
+
 
 # A deployment that still uses any of these values in production is
 # misconfigured; the app refuses to start rather than silently run on a
@@ -151,8 +164,14 @@ class Settings(BaseSettings):
 
     @property
     def otp_test_number_set(self) -> set[str]:
-        """Allowlisted numbers for the mock OTP provider (empty = unrestricted)."""
-        return {n.strip() for n in self.otp_test_numbers.split(",") if n.strip()}
+        """Allowlisted numbers for the mock OTP provider (empty = unrestricted).
+
+        Stored canonicalised (last 10 digits) so the allowlist matches the number
+        the app sends regardless of formatting — ``+91`` prefix, spaces, hyphens
+        or a leading ``0`` all compare equal. Compare incoming numbers with
+        :func:`canon_phone`.
+        """
+        return {canon_phone(n) for n in self.otp_test_numbers.split(",") if n.strip()}
 
     @property
     def sms_configured(self) -> bool:
