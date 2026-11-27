@@ -427,3 +427,15 @@ class DashboardOut(BaseModel):
     pending_verifications: int
     no_match_rate: float
     bookings_today: int
+
+
+# ── Support metrics (admin) ──────────────────────────────────────────────────
+class SupportMetricsOut(BaseModel):
+    open: int
+    assigned: int
+    escalated: int
+    unassigned: int
+    resolved_today: int
+    oldest_open_hours: float | None
+    sla_breaches: int
+    sla_threshold_hours: int
