@@ -23,8 +23,10 @@ import {
   radius,
   spacing,
   useColors,
+  useThemePreference,
   useStatusBarStyle,
   type IconName,
+  type ThemePref,
 } from "../../design";
 
 export default function Profile() {
@@ -116,6 +118,15 @@ export default function Profile() {
           )}
         </View>
 
+        {/* Appearance */}
+        <Card>
+          <SectionHeader title="Appearance" />
+          <Txt variant="callout" color={colors.inkSecondary} style={{ marginBottom: spacing.md }}>
+            Choose Light, Dark, or follow your device.
+          </Txt>
+          <ThemeToggle />
+        </Card>
+
         {/* Links */}
         <Card padded={false}>
           <LinkRow
@@ -144,6 +155,53 @@ export default function Profile() {
           Pandit Ji Express · Partner app
         </Txt>
       </ScrollView>
+    </View>
+  );
+}
+
+const THEME_OPTIONS: { value: ThemePref; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
+function ThemeToggle() {
+  const colors = useColors();
+  const { pref, setPref } = useThemePreference();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        gap: 4,
+        backgroundColor: colors.bg,
+        borderRadius: radius.lg,
+        padding: 4,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      {THEME_OPTIONS.map((o) => {
+        const active = pref === o.value;
+        return (
+          <PressableScale
+            key={o.value}
+            haptic="select"
+            scaleTo={0.97}
+            onPress={() => setPref(o.value)}
+            style={{
+              flex: 1,
+              paddingVertical: spacing.sm,
+              borderRadius: radius.md,
+              backgroundColor: active ? colors.primary : "transparent",
+              alignItems: "center",
+            }}
+          >
+            <Txt variant="callout" color={active ? colors.onPrimary : colors.inkSecondary}>
+              {o.label}
+            </Txt>
+          </PressableScale>
+        );
+      })}
     </View>
   );
 }
