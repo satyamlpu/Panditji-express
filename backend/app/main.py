@@ -35,6 +35,7 @@ from app.marketplace.routers import admin_partners as mp_admin_partners
 from app.marketplace.routers import admin_ops as mp_admin_ops
 from app.marketplace.routers import admin_finance_reports as mp_admin_finance_reports
 from app.marketplace.routers import admin_support as mp_admin_support
+from app.marketplace.routers import admin_system_health as mp_admin_system_health
 from app.marketplace.routers import auth as mp_auth
 from app.marketplace.routers import customer as mp_customer
 from app.marketplace.routers import discovery as mp_discovery
@@ -110,6 +111,7 @@ app.include_router(mp_admin_customers.router)
 app.include_router(mp_admin_partners.router)
 app.include_router(mp_admin_ops.router)
 app.include_router(mp_admin_audit.router)
+app.include_router(mp_admin_system_health.router)
 app.include_router(mp_admin_finance.router)
 app.include_router(mp_admin_finance_reports.router)
 app.include_router(mp_admin_support.router)
