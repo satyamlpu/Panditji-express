@@ -427,3 +427,47 @@ class DashboardOut(BaseModel):
     pending_verifications: int
     no_match_rate: float
     bookings_today: int
+
+
+# ── System health (admin) ────────────────────────────────────────────────────
+class SystemDatabase(BaseModel):
+    status: str
+    dialect: str
+
+
+class SystemCounters(BaseModel):
+    customers: int
+    pandits_total: int
+    pandits_approved: int
+    pandits_online: int
+    bookings_total: int
+    bookings_active: int
+    bookings_dispatching: int
+    bookings_no_partner: int
+    reviews: int
+    open_tickets: int
+    payments: int
+
+
+class SystemConfigOut(BaseModel):
+    environment: str
+    is_production: bool
+    geo_backend: str
+    storage_backend: str
+    media_storage_backend: str
+    commission_percent: float
+    gateway_fee_percent: float
+    cors_origins: int
+    docs_enabled: bool
+    supabase_kyc_configured: bool
+    supabase_media_configured: bool
+    revalidate_configured: bool
+
+
+class SystemHealthOut(BaseModel):
+    status: str
+    generated_at: datetime
+    database: SystemDatabase
+    counters: SystemCounters
+    config: SystemConfigOut
+    warnings: list[str]
