@@ -449,89 +449,6 @@ class CustomerAdminOut(BaseModel):
 
 class CustomerListOut(BaseModel):
     items: list[CustomerAdminOut]
-# ── Partner management CRM (admin) ───────────────────────────────────────────
-class PartnerAdminRow(BaseModel):
-    id: str
-    name: str | None
-    phone: str
-    city: str | None
-    status: str
-    availability: str
-    capability_count: int
-    rating_avg: float | None
-    rating_count: int
-    completed_count: int
-    acceptance_rate: float | None
-    outstanding_paise: int
-    outstanding_display: str
-    created_at: datetime
-
-
-class PartnerListOut(BaseModel):
-    items: list[PartnerAdminRow]
-# ── Audit log + permissions (admin) ──────────────────────────────────────────
-class AuditLogRow(BaseModel):
-    id: str
-    action: str
-    actor_email: str | None
-    entity: str | None
-    entity_id: str | None
-    ip: str | None
-    meta: dict | None
-    created_at: datetime
-
-
-class AuditLogList(BaseModel):
-    items: list[AuditLogRow]
-# ── Finance reporting & reconciliation (admin) ───────────────────────────────
-class ReconciliationTotals(BaseModel):
-    gross_booking_value_paise: int
-    gross_booking_value_display: str
-    platform_commission_paise: int
-    platform_commission_display: str
-    gateway_fees_paise: int
-    gateway_fees_display: str
-    partner_payable_paise: int
-    partner_payable_display: str
-    refunds_paise: int
-    refunds_display: str
-    payouts_paise: int
-    payouts_display: str
-    net_platform_revenue_paise: int
-    net_platform_revenue_display: str
-    outstanding_payable_paise: int
-    outstanding_payable_display: str
-
-
-class FinanceDayRow(BaseModel):
-    date: str
-    charges_paise: int
-    commission_paise: int
-    gateway_paise: int
-    payable_paise: int
-    refunds_paise: int
-    payouts_paise: int
-
-
-class ReconciliationOut(BaseModel):
-    range_days: int
-    totals: ReconciliationTotals
-    by_day: list[FinanceDayRow]
-
-
-class LedgerFeedRow(BaseModel):
-    id: str
-    entry_type: str
-    amount_paise: int
-    amount_display: str
-    booking_code: str | None
-    pandit_id: str | None
-    settled: bool
-    created_at: datetime
-
-
-class LedgerFeedOut(BaseModel):
-    items: list[LedgerFeedRow]
     total: int
     page: int
     page_size: int
@@ -560,6 +477,33 @@ class CustomerExportOut(BaseModel):
     tickets: list[TicketOut]
     exported_at: datetime
     exported_by: str
+
+
+# ── Partner management CRM (admin) ───────────────────────────────────────────
+class PartnerAdminRow(BaseModel):
+    id: str
+    name: str | None
+    phone: str
+    city: str | None
+    status: str
+    availability: str
+    capability_count: int
+    rating_avg: float | None
+    rating_count: int
+    completed_count: int
+    acceptance_rate: float | None
+    outstanding_paise: int
+    outstanding_display: str
+    created_at: datetime
+
+
+class PartnerListOut(BaseModel):
+    items: list[PartnerAdminRow]
+    total: int
+    page: int
+    page_size: int
+
+
 class PartnerPerformance(BaseModel):
     offers_received: int
     offers_accepted: int
@@ -620,6 +564,8 @@ class PartnerEarningsDetail(BaseModel):
     summary: PartnerEarnings
     entries: list[PartnerEarningRow]
     payouts: list[PartnerPayoutRow]
+
+
 # ── Live Operations Centre (admin) ───────────────────────────────────────────
 class OpsPartnerCounts(BaseModel):
     online: int
@@ -709,6 +655,27 @@ class OpsMapOut(BaseModel):
     center_lng: float | None
     partners: list[OpsMapPartner]
     destinations: list[OpsMapDestination]
+
+
+# ── Audit log + permissions (admin) ──────────────────────────────────────────
+class AuditLogRow(BaseModel):
+    id: str
+    action: str
+    actor_email: str | None
+    entity: str | None
+    entity_id: str | None
+    ip: str | None
+    meta: dict | None
+    created_at: datetime
+
+
+class AuditLogList(BaseModel):
+    items: list[AuditLogRow]
+    total: int
+    page: int
+    page_size: int
+
+
 class AuditMetaOut(BaseModel):
     actions: list[str]
     entities: list[str]
@@ -723,6 +690,62 @@ class PermissionRow(BaseModel):
 class PermissionMatrixOut(BaseModel):
     roles: list[str]
     modules: list[PermissionRow]
+
+
+# ── Finance reporting & reconciliation (admin) ───────────────────────────────
+class ReconciliationTotals(BaseModel):
+    gross_booking_value_paise: int
+    gross_booking_value_display: str
+    platform_commission_paise: int
+    platform_commission_display: str
+    gateway_fees_paise: int
+    gateway_fees_display: str
+    partner_payable_paise: int
+    partner_payable_display: str
+    refunds_paise: int
+    refunds_display: str
+    payouts_paise: int
+    payouts_display: str
+    net_platform_revenue_paise: int
+    net_platform_revenue_display: str
+    outstanding_payable_paise: int
+    outstanding_payable_display: str
+
+
+class FinanceDayRow(BaseModel):
+    date: str
+    charges_paise: int
+    commission_paise: int
+    gateway_paise: int
+    payable_paise: int
+    refunds_paise: int
+    payouts_paise: int
+
+
+class ReconciliationOut(BaseModel):
+    range_days: int
+    totals: ReconciliationTotals
+    by_day: list[FinanceDayRow]
+
+
+class LedgerFeedRow(BaseModel):
+    id: str
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_code: str | None
+    pandit_id: str | None
+    settled: bool
+    created_at: datetime
+
+
+class LedgerFeedOut(BaseModel):
+    items: list[LedgerFeedRow]
+    total: int
+    page: int
+    page_size: int
+
+
 class RefundRow(BaseModel):
     id: str
     booking_code: str | None
@@ -732,6 +755,8 @@ class RefundRow(BaseModel):
     status: str
     created_by: str | None
     created_at: datetime
+
+
 # ── Support metrics (admin) ──────────────────────────────────────────────────
 class SupportMetricsOut(BaseModel):
     open: int
@@ -742,6 +767,8 @@ class SupportMetricsOut(BaseModel):
     oldest_open_hours: float | None
     sla_breaches: int
     sla_threshold_hours: int
+
+
 # ── System health (admin) ────────────────────────────────────────────────────
 class SystemDatabase(BaseModel):
     status: str
@@ -784,6 +811,8 @@ class SystemHealthOut(BaseModel):
     counters: SystemCounters
     config: SystemConfigOut
     warnings: list[str]
+
+
 # ── Service areas (admin) ────────────────────────────────────────────────────
 class ServiceAreaOut(BaseModel):
     id: str

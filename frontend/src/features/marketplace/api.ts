@@ -174,17 +174,6 @@ export interface TicketMessage {
   at: string;
 }
 
-export interface SupportMetrics {
-  open: number;
-  assigned: number;
-  escalated: number;
-  unassigned: number;
-  resolved_today: number;
-  oldest_open_hours: number | null;
-  sla_breaches: number;
-  sla_threshold_hours: number;
-}
-
 export interface TicketDetail extends Ticket {
   resolution: string | null;
   messages: TicketMessage[];
@@ -209,86 +198,6 @@ export interface CustomerAdmin {
 
 export interface CustomerList {
   items: CustomerAdmin[];
-export interface PartnerRow {
-  id: string;
-  name: string | null;
-  phone: string;
-  city: string | null;
-  status: string;
-  availability: string;
-  capability_count: number;
-  rating_avg: number | null;
-  rating_count: number;
-  completed_count: number;
-  acceptance_rate: number | null;
-  outstanding_paise: number;
-  outstanding_display: string;
-  created_at: string;
-}
-
-export interface PartnerList {
-  items: PartnerRow[];
-export interface AuditLogRow {
-  id: string;
-  action: string;
-  actor_email: string | null;
-  entity: string | null;
-  entity_id: string | null;
-  ip: string | null;
-  meta: Record<string, unknown> | null;
-  created_at: string;
-}
-
-export interface AuditLogList {
-  items: AuditLogRow[];
-export interface ReconciliationTotals {
-  gross_booking_value_paise: number;
-  gross_booking_value_display: string;
-  platform_commission_paise: number;
-  platform_commission_display: string;
-  gateway_fees_paise: number;
-  gateway_fees_display: string;
-  partner_payable_paise: number;
-  partner_payable_display: string;
-  refunds_paise: number;
-  refunds_display: string;
-  payouts_paise: number;
-  payouts_display: string;
-  net_platform_revenue_paise: number;
-  net_platform_revenue_display: string;
-  outstanding_payable_paise: number;
-  outstanding_payable_display: string;
-}
-
-export interface FinanceDayRow {
-  date: string;
-  charges_paise: number;
-  commission_paise: number;
-  gateway_paise: number;
-  payable_paise: number;
-  refunds_paise: number;
-  payouts_paise: number;
-}
-
-export interface Reconciliation {
-  range_days: number;
-  totals: ReconciliationTotals;
-  by_day: FinanceDayRow[];
-}
-
-export interface LedgerFeedRow {
-  id: string;
-  entry_type: string;
-  amount_paise: number;
-  amount_display: string;
-  booking_code: string | null;
-  pandit_id: string | null;
-  settled: boolean;
-  created_at: string;
-}
-
-export interface LedgerFeed {
-  items: LedgerFeedRow[];
   total: number;
   page: number;
   page_size: number;
@@ -309,6 +218,55 @@ export interface CustomerDetail extends CustomerAdmin {
 }
 
 export interface CustomerBooking {
+  id: string;
+  code: string;
+  status: string;
+  service_title: string;
+  price_display: string;
+  mode: string;
+  created_at: string;
+}
+
+export interface CustomerActivity {
+  action: string;
+  actor_email: string | null;
+  at: string;
+  meta: Record<string, unknown> | null;
+}
+
+export interface CustomerListParams {
+  q?: string;
+  status?: string;
+  sort?: string;
+  order?: "asc" | "desc";
+  page?: number;
+  page_size?: number;
+}
+
+export interface PartnerRow {
+  id: string;
+  name: string | null;
+  phone: string;
+  city: string | null;
+  status: string;
+  availability: string;
+  capability_count: number;
+  rating_avg: number | null;
+  rating_count: number;
+  completed_count: number;
+  acceptance_rate: number | null;
+  outstanding_paise: number;
+  outstanding_display: string;
+  created_at: string;
+}
+
+export interface PartnerList {
+  items: PartnerRow[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export interface PartnerPerformance {
   offers_received: number;
   offers_accepted: number;
@@ -381,16 +339,6 @@ export interface PartnerBookingRow {
   created_at: string;
 }
 
-export interface CustomerActivity {
-  action: string;
-  actor_email: string | null;
-  at: string;
-  meta: Record<string, unknown> | null;
-}
-
-export interface CustomerListParams {
-  q?: string;
-  status?: string;
 export interface PartnerListParams {
   q?: string;
   status?: string;
@@ -399,6 +347,8 @@ export interface PartnerListParams {
   order?: "asc" | "desc";
   page?: number;
   page_size?: number;
+}
+
 export interface OpsPartnerCounts {
   online: number;
   busy: number;
@@ -487,6 +437,26 @@ export interface OpsMap {
   center_lng: number | null;
   partners: OpsMapPartner[];
   destinations: OpsMapDestination[];
+}
+
+export interface AuditLogRow {
+  id: string;
+  action: string;
+  actor_email: string | null;
+  entity: string | null;
+  entity_id: string | null;
+  ip: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface AuditLogList {
+  items: AuditLogRow[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export interface AuditMeta {
   actions: string[];
   entities: string[];
@@ -512,6 +482,59 @@ export interface AuditListParams {
   page_size?: number;
 }
 
+export interface ReconciliationTotals {
+  gross_booking_value_paise: number;
+  gross_booking_value_display: string;
+  platform_commission_paise: number;
+  platform_commission_display: string;
+  gateway_fees_paise: number;
+  gateway_fees_display: string;
+  partner_payable_paise: number;
+  partner_payable_display: string;
+  refunds_paise: number;
+  refunds_display: string;
+  payouts_paise: number;
+  payouts_display: string;
+  net_platform_revenue_paise: number;
+  net_platform_revenue_display: string;
+  outstanding_payable_paise: number;
+  outstanding_payable_display: string;
+}
+
+export interface FinanceDayRow {
+  date: string;
+  charges_paise: number;
+  commission_paise: number;
+  gateway_paise: number;
+  payable_paise: number;
+  refunds_paise: number;
+  payouts_paise: number;
+}
+
+export interface Reconciliation {
+  range_days: number;
+  totals: ReconciliationTotals;
+  by_day: FinanceDayRow[];
+}
+
+export interface LedgerFeedRow {
+  id: string;
+  entry_type: string;
+  amount_paise: number;
+  amount_display: string;
+  booking_code: string | null;
+  pandit_id: string | null;
+  settled: boolean;
+  created_at: string;
+}
+
+export interface LedgerFeed {
+  items: LedgerFeedRow[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export interface RefundRow {
   id: string;
   booking_code: string | null;
@@ -521,6 +544,19 @@ export interface RefundRow {
   status: string;
   created_by: string | null;
   created_at: string;
+}
+
+export interface SupportMetrics {
+  open: number;
+  assigned: number;
+  escalated: number;
+  unassigned: number;
+  resolved_today: number;
+  oldest_open_hours: number | null;
+  sla_breaches: number;
+  sla_threshold_hours: number;
+}
+
 export interface SystemHealth {
   status: string;
   generated_at: string;
@@ -553,6 +589,8 @@ export interface SystemHealth {
     revalidate_configured: boolean;
   };
   warnings: string[];
+}
+
 export interface ServiceArea {
   id: string;
   name: string;
@@ -627,19 +665,11 @@ export const mpApi = {
     api.post<{ amount_display: string }>(`${BASE}/finance/payouts`, { pandit_id }),
 
   // Reviews
-  reviews: (params: { reported?: boolean; hidden?: boolean; rating?: number } = {}) => {
-    const qs = new URLSearchParams();
-    if (params.reported !== undefined) qs.set("reported", String(params.reported));
-    if (params.hidden !== undefined) qs.set("hidden", String(params.hidden));
-    if (params.rating !== undefined) qs.set("rating", String(params.rating));
-    const s = qs.toString();
-    return api.get<Review[]>(`${BASE}/reviews${s ? `?${s}` : ""}`);
-  },
+  reviews: () => api.get<Review[]>(`${BASE}/reviews`),
   moderateReview: (id: string, hidden: boolean) =>
     api.post<Review>(`${BASE}/reviews/${id}/moderate`, { hidden }),
 
   // Support
-  supportMetrics: () => api.get<SupportMetrics>(`${BASE}/support/metrics`),
   tickets: (status?: string) =>
     api.get<Ticket[]>(`${BASE}/support/tickets${status ? `?status=${status}` : ""}`),
   ticket: (id: string) => api.get<TicketDetail>(`${BASE}/support/tickets/${id}`),
@@ -658,12 +688,6 @@ export const mpApi = {
     const qs = new URLSearchParams();
     if (params.q) qs.set("q", params.q);
     if (params.status) qs.set("status", params.status);
-  // Partner management (360)
-  partners: (params: PartnerListParams = {}) => {
-    const qs = new URLSearchParams();
-    if (params.q) qs.set("q", params.q);
-    if (params.status) qs.set("status", params.status);
-    if (params.availability) qs.set("availability", params.availability);
     if (params.sort) qs.set("sort", params.sort);
     if (params.order) qs.set("order", params.order);
     qs.set("page", String(params.page ?? 1));
@@ -687,6 +711,17 @@ export const mpApi = {
     api.post<CustomerDetail>(`${BASE}/customers/${id}/suspend`, { reason }),
   reactivateCustomer: (id: string, reason: string) =>
     api.post<CustomerDetail>(`${BASE}/customers/${id}/reactivate`, { reason }),
+
+  // Partner management (360)
+  partners: (params: PartnerListParams = {}) => {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set("q", params.q);
+    if (params.status) qs.set("status", params.status);
+    if (params.availability) qs.set("availability", params.availability);
+    if (params.sort) qs.set("sort", params.sort);
+    if (params.order) qs.set("order", params.order);
+    qs.set("page", String(params.page ?? 1));
+    qs.set("page_size", String(params.page_size ?? 25));
     return api.get<PartnerList>(`${BASE}/partners?${qs.toString()}`);
   },
   partnerOverview: (id: string) =>
@@ -697,9 +732,11 @@ export const mpApi = {
     api.get<Review[]>(`${BASE}/partners/${id}/reviews`),
   partnerEarnings: (id: string) =>
     api.get<PartnerEarningsDetail>(`${BASE}/partners/${id}/earnings`),
+
   // Live Operations Centre
   opsOverview: () => api.get<OpsOverview>(`${BASE}/ops/overview`),
   opsMap: () => api.get<OpsMap>(`${BASE}/ops/map`),
+
   // Audit log + permissions (super-admin)
   auditLog: (params: AuditListParams = {}) => {
     const qs = new URLSearchParams();
@@ -713,6 +750,7 @@ export const mpApi = {
   },
   auditMeta: () => api.get<AuditMeta>(`${BASE}/audit/meta`),
   auditPermissions: () => api.get<PermissionMatrix>(`${BASE}/audit/permissions`),
+
   // Finance reporting & reconciliation
   reconciliation: (days = 30) =>
     api.get<Reconciliation>(`${BASE}/finance/reconciliation?days=${days}`),
@@ -724,8 +762,11 @@ export const mpApi = {
     return api.get<LedgerFeed>(`${BASE}/finance/ledger?${qs.toString()}`);
   },
   financeRefunds: () => api.get<RefundRow[]>(`${BASE}/finance/refunds`),
+  supportMetrics: () => api.get<SupportMetrics>(`${BASE}/support/metrics`),
+
   // System health
   systemHealth: () => api.get<SystemHealth>(`${BASE}/system/health`),
+
   // Service areas
   serviceAreas: (active?: boolean) =>
     api.get<ServiceArea[]>(
