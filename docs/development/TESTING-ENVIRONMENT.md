@@ -91,11 +91,21 @@ cd pandit-app && npx eas-cli@latest build --platform android --profile testing
 Each finishes with an **APK download link** on the EAS build page
 (`https://expo.dev/accounts/sbsharma3434/projects/<app>/builds`).
 
-### Build versions
-- App version: `1.0.0` (from `app.json`), Android `versionCode 1`.
-- Record the EAS build id + APK URL for each app here once built:
-  - Customer (Testing): `__fill in after build__`
-  - Partner (Testing): `__fill in after build__`
+### Build versions (built 2026-11-27)
+App version `1.0.0`, Android `versionCode 1`, profile `testing`, internal APK.
+
+**Customer — Pandit Ji Express (Testing)** · `com.panditjiexpress.customer.staging`
+- APK: https://expo.dev/artifacts/eas/ipSx3zPbCe5mH8fym-RNYLktXslDcuze0J1Z8YonS1U.apk
+- Build: https://expo.dev/accounts/sbsharma3434/projects/customer-app/builds/f5b79bf8-26ef-45de-bbd0-216b44a2a7f6
+
+**Partner — Pandit Ji Partner (Testing)** · `com.panditjiexpress.partner.staging`
+- APK: https://expo.dev/artifacts/eas/6zRgui-8T6EWJd9w48LJzmKbl9icL-t5mCZ3v0f4Ep0.apk
+- Build: https://expo.dev/accounts/sbsharma3434/projects/pandit-app/builds/46ff4425-07f7-4581-a05c-ec2ebc7d783f
+
+> These APKs point at `https://panditji-backend-staging.onrender.com`. They
+> install side-by-side with production and show the **⚠ TESTING ENVIRONMENT**
+> strip. Login works once the staging backend (§2) is deployed with the mock
+> OTP provider and the test numbers allowlisted.
 
 ---
 
