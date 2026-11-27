@@ -179,6 +179,70 @@ export interface TicketDetail extends Ticket {
   messages: TicketMessage[];
 }
 
+export interface ReconciliationTotals {
+  gross_booking_value_paise: number;
+  gross_booking_value_display: string;
+  platform_commission_paise: number;
+  platform_commission_display: string;
+  gateway_fees_paise: number;
+  gateway_fees_display: string;
+  partner_payable_paise: number;
+  partner_payable_display: string;
+  refunds_paise: number;
+  refunds_display: string;
+  payouts_paise: number;
+  payouts_display: string;
+  net_platform_revenue_paise: number;
+  net_platform_revenue_display: string;
+  outstanding_payable_paise: number;
+  outstanding_payable_display: string;
+}
+
+export interface FinanceDayRow {
+  date: string;
+  charges_paise: number;
+  commission_paise: number;
+  gateway_paise: number;
+  payable_paise: number;
+  refunds_paise: number;
+  payouts_paise: number;
+}
+
+export interface Reconciliation {
+  range_days: number;
+  totals: ReconciliationTotals;
+  by_day: FinanceDayRow[];
+}
+
+export interface LedgerFeedRow {
+  id: string;
+  entry_type: string;
+  amount_paise: number;
+  amount_display: string;
+  booking_code: string | null;
+  pandit_id: string | null;
+  settled: boolean;
+  created_at: string;
+}
+
+export interface LedgerFeed {
+  items: LedgerFeedRow[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface RefundRow {
+  id: string;
+  booking_code: string | null;
+  amount_paise: number;
+  amount_display: string;
+  reason: string | null;
+  status: string;
+  created_by: string | null;
+  created_at: string;
+}
+
 const BASE = "/api/v1/mp/admin";
 
 export const mpApi = {
@@ -239,4 +303,16 @@ export const mpApi = {
       status,
       resolution,
     }),
+
+  // Finance reporting & reconciliation
+  reconciliation: (days = 30) =>
+    api.get<Reconciliation>(`${BASE}/finance/reconciliation?days=${days}`),
+  ledgerFeed: (entryType?: string, page = 1) => {
+    const qs = new URLSearchParams();
+    if (entryType) qs.set("entry_type", entryType);
+    qs.set("page", String(page));
+    qs.set("page_size", "50");
+    return api.get<LedgerFeed>(`${BASE}/finance/ledger?${qs.toString()}`);
+  },
+  financeRefunds: () => api.get<RefundRow[]>(`${BASE}/finance/refunds`),
 };
