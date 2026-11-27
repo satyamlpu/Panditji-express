@@ -427,3 +427,53 @@ class DashboardOut(BaseModel):
     pending_verifications: int
     no_match_rate: float
     bookings_today: int
+
+
+# ── Customers CRM (admin) ────────────────────────────────────────────────────
+class CustomerAdminOut(BaseModel):
+    id: str
+    phone: str
+    name: str | None
+    language: str | None
+    status: str
+    created_at: datetime
+    bookings_count: int
+    completed_count: int
+    cancelled_count: int
+    total_spent_paise: int
+    total_spent_display: str
+    review_count: int
+    open_tickets: int
+    last_booking_at: datetime | None
+
+
+class CustomerListOut(BaseModel):
+    items: list[CustomerAdminOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class CustomerAdminDetail(CustomerAdminOut):
+    addresses: list[AddressOut]
+
+
+class CustomerStatusUpdate(BaseModel):
+    reason: str = Field(min_length=2, max_length=500)
+
+
+class CustomerActivityOut(BaseModel):
+    action: str
+    actor_email: str | None
+    at: datetime
+    meta: dict | None = None
+
+
+class CustomerExportOut(BaseModel):
+    profile: CustomerAdminDetail
+    bookings: list[BookingOut]
+    payments: list[PaymentOut]
+    reviews: list[ReviewOut]
+    tickets: list[TicketOut]
+    exported_at: datetime
+    exported_by: str

@@ -179,6 +179,70 @@ export interface TicketDetail extends Ticket {
   messages: TicketMessage[];
 }
 
+export interface CustomerAdmin {
+  id: string;
+  phone: string;
+  name: string | null;
+  language: string | null;
+  status: string;
+  created_at: string;
+  bookings_count: number;
+  completed_count: number;
+  cancelled_count: number;
+  total_spent_paise: number;
+  total_spent_display: string;
+  review_count: number;
+  open_tickets: number;
+  last_booking_at: string | null;
+}
+
+export interface CustomerList {
+  items: CustomerAdmin[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface CustomerAddress {
+  id: string;
+  label: string | null;
+  line: string;
+  landmark: string | null;
+  instructions: string | null;
+  lat: number;
+  lng: number;
+}
+
+export interface CustomerDetail extends CustomerAdmin {
+  addresses: CustomerAddress[];
+}
+
+export interface CustomerBooking {
+  id: string;
+  code: string;
+  status: string;
+  service_title: string;
+  price_display: string;
+  mode: string;
+  created_at: string;
+}
+
+export interface CustomerActivity {
+  action: string;
+  actor_email: string | null;
+  at: string;
+  meta: Record<string, unknown> | null;
+}
+
+export interface CustomerListParams {
+  q?: string;
+  status?: string;
+  sort?: string;
+  order?: "asc" | "desc";
+  page?: number;
+  page_size?: number;
+}
+
 const BASE = "/api/v1/mp/admin";
 
 export const mpApi = {
@@ -239,4 +303,33 @@ export const mpApi = {
       status,
       resolution,
     }),
+
+  // Customers CRM
+  customers: (params: CustomerListParams = {}) => {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set("q", params.q);
+    if (params.status) qs.set("status", params.status);
+    if (params.sort) qs.set("sort", params.sort);
+    if (params.order) qs.set("order", params.order);
+    qs.set("page", String(params.page ?? 1));
+    qs.set("page_size", String(params.page_size ?? 25));
+    return api.get<CustomerList>(`${BASE}/customers?${qs.toString()}`);
+  },
+  customer: (id: string) => api.get<CustomerDetail>(`${BASE}/customers/${id}`),
+  customerBookings: (id: string) =>
+    api.get<CustomerBooking[]>(`${BASE}/customers/${id}/bookings`),
+  customerPayments: (id: string) =>
+    api.get<Payment[]>(`${BASE}/customers/${id}/payments`),
+  customerReviews: (id: string) =>
+    api.get<Review[]>(`${BASE}/customers/${id}/reviews`),
+  customerTickets: (id: string) =>
+    api.get<Ticket[]>(`${BASE}/customers/${id}/tickets`),
+  customerActivity: (id: string) =>
+    api.get<CustomerActivity[]>(`${BASE}/customers/${id}/activity`),
+  updateCustomer: (id: string, body: { name?: string; language?: string }) =>
+    api.patch<CustomerDetail>(`${BASE}/customers/${id}`, body),
+  suspendCustomer: (id: string, reason: string) =>
+    api.post<CustomerDetail>(`${BASE}/customers/${id}/suspend`, { reason }),
+  reactivateCustomer: (id: string, reason: string) =>
+    api.post<CustomerDetail>(`${BASE}/customers/${id}/reactivate`, { reason }),
 };
