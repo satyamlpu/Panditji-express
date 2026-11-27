@@ -553,6 +553,35 @@ export interface SystemHealth {
     revalidate_configured: boolean;
   };
   warnings: string[];
+export interface ServiceArea {
+  id: string;
+  name: string;
+  city: string | null;
+  center_lat: number;
+  center_lng: number;
+  radius_km: number;
+  pincodes: string[];
+  active: boolean;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ServiceAreaInput {
+  name: string;
+  city?: string | null;
+  center_lat: number;
+  center_lng: number;
+  radius_km: number;
+  pincodes?: string[];
+  active?: boolean;
+  notes?: string | null;
+}
+
+export interface Coverage {
+  lat: number;
+  lng: number;
+  covered: boolean;
+  areas: ServiceArea[];
 }
 
 const BASE = "/api/v1/mp/admin";
@@ -697,4 +726,17 @@ export const mpApi = {
   financeRefunds: () => api.get<RefundRow[]>(`${BASE}/finance/refunds`),
   // System health
   systemHealth: () => api.get<SystemHealth>(`${BASE}/system/health`),
+  // Service areas
+  serviceAreas: (active?: boolean) =>
+    api.get<ServiceArea[]>(
+      `${BASE}/service-areas${active === undefined ? "" : `?active=${active}`}`,
+    ),
+  createServiceArea: (body: ServiceAreaInput) =>
+    api.post<ServiceArea>(`${BASE}/service-areas`, body),
+  updateServiceArea: (id: string, body: Partial<ServiceAreaInput>) =>
+    api.patch<ServiceArea>(`${BASE}/service-areas/${id}`, body),
+  deleteServiceArea: (id: string) =>
+    api.del<{ message: string }>(`${BASE}/service-areas/${id}`),
+  serviceAreaCoverage: (lat: number, lng: number) =>
+    api.get<Coverage>(`${BASE}/service-areas/coverage?lat=${lat}&lng=${lng}`),
 };

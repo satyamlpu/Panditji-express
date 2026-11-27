@@ -784,3 +784,44 @@ class SystemHealthOut(BaseModel):
     counters: SystemCounters
     config: SystemConfigOut
     warnings: list[str]
+# ── Service areas (admin) ────────────────────────────────────────────────────
+class ServiceAreaOut(BaseModel):
+    id: str
+    name: str
+    city: str | None
+    center_lat: float
+    center_lng: float
+    radius_km: float
+    pincodes: list[str]
+    active: bool
+    notes: str | None
+    created_at: datetime
+
+
+class ServiceAreaCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    city: str | None = Field(default=None, max_length=80)
+    center_lat: float = Field(ge=-90, le=90)
+    center_lng: float = Field(ge=-180, le=180)
+    radius_km: float = Field(gt=0, le=500)
+    pincodes: list[str] = Field(default_factory=list)
+    active: bool = True
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class ServiceAreaUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    city: str | None = Field(default=None, max_length=80)
+    center_lat: float | None = Field(default=None, ge=-90, le=90)
+    center_lng: float | None = Field(default=None, ge=-180, le=180)
+    radius_km: float | None = Field(default=None, gt=0, le=500)
+    pincodes: list[str] | None = None
+    active: bool | None = None
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class CoverageOut(BaseModel):
+    lat: float
+    lng: float
+    covered: bool
+    areas: list[ServiceAreaOut]
