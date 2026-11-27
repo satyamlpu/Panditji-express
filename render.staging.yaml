@@ -1,0 +1,62 @@
+# Staging-only Render Blueprint — the FREE internal testing backend.
+#
+# Deploy: Render → New → Blueprint → connect this repo, then set:
+#   • Branch        → the branch that has this file (e.g. feat/mock-otp-testing-env,
+#                      or main once the testing PR is merged)
+#   • Blueprint Path → render.staging.yaml
+#
+# It creates ONLY the staging backend + an isolated free test database and wires
+# them together. The ONLY value you enter is OTP_TEST_NUMBERS (your test phone
+# number, +91… with no spaces). Public URL: https://panditji-backend-staging.onrender.com
+#
+# Uses the MOCK OTP provider (fixed code 123456, no SMS). APP_ENV=staging — NOT
+# production — so the mock provider is allowed; production still uses real SMS
+# and fails closed. Migrations run automatically on start.
+services:
+  - type: web
+    name: panditji-backend-staging
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    # Apply DB migrations before serving (idempotent; free-plan safe).
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: APP_ENV
+        value: staging
+      - key: DEBUG
+        value: "false"
+      # Mock OTP provider — free testing, no SMS credits.
+      - key: OTP_MODE
+        value: mock
+      - key: OTP_TEST_CODE
+        value: "123456"
+      # The ONLY var you set by hand: comma-separated E.164 allowlist of the
+      # number(s) you will test with, e.g. +919000000001,+919000000002
+      - key: OTP_TEST_NUMBERS
+        sync: false
+      # Isolated test database — auto-provisioned + wired by this blueprint.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: panditji-staging-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      - key: REVALIDATE_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://frontend-umber-six-66.vercel.app
+
+# Isolated free test database — created and linked automatically.
+databases:
+  - name: panditji-staging-db
+    plan: free
+    databaseName: panditji_staging
+    user: panditji
+    region: singapore

@@ -10,6 +10,19 @@
         "buildType": "apk"
       }
     },
+    "testing": {
+      "distribution": "internal",
+      "channel": "testing",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://panditji-backend-staging.onrender.com",
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "APP_VARIANT": "staging",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "android": {

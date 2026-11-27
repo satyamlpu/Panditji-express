@@ -2,6 +2,10 @@
 # Render → New → Blueprint → connect this repo. Frontend stays on Vercel.
 # Secrets (DATABASE_URL = Supabase pooler, REVALIDATE_SECRET = shared with the
 # frontend) are set in the Render dashboard, never committed here.
+#
+# This file is PRODUCTION. For the free internal testing backend, deploy the
+# separate staging-only blueprint instead: render.staging.yaml (set it as the
+# "Blueprint Path" when creating the Render Blueprint).
 services:
   - type: web
     name: panditji-backend

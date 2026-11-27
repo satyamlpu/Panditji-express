@@ -8,10 +8,23 @@ needs of a content-driven public site + admin.
 from __future__ import annotations
 
 import logging
+import re
 from functools import lru_cache
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def canon_phone(p: str) -> str:
+    """Canonical form of a phone for lenient test-allowlist matching.
+
+    Reduces to the national subscriber number (last 10 digits), so the same
+    number compares equal whether written ``+919812345678``, ``+91 98123 45678``,
+    ``09812345678`` or ``9812345678``. Shorter inputs return their own digits.
+    """
+    digits = re.sub(r"\D", "", p)
+    return digits[-10:] if len(digits) >= 10 else digits
+
 
 # A deployment that still uses any of these values in production is
 # misconfigured; the app refuses to start rather than silently run on a
@@ -67,6 +80,24 @@ class Settings(BaseSettings):
     # without also holding the server secret. Rotating it only invalidates the
     # few OTPs still inside their 5-minute TTL.
     otp_pepper: str = ""
+
+    # ── OTP delivery provider ───────────────────────────────────────────────
+    # "mock": a fixed test code (OTP_TEST_CODE) is issued, NO SMS is sent, and —
+    # when OTP_TEST_NUMBERS is set — only allowlisted numbers may request one.
+    # Free dev/staging testing with the real auth/JWT/DB/role flow intact.
+    # "sms": a random code is sent via MSG91 and never returned in the response.
+    # Empty = auto ("sms" in production, "mock" otherwise). The mock provider is
+    # REFUSED in production (validate_runtime), so it can never be enabled there
+    # by accident.
+    otp_mode: str = ""
+    otp_test_code: str = "123456"
+    otp_test_numbers: str = ""  # comma-separated E.164 allowlist for mock OTP
+
+    # MSG91 SMS/DLT (production OTP delivery). Unset → "sms" mode fails closed:
+    # OTP requests error rather than silently succeeding without delivery.
+    msg91_auth_key: str = ""
+    msg91_sender_id: str = ""
+    msg91_otp_template_id: str = ""
 
     # Error monitoring (Sentry). No-op while unset, so dev and CI stay offline;
     # set SENTRY_DSN in production to capture unhandled errors.
@@ -139,6 +170,29 @@ class Settings(BaseSettings):
         return self.app_env.lower() == "production"
 
     @property
+    def otp_effective_mode(self) -> str:
+        """Resolved OTP provider: "mock" or "sms" (auto by env when unset)."""
+        m = self.otp_mode.strip().lower()
+        if m in ("mock", "sms"):
+            return m
+        return "sms" if self.is_production else "mock"
+
+    @property
+    def otp_test_number_set(self) -> set[str]:
+        """Allowlisted numbers for the mock OTP provider (empty = unrestricted).
+
+        Stored canonicalised (last 10 digits) so the allowlist matches the number
+        the app sends regardless of formatting — ``+91`` prefix, spaces, hyphens
+        or a leading ``0`` all compare equal. Compare incoming numbers with
+        :func:`canon_phone`.
+        """
+        return {canon_phone(n) for n in self.otp_test_numbers.split(",") if n.strip()}
+
+    @property
+    def sms_configured(self) -> bool:
+        return bool(self.msg91_auth_key and self.msg91_sender_id)
+
+    @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
@@ -178,6 +232,21 @@ class Settings(BaseSettings):
                 "Refusing to start in production with default secrets: "
                 + ", ".join(insecure)
                 + ". Set each to a real, unique value."
+            )
+        # The mock OTP provider must NEVER run in production — fail fast so a
+        # misconfigured OTP_MODE can't let the fixed test code authenticate real
+        # accounts.
+        if self.otp_effective_mode != "sms":
+            raise RuntimeError(
+                "OTP_MODE must be 'sms' in production — the mock OTP provider "
+                "cannot be enabled in production. Configure MSG91 instead."
+            )
+        # Production fails closed when the SMS provider is unavailable: OTP
+        # requests error rather than silently succeeding without delivery.
+        if not self.sms_configured:
+            logging.getLogger("panditji.config").warning(
+                "No SMS provider configured (MSG91_AUTH_KEY/MSG91_SENDER_ID) — "
+                "OTP delivery fails closed until these are set."
             )
         # A known-public default admin password in production is a serious risk.
         # Not fatal (it only governs seeding, and the live row may already differ),
