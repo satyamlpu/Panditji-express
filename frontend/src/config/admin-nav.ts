@@ -69,7 +69,8 @@ export const APP_NAV: NavItem[] = [
   { href: "/admin/marketplace/customers", label: "Customers", icon: "customers" },
   { href: "/admin/marketplace/partners", label: "Partners", icon: "partners" },
   { href: "/admin/marketplace/bookings", label: "Bookings", icon: "bookings" },
-  { href: "/admin/marketplace/finance", label: "Finance", icon: "finance" },
+  { href: "/admin/marketplace/finance", label: "Finance", icon: "finance", exact: true },
+  { href: "/admin/marketplace/finance/reports", label: "Finance Reports", icon: "analytics" },
   { href: "/admin/marketplace/reviews", label: "Reviews", icon: "reviews" },
   { href: "/admin/marketplace/support", label: "Support", icon: "support" },
 ];
