@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -224,13 +224,20 @@ async def _review_out(session: AsyncSession, r: Review) -> ReviewOut:
 
 @router.get("/reviews", response_model=list[ReviewOut])
 async def list_reviews(
-    _: CurrentAdmin = _support, session: AsyncSession = Depends(get_session)
+    _: CurrentAdmin = _support,
+    session: AsyncSession = Depends(get_session),
+    reported: bool | None = Query(default=None),
+    hidden: bool | None = Query(default=None),
+    rating: int | None = Query(default=None, ge=1, le=5),
 ) -> list[ReviewOut]:
-    rows = (
-        (await session.execute(select(Review).order_by(Review.created_at.desc()).limit(200)))
-        .scalars()
-        .all()
-    )
+    stmt = select(Review).order_by(Review.created_at.desc()).limit(200)
+    if reported is not None:
+        stmt = stmt.where(Review.reported.is_(reported))
+    if hidden is not None:
+        stmt = stmt.where(Review.hidden.is_(hidden))
+    if rating is not None:
+        stmt = stmt.where(Review.rating == rating)
+    rows = (await session.execute(stmt)).scalars().all()
     return [await _review_out(session, r) for r in rows]
 
 
