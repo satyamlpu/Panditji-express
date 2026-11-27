@@ -427,3 +427,94 @@ class DashboardOut(BaseModel):
     pending_verifications: int
     no_match_rate: float
     bookings_today: int
+
+
+# ── Live Operations Centre (admin) ───────────────────────────────────────────
+class OpsPartnerCounts(BaseModel):
+    online: int
+    busy: int
+    offline: int
+    unavailable: int
+    approved_total: int
+
+
+class OpsBookingCounts(BaseModel):
+    dispatching: int
+    active: int
+    unassigned: int
+    scheduled_upcoming: int
+    completed_today: int
+
+
+class OpsActiveBooking(BaseModel):
+    id: str
+    code: str
+    status: str
+    customer_name: str | None
+    partner_id: str | None
+    partner_name: str | None
+    live_lat: float | None
+    live_lng: float | None
+    live_fresh_seconds: int | None
+    eta_minutes: int | None
+    dest_lat: float
+    dest_lng: float
+
+
+class OpsDispatchBooking(BaseModel):
+    id: str
+    code: str
+    status: str
+    created_at: datetime
+    waiting_seconds: int
+    offers_count: int
+    current_partner_name: str | None
+
+
+class OpsUnassignedBooking(BaseModel):
+    id: str
+    code: str
+    status: str
+    created_at: datetime
+    waiting_seconds: int
+
+
+class OpsAlert(BaseModel):
+    id: str
+    code: str
+    status: str
+    kind: str  # stuck_dispatch | no_partner | stale_location
+    since_seconds: int | None
+
+
+class OpsOverviewOut(BaseModel):
+    generated_at: datetime
+    partners: OpsPartnerCounts
+    bookings: OpsBookingCounts
+    active: list[OpsActiveBooking]
+    dispatching: list[OpsDispatchBooking]
+    unassigned: list[OpsUnassignedBooking]
+    alerts: list[OpsAlert]
+
+
+class OpsMapPartner(BaseModel):
+    id: str
+    name: str | None
+    availability: str
+    lat: float
+    lng: float
+    is_live: bool
+
+
+class OpsMapDestination(BaseModel):
+    code: str
+    lat: float
+    lng: float
+    status: str
+
+
+class OpsMapOut(BaseModel):
+    center_lat: float | None
+    center_lng: float | None
+    partners: list[OpsMapPartner]
+    destinations: list[OpsMapDestination]
