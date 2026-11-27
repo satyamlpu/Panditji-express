@@ -29,6 +29,7 @@ from app.core.middleware import SecurityHeadersMiddleware
 from app.core.observability import init_observability
 from app.marketplace.routers import admin as mp_admin
 from app.marketplace.routers import admin_customers as mp_admin_customers
+from app.marketplace.routers import admin_audit as mp_admin_audit
 from app.marketplace.routers import admin_finance as mp_admin_finance
 from app.marketplace.routers import admin_partners as mp_admin_partners
 from app.marketplace.routers import admin_ops as mp_admin_ops
@@ -107,6 +108,7 @@ app.include_router(mp_admin.router)
 app.include_router(mp_admin_customers.router)
 app.include_router(mp_admin_partners.router)
 app.include_router(mp_admin_ops.router)
+app.include_router(mp_admin_audit.router)
 app.include_router(mp_admin_finance.router)
 app.include_router(mp_admin_support.router)
 

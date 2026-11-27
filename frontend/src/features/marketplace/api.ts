@@ -217,6 +217,19 @@ export interface PartnerRow {
 
 export interface PartnerList {
   items: PartnerRow[];
+export interface AuditLogRow {
+  id: string;
+  action: string;
+  actor_email: string | null;
+  entity: string | null;
+  entity_id: string | null;
+  ip: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface AuditLogList {
+  items: AuditLogRow[];
   total: number;
   page: number;
   page_size: number;
@@ -415,6 +428,29 @@ export interface OpsMap {
   center_lng: number | null;
   partners: OpsMapPartner[];
   destinations: OpsMapDestination[];
+export interface AuditMeta {
+  actions: string[];
+  entities: string[];
+}
+
+export interface PermissionRow {
+  module: string;
+  roles: string[];
+  description: string;
+}
+
+export interface PermissionMatrix {
+  roles: string[];
+  modules: PermissionRow[];
+}
+
+export interface AuditListParams {
+  action?: string;
+  entity?: string;
+  actor?: string;
+  q?: string;
+  page?: number;
+  page_size?: number;
 }
 
 const BASE = "/api/v1/mp/admin";
@@ -525,4 +561,17 @@ export const mpApi = {
   // Live Operations Centre
   opsOverview: () => api.get<OpsOverview>(`${BASE}/ops/overview`),
   opsMap: () => api.get<OpsMap>(`${BASE}/ops/map`),
+  // Audit log + permissions (super-admin)
+  auditLog: (params: AuditListParams = {}) => {
+    const qs = new URLSearchParams();
+    if (params.action) qs.set("action", params.action);
+    if (params.entity) qs.set("entity", params.entity);
+    if (params.actor) qs.set("actor", params.actor);
+    if (params.q) qs.set("q", params.q);
+    qs.set("page", String(params.page ?? 1));
+    qs.set("page_size", String(params.page_size ?? 50));
+    return api.get<AuditLogList>(`${BASE}/audit?${qs.toString()}`);
+  },
+  auditMeta: () => api.get<AuditMeta>(`${BASE}/audit/meta`),
+  auditPermissions: () => api.get<PermissionMatrix>(`${BASE}/audit/permissions`),
 };
