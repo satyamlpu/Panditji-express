@@ -427,3 +427,38 @@ class DashboardOut(BaseModel):
     pending_verifications: int
     no_match_rate: float
     bookings_today: int
+
+
+# ── Audit log + permissions (admin) ──────────────────────────────────────────
+class AuditLogRow(BaseModel):
+    id: str
+    action: str
+    actor_email: str | None
+    entity: str | None
+    entity_id: str | None
+    ip: str | None
+    meta: dict | None
+    created_at: datetime
+
+
+class AuditLogList(BaseModel):
+    items: list[AuditLogRow]
+    total: int
+    page: int
+    page_size: int
+
+
+class AuditMetaOut(BaseModel):
+    actions: list[str]
+    entities: list[str]
+
+
+class PermissionRow(BaseModel):
+    module: str
+    roles: list[str]
+    description: str
+
+
+class PermissionMatrixOut(BaseModel):
+    roles: list[str]
+    modules: list[PermissionRow]

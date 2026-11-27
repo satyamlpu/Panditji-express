@@ -72,6 +72,7 @@ export const APP_NAV: NavItem[] = [
   { href: "/admin/marketplace/finance", label: "Finance", icon: "finance" },
   { href: "/admin/marketplace/reviews", label: "Reviews", icon: "reviews" },
   { href: "/admin/marketplace/support", label: "Support", icon: "support" },
+  { href: "/admin/marketplace/audit", label: "Audit & Roles", icon: "security" },
 ];
 
 export const NAV_BY_MODULE: Record<ModuleId, NavItem[]> = {
