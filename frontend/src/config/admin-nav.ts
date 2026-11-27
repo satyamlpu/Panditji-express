@@ -66,6 +66,7 @@ export const WEBSITE_NAV: NavItem[] = [
 
 export const APP_NAV: NavItem[] = [
   { href: "/admin/marketplace", label: "Operations", icon: "operations", exact: true },
+  { href: "/admin/marketplace/ops", label: "Live Ops", icon: "activity" },
   { href: "/admin/marketplace/customers", label: "Customers", icon: "customers" },
   { href: "/admin/marketplace/partners", label: "Partners", icon: "partners" },
   { href: "/admin/marketplace/bookings", label: "Bookings", icon: "bookings" },
