@@ -66,12 +66,17 @@ export const WEBSITE_NAV: NavItem[] = [
 
 export const APP_NAV: NavItem[] = [
   { href: "/admin/marketplace", label: "Operations", icon: "operations", exact: true },
+  { href: "/admin/marketplace/ops", label: "Live Ops", icon: "activity" },
   { href: "/admin/marketplace/customers", label: "Customers", icon: "customers" },
   { href: "/admin/marketplace/partners", label: "Partners", icon: "partners" },
+  { href: "/admin/marketplace/service-areas", label: "Service Areas", icon: "locations" },
   { href: "/admin/marketplace/bookings", label: "Bookings", icon: "bookings" },
-  { href: "/admin/marketplace/finance", label: "Finance", icon: "finance" },
+  { href: "/admin/marketplace/finance", label: "Finance", icon: "finance", exact: true },
+  { href: "/admin/marketplace/finance/reports", label: "Finance Reports", icon: "analytics" },
   { href: "/admin/marketplace/reviews", label: "Reviews", icon: "reviews" },
   { href: "/admin/marketplace/support", label: "Support", icon: "support" },
+  { href: "/admin/marketplace/audit", label: "Audit & Roles", icon: "security" },
+  { href: "/admin/marketplace/system", label: "System Health", icon: "activity" },
 ];
 
 export const NAV_BY_MODULE: Record<ModuleId, NavItem[]> = {

@@ -7,13 +7,15 @@ opener is notified. Replies and status changes record the acting staff member.
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentAdmin
 from app.core.errors import APIError, NotFoundError
+from app.db.base import utcnow
 from app.db.session import get_session
 from app.marketplace import support
 from app.marketplace.constants import MpAudit, Principal, StaffRole, TicketStatus
@@ -21,6 +23,7 @@ from app.marketplace.models import SupportTicket
 from app.marketplace.notify import notify_customer, notify_pandit
 from app.marketplace.principals import require_staff
 from app.marketplace.schemas import (
+    SupportMetricsOut,
     TicketAssign,
     TicketDetailOut,
     TicketOut,
@@ -32,6 +35,72 @@ from app.services.audit import audit
 router = APIRouter(prefix="/api/v1/mp/admin/support", tags=["mp:admin-support"])
 
 _support = Depends(require_staff(StaffRole.SUPPORT))
+
+_OPEN_STATES = (TicketStatus.OPEN, TicketStatus.ASSIGNED, TicketStatus.ESCALATED)
+
+
+def _aware(dt: datetime) -> datetime:
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+
+
+@router.get("/metrics", response_model=SupportMetricsOut)
+async def support_metrics(
+    _: CurrentAdmin = _support,
+    session: AsyncSession = Depends(get_session),
+    sla_threshold_hours: int = Query(default=24, ge=1, le=720),
+) -> SupportMetricsOut:
+    """Queue health: open/assigned/escalated/unassigned counts, the oldest open
+    ticket's age, and how many open tickets have breached the SLA threshold."""
+    status_counts = dict(
+        (
+            await session.execute(
+                select(SupportTicket.status, func.count()).group_by(SupportTicket.status)
+            )
+        ).all()
+    )
+    unassigned = (
+        await session.execute(
+            select(func.count())
+            .select_from(SupportTicket)
+            .where(
+                SupportTicket.status == TicketStatus.OPEN,
+                SupportTicket.assignee_email.is_(None),
+            )
+        )
+    ).scalar_one()
+
+    today = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    resolved_today = (
+        await session.execute(
+            select(func.count())
+            .select_from(SupportTicket)
+            .where(
+                SupportTicket.status.in_(TicketStatus.CLOSED_STATES),
+                SupportTicket.updated_at >= today,
+            )
+        )
+    ).scalar_one()
+
+    open_rows = (
+        await session.execute(
+            select(SupportTicket.created_at).where(SupportTicket.status.in_(_OPEN_STATES))
+        )
+    ).scalars().all()
+    now = datetime.now(UTC)
+    ages_h = [(now - _aware(c)).total_seconds() / 3600 for c in open_rows]
+    oldest = round(max(ages_h), 1) if ages_h else None
+    sla_breaches = sum(1 for h in ages_h if h > sla_threshold_hours)
+
+    return SupportMetricsOut(
+        open=status_counts.get(TicketStatus.OPEN, 0),
+        assigned=status_counts.get(TicketStatus.ASSIGNED, 0),
+        escalated=status_counts.get(TicketStatus.ESCALATED, 0),
+        unassigned=unassigned,
+        resolved_today=resolved_today,
+        oldest_open_hours=oldest,
+        sla_breaches=sla_breaches,
+        sla_threshold_hours=sla_threshold_hours,
+    )
 
 
 async def _load(session: AsyncSession, tid: str) -> SupportTicket:
