@@ -483,6 +483,55 @@ class AuditLogRow(BaseModel):
 
 class AuditLogList(BaseModel):
     items: list[AuditLogRow]
+# ── Finance reporting & reconciliation (admin) ───────────────────────────────
+class ReconciliationTotals(BaseModel):
+    gross_booking_value_paise: int
+    gross_booking_value_display: str
+    platform_commission_paise: int
+    platform_commission_display: str
+    gateway_fees_paise: int
+    gateway_fees_display: str
+    partner_payable_paise: int
+    partner_payable_display: str
+    refunds_paise: int
+    refunds_display: str
+    payouts_paise: int
+    payouts_display: str
+    net_platform_revenue_paise: int
+    net_platform_revenue_display: str
+    outstanding_payable_paise: int
+    outstanding_payable_display: str
+
+
+class FinanceDayRow(BaseModel):
+    date: str
+    charges_paise: int
+    commission_paise: int
+    gateway_paise: int
+    payable_paise: int
+    refunds_paise: int
+    payouts_paise: int
+
+
+class ReconciliationOut(BaseModel):
+    range_days: int
+    totals: ReconciliationTotals
+    by_day: list[FinanceDayRow]
+
+
+class LedgerFeedRow(BaseModel):
+    id: str
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_code: str | None
+    pandit_id: str | None
+    settled: bool
+    created_at: datetime
+
+
+class LedgerFeedOut(BaseModel):
+    items: list[LedgerFeedRow]
     total: int
     page: int
     page_size: int
@@ -674,3 +723,12 @@ class PermissionRow(BaseModel):
 class PermissionMatrixOut(BaseModel):
     roles: list[str]
     modules: list[PermissionRow]
+class RefundRow(BaseModel):
+    id: str
+    booking_code: str | None
+    amount_paise: int
+    amount_display: str
+    reason: str | None
+    status: str
+    created_by: str | None
+    created_at: datetime
