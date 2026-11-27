@@ -1,20 +1,34 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, Star } from "lucide-react";
+import { Eye, EyeOff, Flag, Star } from "lucide-react";
 import { mpApi } from "@/features/marketplace/api";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
+const FILTERS = ["all", "reported", "hidden", "low"] as const;
+type Filter = (typeof FILTERS)[number];
+const FILTER_LABEL: Record<Filter, string> = {
+  all: "All", reported: "Reported", hidden: "Hidden", low: "1–2 ★",
+};
+
 export default function ReviewsPage() {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["mp", "reviews"],
-    queryFn: () => mpApi.reviews(),
+  const [filter, setFilter] = useState<Filter>("all");
+
+  const params =
+    filter === "reported" ? { reported: true }
+    : filter === "hidden" ? { hidden: true }
+    : {};
+  const { data: raw, isLoading } = useQuery({
+    queryKey: ["mp", "reviews", filter],
+    queryFn: () => mpApi.reviews(params),
   });
+  const data = filter === "low" ? raw?.filter((r) => r.rating <= 2) : raw;
 
   const moderate = useMutation({
     mutationFn: ({ id, hidden }: { id: string; hidden: boolean }) =>
@@ -33,7 +47,25 @@ export default function ReviewsPage() {
         Customer reviews of completed bookings. Hide any that breach the policy.
       </p>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-5 flex flex-wrap gap-1.5">
+        {FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            aria-pressed={filter === f}
+            className={cn(
+              "rounded-pill border px-3 py-1.5 text-sm font-medium",
+              filter === f
+                ? "border-forest bg-forest text-white"
+                : "border-line bg-surface text-ink hover:bg-surface-2",
+            )}
+          >
+            {FILTER_LABEL[f]}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-5 space-y-3">
         {isLoading ? (
           <div className="py-16 text-center"><Spinner className="text-forest" /></div>
         ) : !data?.length ? (
@@ -65,6 +97,11 @@ export default function ReviewsPage() {
                       {r.pandit_name ?? "—"}
                     </span>
                     <span className="text-xs text-muted">· {r.booking_code}</span>
+                    {r.reported && (
+                      <span className="inline-flex items-center gap-1 rounded-pill bg-tomato/10 px-2 py-0.5 text-xs font-medium text-tomato">
+                        <Flag size={11} /> Reported
+                      </span>
+                    )}
                     {r.hidden && (
                       <span className="rounded-pill bg-tomato/10 px-2 py-0.5 text-xs font-medium text-tomato">
                         Hidden

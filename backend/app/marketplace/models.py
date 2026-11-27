@@ -482,3 +482,25 @@ class PushToken(UUIDPk, Timestamps, Base):
     principal_kind: Mapped[str] = mapped_column(nullable=False)  # customer / pandit
     principal_id: Mapped[uuid.UUID] = mapped_column(GUID(), nullable=False, index=True)
     platform: Mapped[str] = mapped_column(nullable=False)  # ios / android / web
+# ── Service areas (operational serviceability) ────────────────────────────────
+class ServiceArea(UUIDPk, Timestamps, Base):
+    """A named operational service area: a city/zone covered by the platform,
+    modelled as a centre + radius (reusing the existing geo primitives) with an
+    optional pincode list. This is a *managed catalogue* on top of the existing
+    per-partner ``service_radius_km``; whether booking serviceability is *gated*
+    on these areas is a separate product decision and is NOT wired into dispatch
+    here (see the module doc)."""
+
+    __tablename__ = "mp_service_area"
+    __table_args__ = (
+        CheckConstraint("radius_km > 0", name="ck_service_area_radius_pos"),
+    )
+
+    name: Mapped[str] = mapped_column(nullable=False)
+    city: Mapped[str | None] = mapped_column(nullable=True)
+    center_lat: Mapped[float] = mapped_column(Float, nullable=False)
+    center_lng: Mapped[float] = mapped_column(Float, nullable=False)
+    radius_km: Mapped[float] = mapped_column(Float, default=10.0, nullable=False)
+    pincodes: Mapped[list | None] = mapped_column(JSON, nullable=True)  # list[str]
+    active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
