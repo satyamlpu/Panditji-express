@@ -41,24 +41,32 @@ keeps real SMS.
 ## 2. Deploy the staging backend (one-time, free)
 
 The testing APKs point at `https://panditji-backend-staging.onrender.com`. Bring
-it up with the committed Render blueprint (free plan):
+it up with the committed Render blueprint (free plan) — it is **one-click**:
 
-1. Render → **New → Blueprint** → connect this repo. It picks up
-   `render.yaml`, which now defines **`panditji-backend-staging`** alongside prod.
-2. Set the two dashboard-only vars on the staging service:
-   - `DATABASE_URL` — an **isolated** test database (a separate Supabase project
-     / schema, or a free Render Postgres). **Never** the production DB.
-   - `OTP_TEST_NUMBERS` — comma-separated E.164 allowlist, e.g.
-     `+919000000001,+919000000002`.
-3. Deploy. `APP_ENV=staging` + `OTP_MODE=mock` are already set in the blueprint;
-   `JWT_SECRET` / `PAYMENT_WEBHOOK_SECRET` are auto-generated.
-4. Run migrations if needed, then confirm:
+1. Render → **New → Blueprint** → connect this repo. It reads `render.yaml`,
+   which defines **`panditji-backend-staging`** plus an **isolated free test
+   database** (`panditji-staging-db`) and wires them together.
+2. The blueprint prompts for the one var it can't guess:
+   - `OTP_TEST_NUMBERS` — comma-separated E.164 allowlist of the number(s) you
+     will test with, e.g. `+919000000001,+919000000002`.
+   Everything else is automatic: `APP_ENV=staging`, `OTP_MODE=mock`,
+   `OTP_TEST_CODE=123456`, `DATABASE_URL` (from the test DB), and generated
+   `JWT_SECRET` / `PAYMENT_WEBHOOK_SECRET`.
+3. **Apply / Deploy.** Migrations run automatically on start
+   (`alembic upgrade head` in the start command), so the tables always exist —
+   nothing to run by hand.
+4. Wait for "Live", then confirm:
    ```bash
    curl https://panditji-backend-staging.onrender.com/health
    ```
+   A free service sleeps when idle, so the **first** request after a while takes
+   ~30–60s to wake — the app may show "Request Failed" if it times out; just
+   retry once it's awake.
 
-> If you prefer Vercel, deploy a separate staging project instead and update the
-> `EXPO_PUBLIC_API_BASE` in both `eas.json` → `testing` profiles to its URL.
+> Prefer Vercel? Deploy a separate staging project instead and point both
+> `eas.json` → `testing` profiles' `EXPO_PUBLIC_API_BASE` at its URL (Vercel is
+> serverless, so set `DATABASE_URL` to a hosted Postgres and run migrations
+> separately).
 
 ---
 
