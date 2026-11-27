@@ -30,6 +30,8 @@ export default function Onboard() {
   const [name, setName] = useState("");
   const [city, setCity] = useState("Kanpur");
   const [radiusKm, setRadiusKm] = useState("12");
+  const [experience, setExperience] = useState("");
+  const [specialisation, setSpecialisation] = useState("");
   const [langs, setLangs] = useState<string[]>(["Hindi"]);
   const [slugs, setSlugs] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -51,6 +53,8 @@ export default function Onboard() {
         setName(p.name ?? "");
         setCity(p.city ?? "Kanpur");
         if (p.service_radius_km) setRadiusKm(String(p.service_radius_km));
+        if (p.experience_years != null) setExperience(String(p.experience_years));
+        if (p.specialisation) setSpecialisation(p.specialisation);
         if (p.languages?.length) setLangs(p.languages);
         if (p.capabilities?.length) setSlugs(p.capabilities.map((c) => c.slug));
       } catch {
@@ -69,6 +73,10 @@ export default function Onboard() {
     if (name.trim().length < 2) return setError("Please enter your full name.");
     if (langs.length === 0) return setError("Select at least one language.");
     if (slugs.length === 0) return setError("Select at least one puja you can perform.");
+    const exp = experience.trim() ? Number(experience) : null;
+    if (exp != null && (!Number.isFinite(exp) || exp < 0 || exp > 80)) {
+      return setError("Experience must be a number between 0 and 80 years.");
+    }
     setBusy(true);
     try {
       const updated = await api.post<Pandit>("/api/v1/mp/partner/onboard", {
@@ -79,6 +87,8 @@ export default function Onboard() {
         base_lng: KANPUR.lng,
         service_radius_km: Number(radiusKm) || 10,
         service_slugs: slugs,
+        experience_years: exp,
+        specialisation: specialisation.trim() || null,
       });
       setMe(updated);
       haptics.success();
@@ -141,6 +151,8 @@ export default function Onboard() {
             <FormInput label="Full name" icon="profile" value={name} onChangeText={setName} placeholder="e.g. Panditji Sharma" />
             <FormInput label="City" icon="location" value={city} onChangeText={setCity} placeholder="Kanpur" />
             <FormInput label="Service radius (km)" icon="navigation" value={radiusKm} onChangeText={setRadiusKm} keyboardType="number-pad" placeholder="12" />
+            <FormInput label="Years of experience (optional)" icon="clock" value={experience} onChangeText={setExperience} keyboardType="number-pad" placeholder="e.g. 15" />
+            <FormInput label="Specialisation (optional)" icon="blessing" value={specialisation} onChangeText={setSpecialisation} placeholder="e.g. Vedic havan & Griha Pravesh" />
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <Icon name="location" size={13} color={colors.inkMuted} />
               <Txt variant="caption" color={colors.inkMuted}>

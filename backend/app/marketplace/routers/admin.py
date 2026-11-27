@@ -6,21 +6,24 @@ action records actor, reason and result via the audit log.
 
 from __future__ import annotations
 
+import hmac
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentAdmin
-from app.core.errors import APIError, NotFoundError
+from app.core.config import settings
+from app.core.errors import APIError, NotFoundError, UnauthorizedError
 from app.db.base import utcnow
 from app.db.session import get_session
 from app.marketplace import dispatch
 from app.marketplace.constants import (
     Availability,
+    BookingMode,
     BookingStatus,
     MpAudit,
     PanditStatus,
@@ -39,6 +42,10 @@ from app.marketplace.models import (
 )
 from app.marketplace.principals import client_ip, require_staff
 from app.marketplace.schemas import (
+    AnalyticsDaily,
+    AnalyticsOut,
+    AnalyticsTopService,
+    AnalyticsTotals,
     BookingAdminDetail,
     BookingAdminOut,
     BookingEventOut,
@@ -66,6 +73,9 @@ _DECISION_STATUS = {
     "reject": PanditStatus.REJECTED,
     "request_changes": PanditStatus.ACTION_REQUIRED,
     "suspend": PanditStatus.SUSPENDED,
+    "schedule_interview": PanditStatus.INTERVIEW_SCHEDULED,
+    "complete_interview": PanditStatus.INTERVIEW_COMPLETED,
+    "require_reverification": PanditStatus.REVERIFICATION_REQUIRED,
 }
 
 
@@ -445,3 +455,144 @@ async def dashboard(
         no_match_rate=round(no_partner / total, 3) if total else 0.0,
         bookings_today=bookings_today,
     )
+
+
+_CANCELLED_STATUSES = (
+    BookingStatus.CANCELLED_CUSTOMER,
+    BookingStatus.CANCELLED_PARTNER,
+    BookingStatus.CANCELLED_PLATFORM,
+)
+
+
+@router.get("/analytics", response_model=AnalyticsOut)
+async def analytics(
+    days: int = Query(30, ge=1, le=180),
+    _: CurrentAdmin = _ops,
+    session: AsyncSession = Depends(get_session),
+) -> AnalyticsOut:
+    """Operations trend analytics over the last ``days`` days (real booking data).
+
+    Daily booking volume (with completed / no-partner splits), top services, and
+    window totals + rates. Aggregated in Python from the booking rows so it stays
+    dialect-portable (no DB-specific date functions)."""
+    start = utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(
+        days=days - 1
+    )
+    rows = (
+        await session.execute(
+            select(
+                Booking.created_at,
+                Booking.status,
+                Booking.service_title_snapshot,
+                Booking.price_paise,
+            ).where(Booking.created_at >= start)
+        )
+    ).all()
+
+    # Seed every day in the window so the series has no gaps.
+    buckets: dict[str, dict[str, int]] = {}
+    for i in range(days):
+        key = (start + timedelta(days=i)).strftime("%Y-%m-%d")
+        buckets[key] = {"total": 0, "completed": 0, "no_partner": 0}
+
+    service_counts: dict[str, int] = {}
+    totals = {"bookings": 0, "completed": 0, "no_partner": 0, "cancelled": 0}
+    gmv_paise = 0
+
+    for created_at, status, title, price_paise in rows:
+        day = created_at.strftime("%Y-%m-%d")
+        b = buckets.get(day)
+        if b is not None:
+            b["total"] += 1
+            if status == BookingStatus.COMPLETED:
+                b["completed"] += 1
+            elif status == BookingStatus.NO_PARTNER:
+                b["no_partner"] += 1
+        totals["bookings"] += 1
+        if status == BookingStatus.COMPLETED:
+            totals["completed"] += 1
+            gmv_paise += price_paise or 0
+        elif status == BookingStatus.NO_PARTNER:
+            totals["no_partner"] += 1
+        elif status in _CANCELLED_STATUSES:
+            totals["cancelled"] += 1
+        service_counts[title] = service_counts.get(title, 0) + 1
+
+    n = totals["bookings"]
+    top = sorted(service_counts.items(), key=lambda kv: kv[1], reverse=True)[:5]
+
+    return AnalyticsOut(
+        days=days,
+        totals=AnalyticsTotals(
+            bookings=n,
+            completed=totals["completed"],
+            no_partner=totals["no_partner"],
+            cancelled=totals["cancelled"],
+            completion_rate=round(totals["completed"] / n, 3) if n else 0.0,
+            no_match_rate=round(totals["no_partner"] / n, 3) if n else 0.0,
+            gmv_paise=gmv_paise,
+            gmv_display=price_display(gmv_paise),
+        ),
+        daily=[
+            AnalyticsDaily(
+                date=day,
+                total=v["total"],
+                completed=v["completed"],
+                no_partner=v["no_partner"],
+            )
+            for day, v in buckets.items()
+        ],
+        top_services=[AnalyticsTopService(title=t, bookings=c) for t, c in top],
+    )
+
+
+def _require_scheduler(
+    x_scheduler_token: str | None = Header(default=None),
+) -> None:
+    """Authorize the scheduled-dispatch cron via a shared secret.
+
+    Disabled (503) until ``SCHEDULER_SECRET`` is set, so it can't be abused
+    before it's deliberately wired to a cron. Constant-time token compare."""
+    secret = settings.scheduler_secret
+    if not secret:
+        raise APIError(
+            "Scheduled dispatch is not enabled (SCHEDULER_SECRET is unset).",
+            code="scheduler_disabled",
+            status_code=503,
+        )
+    if not x_scheduler_token or not hmac.compare_digest(x_scheduler_token, secret):
+        raise UnauthorizedError("Invalid scheduler token")
+
+
+@router.post("/scheduler/dispatch-due")
+async def dispatch_due_scheduled(
+    _: None = Depends(_require_scheduler),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Dispatch scheduled bookings whose time has arrived.
+
+    Meant to be polled by an external cron (Vercel Cron / GitHub Action). Picks
+    scheduled bookings still at ``requested`` whose ``scheduled_at`` has passed
+    and starts dispatch for each. Idempotent — a booking leaves ``requested`` as
+    soon as dispatch starts, so it is never picked twice. No background worker."""
+    now = utcnow()
+    due = (
+        await session.execute(
+            select(Booking)
+            .where(
+                Booking.mode == BookingMode.SCHEDULED,
+                Booking.status == BookingStatus.REQUESTED,
+                Booking.scheduled_at.is_not(None),
+                Booking.scheduled_at <= now,
+            )
+            .order_by(Booking.scheduled_at.asc())
+            .limit(100)
+        )
+    ).scalars().all()
+
+    dispatched = 0
+    for booking in due:
+        await dispatch.start_dispatch(session, booking)
+        dispatched += 1
+
+    return {"dispatched": dispatched, "checked_at": now.isoformat()}

@@ -14,6 +14,17 @@ import { cn } from "@/lib/utils";
 
 const STATUSES = ["all", "open", "assigned", "escalated", "resolved", "closed"];
 
+function ageHours(iso: string) {
+  return (Date.now() - new Date(iso).getTime()) / 3_600_000;
+}
+function ageLabel(h: number) {
+  if (h < 1) return `${Math.round(h * 60)}m`;
+  if (h < 24) return `${Math.round(h)}h`;
+  return `${Math.round(h / 24)}d`;
+}
+const OPEN_STATES = ["open", "assigned", "escalated"];
+const SLA_HOURS = 24;
+
 function SupportInner() {
   const qc = useQueryClient();
   const [status, setStatus] = useState(useSearchParams().get("status") ?? "all");
@@ -24,6 +35,11 @@ function SupportInner() {
   const list = useQuery({
     queryKey: ["mp", "tickets", status],
     queryFn: () => mpApi.tickets(status === "all" ? undefined : status),
+    refetchInterval: 20000,
+  });
+  const metrics = useQuery({
+    queryKey: ["mp", "support", "metrics"],
+    queryFn: () => mpApi.supportMetrics(),
     refetchInterval: 20000,
   });
   const detail = useQuery({
@@ -54,6 +70,16 @@ function SupportInner() {
     onSuccess: () => { toast.success("Resolved"); setResolution(""); invalidate(); },
     onError: onErr,
   });
+  const escalate = useMutation({
+    mutationFn: () => mpApi.ticketStatus(openId as string, "escalated"),
+    onSuccess: () => { toast.success("Escalated"); invalidate(); },
+    onError: onErr,
+  });
+  const close = useMutation({
+    mutationFn: () => mpApi.ticketStatus(openId as string, "closed", resolution),
+    onSuccess: () => { toast.success("Closed"); setResolution(""); invalidate(); },
+    onError: onErr,
+  });
 
   const d = detail.data;
   const closed = d && (d.status === "resolved" || d.status === "closed");
@@ -62,8 +88,25 @@ function SupportInner() {
     <div>
       <h1 className="font-display text-2xl font-bold text-ink">Support</h1>
       <p className="mt-1 text-sm text-muted">
-        Customer and partner tickets — assign, reply and resolve.
+        Customer and partner tickets — assign, reply, escalate and resolve.
       </p>
+
+      {metrics.data && (
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {[
+            ["Open", metrics.data.open, ""],
+            ["Unassigned", metrics.data.unassigned, metrics.data.unassigned ? "text-[#7a5a00]" : ""],
+            ["Escalated", metrics.data.escalated, metrics.data.escalated ? "text-tomato" : ""],
+            [`SLA breaches (>${metrics.data.sla_threshold_hours}h)`, metrics.data.sla_breaches, metrics.data.sla_breaches ? "text-tomato" : ""],
+            ["Resolved today", metrics.data.resolved_today, "text-forest"],
+          ].map(([label, val, tone]) => (
+            <div key={label as string} className="rounded-card border border-line bg-surface px-3 py-2 shadow-soft">
+              <p className={cn("text-lg font-bold tabular-nums text-ink", tone as string)}>{val}</p>
+              <p className="text-[11px] text-muted">{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-5 flex flex-wrap gap-1.5">
         {STATUSES.map((s) => (
@@ -102,7 +145,26 @@ function SupportInner() {
                     {t.assignee_email ? ` · @${t.assignee_email}` : ""}
                   </p>
                 </button>
-                <StatusDot status={t.status} />
+                <div className="flex shrink-0 items-center gap-2">
+                  {OPEN_STATES.includes(t.status) ? (
+                    (() => {
+                      const h = ageHours(t.created_at);
+                      const breach = h > SLA_HOURS;
+                      return (
+                        <span
+                          className={cn(
+                            "rounded-pill px-2 py-0.5 text-xs font-medium",
+                            breach ? "bg-tomato/10 text-tomato" : "bg-surface-2 text-muted",
+                          )}
+                          title={breach ? "SLA breached" : "Age"}
+                        >
+                          {ageLabel(h)}
+                        </span>
+                      );
+                    })()
+                  ) : null}
+                  <StatusDot status={t.status} />
+                </div>
               </li>
             ))}
           </ul>
@@ -163,6 +225,17 @@ function SupportInner() {
                       Assign to me
                     </Button>
                   )}
+                  {d.status !== "escalated" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-tomato/40 text-tomato"
+                      onClick={() => escalate.mutate()}
+                      disabled={escalate.isPending}
+                    >
+                      Escalate
+                    </Button>
+                  )}
                 </div>
                 <AField label="Reply">
                   <Textarea value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Type a reply to the customer/partner…" />
@@ -185,6 +258,14 @@ function SupportInner() {
                       disabled={resolution.trim().length < 2 || resolve.isPending}
                     >
                       Resolve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => close.mutate()}
+                      disabled={resolution.trim().length < 2 || close.isPending}
+                    >
+                      Close
                     </Button>
                   </div>
                 </div>

@@ -374,3 +374,48 @@ async def summary(session: AsyncSession) -> dict:
         "paid_out_paise": paid_out,
         "outstanding_payable_paise": payable - paid_out,
     }
+
+
+async def report(session: AsyncSession, start, end) -> dict:
+    """Ledger-derived finance totals over an optional [start, end) window."""
+
+    def _ranged(stmt):
+        if start is not None:
+            stmt = stmt.where(LedgerEntry.created_at >= start)
+        if end is not None:
+            stmt = stmt.where(LedgerEntry.created_at < end)
+        return stmt
+
+    async def _sum(entry_type: str) -> int:
+        stmt = select(func.coalesce(func.sum(LedgerEntry.amount_paise), 0)).where(
+            LedgerEntry.entry_type == entry_type
+        )
+        return (await session.execute(_ranged(stmt))).scalar_one()
+
+    gbv = await _sum(LedgerType.CUSTOMER_CHARGE)
+    commission = await _sum(LedgerType.PLATFORM_COMMISSION)
+    gateway = await _sum(LedgerType.GATEWAY_FEE)
+    payable = await _sum(LedgerType.PARTNER_PAYABLE)
+    refunds = await _sum(LedgerType.REFUND)
+    paid_out = await _sum(LedgerType.PAYOUT)
+    bookings_count = (
+        await session.execute(
+            _ranged(
+                select(func.count())
+                .select_from(LedgerEntry)
+                .where(LedgerEntry.entry_type == LedgerType.CUSTOMER_CHARGE)
+            )
+        )
+    ).scalar_one()
+    return {
+        "start": start,
+        "end": end,
+        "gross_booking_value_paise": gbv,
+        "platform_commission_paise": commission,
+        "gateway_fees_paise": gateway,
+        "partner_payable_paise": payable,
+        "refunds_paise": refunds,
+        "paid_out_paise": paid_out,
+        "net_commission_paise": commission - refunds,
+        "bookings_count": bookings_count,
+    }
