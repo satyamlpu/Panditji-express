@@ -40,9 +40,12 @@ interface Pandit {
   name: string | null;
   languages: string[];
   distance_km: number;
-  eta_minutes?: number | null;
   rating_avg: number | null;
   rating_count: number;
+  eta_minutes: number | null;
+  price_display: string | null;
+  experience_years: number | null;
+  specialisation: string | null;
 }
 
 type Mode = "immediate" | "scheduled";
@@ -75,6 +78,9 @@ export default function BookScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pandits, setPandits] = useState<Pandit[] | null>(null);
+  // When set, the customer has chosen a specific pandit; dispatch offers them
+  // first and falls back to nearest-first if they decline.
+  const [selectedPandit, setSelectedPandit] = useState<string | null>(null);
 
   const days = useMemo(() => nextDays(5), []);
 
@@ -120,6 +126,7 @@ export default function BookScreen() {
         address_line: address,
         lat: KANPUR.lat,
         lng: KANPUR.lng,
+        ...(selectedPandit ? { preferred_pandit_id: selectedPandit } : {}),
       });
       haptics.success();
       router.replace(`/booking/${b.id}`);
@@ -270,6 +277,11 @@ export default function BookScreen() {
         {/* Available Panditjis near you (real discovery) */}
         <View>
           <SectionHeader title="Available near you" />
+          {pandits !== null && pandits.length > 0 ? (
+            <Txt variant="caption" color={colors.inkSecondary} style={{ marginBottom: spacing.sm }}>
+              Tap a Panditji to request them specifically, or we&apos;ll match the nearest.
+            </Txt>
+          ) : null}
           {pandits === null ? (
             <Card>
               <Txt variant="callout" color={colors.inkSecondary}>
@@ -287,6 +299,11 @@ export default function BookScreen() {
                   etaMinutes={p.eta_minutes}
                   ratingAvg={p.rating_avg}
                   ratingCount={p.rating_count}
+                  selected={selectedPandit === p.id}
+                  onPress={() => {
+                    haptics.select();
+                    setSelectedPandit((cur) => (cur === p.id ? null : p.id));
+                  }}
                 />
               ))}
             </View>

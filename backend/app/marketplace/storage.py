@@ -40,8 +40,42 @@ ALLOWED_CONTENT_TYPES: dict[str, str] = {
 }
 
 
+# Media Library accepts web raster images only. SVG is deliberately excluded
+# (it can carry script); these are served from a public proxy, so the type must
+# be something a browser renders inertly.
+MEDIA_CONTENT_TYPES: dict[str, str] = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+}
+
+
 class StorageError(RuntimeError):
     """Raised when the configured storage backend cannot complete an operation."""
+
+
+def build_media_key(ext: str) -> str:
+    """A collision-free, path-safe object key for a public Media Library image.
+
+    Flat namespace (the media dir/bucket already isolates these from KYC), and
+    the extension is constrained to the image allowlist — the client's filename
+    is never used to build the path.
+    """
+    safe_ext = ext if ext in MEDIA_CONTENT_TYPES.values() else "bin"
+    return f"{uuid.uuid4().hex}.{safe_ext}"
+
+
+def get_media_storage() -> LocalDiskStorage | SupabaseStorage:
+    """Storage backend for public website media (separate dir/bucket from KYC)."""
+    backend = (settings.storage_backend or "local").lower()
+    if backend == "supabase":
+        return SupabaseStorage(
+            settings.supabase_url,
+            settings.supabase_service_key,
+            settings.supabase_media_bucket,
+        )
+    return LocalDiskStorage(settings.media_storage_local_dir)
 
 
 def build_key(pandit_id: str, doc_id: str, ext: str) -> str:
@@ -77,6 +111,12 @@ class LocalDiskStorage:
         if not path.is_file():
             raise StorageError("Stored file not found")
         return path.read_bytes()
+
+    async def delete(self, ref: str) -> None:
+        path = (self._base / ref).resolve()
+        if not str(path).startswith(str(self._base) + "/"):
+            raise StorageError("Refusing to delete outside the storage root")
+        path.unlink(missing_ok=True)
 
 
 class SupabaseStorage:
@@ -127,6 +167,13 @@ class SupabaseStorage:
         if resp.status_code >= 400:
             raise StorageError(f"Supabase download failed ({resp.status_code})")
         return resp.content
+
+    async def delete(self, ref: str) -> None:
+        async with httpx.AsyncClient(timeout=30.0) as http:
+            resp = await http.delete(self._object_url(ref), headers=self._headers)
+        # A missing object is fine; anything else is a real failure.
+        if resp.status_code not in (200, 204, 404):
+            raise StorageError(f"Supabase delete failed ({resp.status_code})")
 
 
 def get_storage() -> LocalDiskStorage | SupabaseStorage:

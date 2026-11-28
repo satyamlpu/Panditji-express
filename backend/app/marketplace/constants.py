@@ -39,18 +39,24 @@ class PanditStatus:
     SUBMITTED = "submitted"
     UNDER_REVIEW = "under_review"
     ACTION_REQUIRED = "action_required"
+    INTERVIEW_SCHEDULED = "interview_scheduled"
+    INTERVIEW_COMPLETED = "interview_completed"
     APPROVED = "approved"
     REJECTED = "rejected"
     SUSPENDED = "suspended"
+    REVERIFICATION_REQUIRED = "reverification_required"
 
     ALL = (
         DRAFT,
         SUBMITTED,
         UNDER_REVIEW,
         ACTION_REQUIRED,
+        INTERVIEW_SCHEDULED,
+        INTERVIEW_COMPLETED,
         APPROVED,
         REJECTED,
         SUSPENDED,
+        REVERIFICATION_REQUIRED,
     )
     # Only an approved partner may receive ordinary dispatch offers.
     ELIGIBLE = (APPROVED,)

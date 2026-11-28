@@ -7,8 +7,9 @@ refund requires a reason. Review moderation is gated to support (+ super-admin).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +28,7 @@ from app.marketplace.models import (
 )
 from app.marketplace.principals import require_staff
 from app.marketplace.schemas import (
+    FinanceReportOut,
     FinanceSummaryOut,
     LedgerEntryOut,
     PaymentOut,
@@ -68,6 +70,17 @@ async def finance_summary(
     _: CurrentAdmin = _finance, session: AsyncSession = Depends(get_session)
 ) -> FinanceSummaryOut:
     return FinanceSummaryOut(**await finance.summary(session))
+
+
+@router.get("/finance/report", response_model=FinanceReportOut)
+async def finance_report(
+    start: datetime | None = Query(default=None),
+    end: datetime | None = Query(default=None),
+    _: CurrentAdmin = _finance,
+    session: AsyncSession = Depends(get_session),
+) -> FinanceReportOut:
+    """Ledger-derived finance totals over an optional [start, end) window."""
+    return FinanceReportOut(**await finance.report(session, start, end))
 
 
 @router.get("/finance/payments", response_model=list[PaymentOut])

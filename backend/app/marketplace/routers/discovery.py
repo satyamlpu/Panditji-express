@@ -13,6 +13,7 @@ from app.core.errors import NotFoundError
 from app.db.session import get_session
 from app.marketplace.constants import Availability, PanditStatus
 from app.marketplace.dispatch import HEARTBEAT_FRESH_SECONDS
+from app.marketplace.eta import eta_minutes
 from app.marketplace.geo import haversine_km
 from app.marketplace.models import Pandit, PanditCapability
 from app.marketplace.schemas import PanditSearchItem, Serviceability
@@ -24,7 +25,7 @@ router = APIRouter(prefix="/api/v1/mp/discovery", tags=["mp:discovery"])
 
 async def _available_partners(
     session: AsyncSession, service_slug: str, lat: float, lng: float
-) -> list[tuple[Pandit, float]]:
+) -> tuple[Service, list[tuple[Pandit, float]]]:
     service = (
         await session.execute(
             select(Service).where(
@@ -43,7 +44,7 @@ async def _available_partners(
         )
     ).scalars().all()
     if not capable_ids:
-        return []
+        return service, []
 
     pandits = (
         await session.execute(
@@ -68,7 +69,7 @@ async def _available_partners(
         if dist <= p.service_radius_km:
             out.append((p, dist))
     out.sort(key=lambda t: t[1])
-    return out
+    return service, out
 
 
 @router.get("/services")
@@ -107,7 +108,8 @@ async def search_pandits(
     lng: float = Query(..., ge=-180, le=180),
     session: AsyncSession = Depends(get_session),
 ) -> list[PanditSearchItem]:
-    found = await _available_partners(session, service_slug, lat, lng)
+    service, found = await _available_partners(session, service_slug, lat, lng)
+    price = price_display(service.price_paise)
     return [
         PanditSearchItem(
             id=str(p.id),
@@ -117,6 +119,10 @@ async def search_pandits(
             service_radius_km=p.service_radius_km,
             rating_avg=round(p.rating_sum / p.rating_count, 2) if p.rating_count else None,
             rating_count=p.rating_count,
+            eta_minutes=eta_minutes(d),
+            price_display=price,
+            experience_years=p.experience_years,
+            specialisation=p.specialisation,
         )
         for p, d in found
     ]
@@ -129,7 +135,7 @@ async def serviceability(
     lng: float = Query(..., ge=-180, le=180),
     session: AsyncSession = Depends(get_session),
 ) -> Serviceability:
-    found = await _available_partners(session, service_slug, lat, lng)
+    _service, found = await _available_partners(session, service_slug, lat, lng)
     if found:
         return Serviceability(serviceable=True, available_partners=len(found))
     return Serviceability(

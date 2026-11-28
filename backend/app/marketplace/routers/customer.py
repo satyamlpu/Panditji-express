@@ -6,7 +6,7 @@ import secrets
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,8 +14,14 @@ from app.core.constants import ContentStatus
 from app.core.errors import APIError, NotFoundError
 from app.core.ratelimit import rate_limit
 from app.db.session import get_session
-from app.marketplace import dispatch, finance, support
-from app.marketplace.constants import BookingMode, BookingStatus, MpAudit, TicketStatus
+from app.marketplace import dispatch, finance, push, support
+from app.marketplace.constants import (
+    BookingMode,
+    BookingStatus,
+    MpAudit,
+    PanditStatus,
+    TicketStatus,
+)
 from app.marketplace.eta import eta_minutes
 from app.marketplace.geo import haversine_km
 from app.marketplace.models import (
@@ -40,6 +46,7 @@ from app.marketplace.schemas import (
     CustomerUpdate,
     NotificationOut,
     OrderOut,
+    PushTokenIn,
     ReviewCreate,
     TicketCreate,
     TicketDetailOut,
@@ -194,12 +201,31 @@ async def create_booking(
             status_code=422,
         )
 
+    # Optional customer-selected pandit: must exist and be approved. Dispatch
+    # offers them first and falls back to nearest-first if they don't take it.
+    preferred_id = None
+    if payload.preferred_pandit_id:
+        try:
+            preferred_id = uuid.UUID(payload.preferred_pandit_id)
+        except ValueError:
+            raise NotFoundError("Selected pandit not found") from None
+        chosen = (
+            await session.execute(select(Pandit).where(Pandit.id == preferred_id))
+        ).scalar_one_or_none()
+        if chosen is None or chosen.status != PanditStatus.APPROVED:
+            raise APIError(
+                "Selected pandit is not available.",
+                code="not_allowed",
+                status_code=409,
+            )
+
     booking = Booking(
         code=_booking_code(),
         customer_id=uuid.UUID(me.id),
         service_id=service.id,
         mode=payload.mode,
         scheduled_at=payload.scheduled_at,
+        preferred_pandit_id=preferred_id,
         status=BookingStatus.REQUESTED,
         address_line=line,
         landmark=landmark,
@@ -480,6 +506,32 @@ async def submit_review(
         meta={"rating": payload.rating},
     )
     return {"ok": True, "rating": payload.rating}
+
+
+@router.post("/push-token")
+async def register_push_token(
+    payload: PushTokenIn,
+    me: CurrentCustomer = Depends(get_current_customer),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    await push.register(
+        session,
+        principal_kind="customer",
+        principal_id=me.id,
+        token=payload.token,
+        platform=payload.platform,
+    )
+    return {"ok": True}
+
+
+@router.delete("/push-token")
+async def delete_push_token(
+    token: str = Query(..., min_length=8),
+    _me: CurrentCustomer = Depends(get_current_customer),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    await push.unregister(session, token=token)
+    return {"ok": True}
 
 
 @router.post("/support/tickets", response_model=TicketOut, status_code=201)

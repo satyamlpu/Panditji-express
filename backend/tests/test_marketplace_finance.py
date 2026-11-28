@@ -10,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import func, select
 
 from app.marketplace.finance import sign_payload
-from app.marketplace.models import LedgerEntry, Pandit
+from app.marketplace.models import LedgerEntry, Pandit, PushToken
 from app.models.service import Service
 from tests.conftest import TestSession
 from tests.test_marketplace import LAT, LNG, _auth, _book, _make_pandit, _token
@@ -178,3 +178,104 @@ async def test_review_only_on_completed_and_once(client: AsyncClient, service_id
 
 async def test_finance_requires_staff(client: AsyncClient):
     assert (await client.get("/api/v1/mp/admin/finance/summary")).status_code == 401
+
+
+async def test_partner_earnings(client: AsyncClient, admin_token, service_id):
+    booking, ctok, ptok, pid = await _completed(client, service_id, phone="+910000002050")
+    order = await _order(client, ctok, booking["id"])
+    await _webhook(client, order["provider_order_id"], payment_id="pay_earn")
+
+    # Before payout: the partner has pending earnings, nothing paid out yet.
+    res = await client.get("/api/v1/mp/partner/earnings", headers=_auth(ptok))
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["total_earned_paise"] > 0
+    assert data["pending_paise"] == data["total_earned_paise"]
+    assert data["paid_out_paise"] == 0
+    assert data["bookings_count"] >= 1
+    assert len(data["recent"]) >= 1
+
+    # After a payout: pending clears, paid_out reflects the disbursement.
+    paid = await client.post(
+        "/api/v1/mp/admin/finance/payouts",
+        headers=_auth(admin_token),
+        json={"pandit_id": pid},
+    )
+    assert paid.status_code == 200, paid.text
+    d2 = (await client.get("/api/v1/mp/partner/earnings", headers=_auth(ptok))).json()
+    assert d2["pending_paise"] == 0
+    assert d2["paid_out_paise"] > 0
+
+
+async def test_push_token_register_and_unregister(client: AsyncClient):
+    tok = await _token(client, "+919999901234", "customer")
+    token = "ExponentPushToken[abc123xyz]"
+
+    # register
+    r = await client.post(
+        "/api/v1/mp/customer/push-token",
+        headers=_auth(tok),
+        json={"token": token, "platform": "ios"},
+    )
+    assert r.status_code == 200, r.text
+
+    # re-registering the same token is idempotent — no duplicate row
+    r2 = await client.post(
+        "/api/v1/mp/customer/push-token",
+        headers=_auth(tok),
+        json={"token": token, "platform": "android"},
+    )
+    assert r2.status_code == 200
+    async with TestSession() as s:
+        count = (
+            await s.execute(
+                select(func.count()).select_from(PushToken).where(PushToken.token == token)
+            )
+        ).scalar_one()
+    assert count == 1
+
+    # auth is required
+    anon = await client.post(
+        "/api/v1/mp/customer/push-token", json={"token": token, "platform": "ios"}
+    )
+    assert anon.status_code == 401
+
+    # unregister removes it
+    d = await client.delete(
+        "/api/v1/mp/customer/push-token", params={"token": token}, headers=_auth(tok)
+    )
+    assert d.status_code == 200
+    async with TestSession() as s:
+        count2 = (
+            await s.execute(
+                select(func.count()).select_from(PushToken).where(PushToken.token == token)
+            )
+        ).scalar_one()
+    assert count2 == 0
+
+
+async def test_finance_report(client: AsyncClient, admin_token, service_id):
+    booking, ctok, _, _ = await _completed(client, service_id, phone="+910000002060")
+    order = await _order(client, ctok, booking["id"])
+    await _webhook(client, order["provider_order_id"], payment_id="pay_report")
+
+    res = await client.get("/api/v1/mp/admin/finance/report", headers=_auth(admin_token))
+    assert res.status_code == 200, res.text
+    d = res.json()
+    assert d["gross_booking_value_paise"] > 0
+    assert d["platform_commission_paise"] > 0
+    assert d["bookings_count"] >= 1
+    assert d["net_commission_paise"] == d["platform_commission_paise"] - d["refunds_paise"]
+
+    # a window entirely in the past contains no ledger entries
+    past = await client.get(
+        "/api/v1/mp/admin/finance/report",
+        params={"end": "2000-01-01T00:00:00Z"},
+        headers=_auth(admin_token),
+    )
+    pd = past.json()
+    assert pd["gross_booking_value_paise"] == 0
+    assert pd["bookings_count"] == 0
+
+    # finance/admin auth required
+    assert (await client.get("/api/v1/mp/admin/finance/report")).status_code == 401
