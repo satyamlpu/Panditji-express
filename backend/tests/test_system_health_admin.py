@@ -48,7 +48,10 @@ async def test_health_db_counters_and_config(client: AsyncClient, admin_token):
     assert res.status_code == 200, res.text
     d = res.json()
     assert d["database"]["status"] == "connected"
-    assert d["database"]["dialect"] == "sqlite"
+    # Dialect matches the test DB (SQLite locally, PostgreSQL on CI).
+    from tests.conftest import IS_SQLITE
+
+    assert d["database"]["dialect"] == ("sqlite" if IS_SQLITE else "postgresql")
     assert d["counters"]["customers"] == 1
     assert d["counters"]["pandits_approved"] == 1
     assert d["counters"]["pandits_online"] == 1
