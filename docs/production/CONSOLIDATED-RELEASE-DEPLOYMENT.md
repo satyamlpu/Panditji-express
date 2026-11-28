@@ -140,6 +140,10 @@ Apps / website:
   (a pending product decision); the areas are a managed catalogue only.
 - Business decisions still open (not hardcoded): commission %, payout cycle,
   cancellation charges, KYC document policy, tax/GST.
-- Prod-like **staging** migration dry-run (PostGIS) could not be executed in the
-  agent's local env (no PostGIS); CI runs the PostGIS suite, and the migration was
-  verified up+down on SQLite + the full schema on PostgreSQL via `create_all`.
+- Prod-like **staging** migration dry-run **was executed** on a throwaway PG17 + PostGIS 3.6
+  cluster: the reviewed SQL file drove `c3e6a9f1d4b7 → de1035e6959b` and its schema dump is
+  identical to `alembic upgrade head`; the hardened guard aborts (full rollback, no leaked
+  tables) on wrong-version and two-row `alembic_version`; and both the new and the
+  prod-deployed old backend serve the public + admin endpoints with 200 against the migrated
+  DB. The one open item is confirming the prod `DATABASE_URL` connects as the owner
+  (`postgres`) role — see §0's RLS note.

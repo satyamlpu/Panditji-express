@@ -35,10 +35,22 @@ Scope: the consolidated branch (local `feat/crm-plus-release`, to be pushed as
   push_tokens) validated by the Postgres pytest run (`create_all`).
 - **No table collision:** #11's `c4d1e2f3a5b6` media migration is a no-op (resolve-pr11
   neutered it); #16's `d4f7b1a9c2e8` owns the media schema.
-- **Prod SQL prepared:** `PROD-MIGRATE-c3e6a9f1d4b7-to-de1035e6959b.sql` — one atomic
-  transaction, self-abort guard, no PostGIS DDL (that was `c3e6a9f1d4b7`, already on
-  prod). ⚠️ A **PostGIS staging dry-run was not possible locally** (no PostGIS); CI's
-  PostGIS job will exercise the full chain.
+- **Prod SQL prepared + staging-verified:** `PROD-MIGRATE-c3e6a9f1d4b7-to-de1035e6959b.sql`
+  — one atomic transaction, hardened self-abort guard, no PostGIS DDL (that was
+  `c3e6a9f1d4b7`, already on prod).
+- **Staging dry-run PASSED (PG17 + PostGIS 3.6):** a fresh DB taken to `c3e6a9f1d4b7` then
+  run through the SQL file reached `de1035e6959b`; its `--schema-only` dump is **identical**
+  to a parallel `alembic upgrade head` DB (only `\restrict` session nonces differ). So the
+  reviewed SQL == `alembic upgrade head`.
+- **Hardened guard verified:** aborts (full rollback, no leaked tables) on a wrong single
+  version AND on a two-row `alembic_version`; applies cleanly from exactly `c3e6a9f1d4b7`.
+  SQL body remains byte-for-byte `alembic --sql` output (modulo one non-deterministic
+  merge-bookkeeping line pair, same end state).
+- **Dual-backend compat PASSED:** both the new backend (this branch) and the old backend
+  (`main` @ the deployed commit) serve `/public/services`, `/mp/discovery/services`,
+  `/public/settings` and an admin endpoint with **200** against the migrated DB — so the
+  migration does not break the currently-deployed code (and fixes the `/public/services`
+  500 even before redeploy).
 
 ## 4. API health (consolidated backend, local)
 - **All 15 admin/module endpoints return 200** (dashboard, analytics, customers,
@@ -72,8 +84,11 @@ Scope: the consolidated branch (local `feat/crm-plus-release`, to be pushed as
    - Merge the PR + redeploy (keep #29's Pillow fix).
 3. **Product decisions (not hardcoded):** serviceability enforcement, commission %,
    payout cycle, cancellation charges, KYC policy, tax/GST.
-4. **PostGIS staging dry-run** of the migration — recommended on a real staging DB
-   with PostGIS before prod.
+4. **Confirm the prod `DATABASE_URL` role is the Supabase table-owner (`postgres`)** before
+   migrating. RLS is ENABLE-not-FORCE, so the owner bypasses it (verified: owner full CRUD
+   works, a non-owner no-grant role is denied, a non-superuser *owner* still bypasses). A
+   restricted non-owner role would 500 on every query after the migration — STOP-ship. The
+   role is set in the Render dashboard (not in the repo), so the human must verify it.
 
 See [`CONSOLIDATED-RELEASE-DEPLOYMENT.md`](./CONSOLIDATED-RELEASE-DEPLOYMENT.md) for
 the backup/migration/rollback/sequence/checklist.
