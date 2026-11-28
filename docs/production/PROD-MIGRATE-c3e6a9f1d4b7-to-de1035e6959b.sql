@@ -16,10 +16,17 @@
 
 BEGIN;
 
--- Self-abort guard: only proceed if prod is exactly at c3e6a9f1d4b7.
+-- Self-abort guard: proceed only if alembic_version holds EXACTLY ONE row and
+-- that row is c3e6a9f1d4b7. A missing row, extra rows, or a different version
+-- RAISES and rolls the whole transaction back, so a wrong/duplicate/corrupt
+-- state changes nothing.
 DO $$
-DECLARE cur text;
+DECLARE n integer; cur text;
 BEGIN
+  SELECT count(*) INTO n FROM alembic_version;
+  IF n <> 1 THEN
+    RAISE EXCEPTION 'ABORT: alembic_version has % row(s), expected exactly 1 (= c3e6a9f1d4b7). No changes applied.', n;
+  END IF;
   SELECT version_num INTO cur FROM alembic_version;
   IF cur IS DISTINCT FROM 'c3e6a9f1d4b7' THEN
     RAISE EXCEPTION 'ABORT: alembic_version is %, expected c3e6a9f1d4b7. No changes applied.', cur;
