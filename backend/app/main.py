@@ -16,8 +16,10 @@ from app.api.routers import (
     admin_locations,
     admin_media,
     admin_pages,
+    admin_releases,
     admin_services,
     admin_settings,
+    admin_staff,
     admin_system,
     admin_testimonials,
     auth,
@@ -25,12 +27,18 @@ from app.api.routers import (
 )
 from app.core.config import settings
 from app.core.errors import register_exception_handlers
-from app.core.middleware import SecurityHeadersMiddleware
+from app.core.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
 from app.core.observability import init_observability
 from app.marketplace.routers import admin as mp_admin
 from app.marketplace.routers import admin_audit as mp_admin_audit
+from app.marketplace.routers import admin_customers as mp_admin_customers
 from app.marketplace.routers import admin_finance as mp_admin_finance
+from app.marketplace.routers import admin_finance_reports as mp_admin_finance_reports
+from app.marketplace.routers import admin_ops as mp_admin_ops
+from app.marketplace.routers import admin_partners as mp_admin_partners
+from app.marketplace.routers import admin_service_areas as mp_admin_service_areas
 from app.marketplace.routers import admin_support as mp_admin_support
+from app.marketplace.routers import admin_system_health as mp_admin_system_health
 from app.marketplace.routers import auth as mp_auth
 from app.marketplace.routers import customer as mp_customer
 from app.marketplace.routers import discovery as mp_discovery
@@ -49,6 +57,9 @@ app = FastAPI(
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
+# Added last = runs first (outermost): every response, including errors and
+# CORS preflight, gets a correlation id and one structured access log line.
+app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -93,6 +104,8 @@ app.include_router(admin_settings.router)
 app.include_router(admin_media.router)
 app.include_router(admin_system.router)
 app.include_router(admin_enquiries.router)
+app.include_router(admin_releases.router)
+app.include_router(admin_staff.router)
 app.include_router(public.router)
 
 # ── Marketplace (SRS Phase 1) ────────────────────────────────────────────────
@@ -103,7 +116,13 @@ app.include_router(mp_discovery.router)
 app.include_router(mp_payments.router)
 app.include_router(mp_admin.router)
 app.include_router(mp_admin_audit.router)
+app.include_router(mp_admin_customers.router)
+app.include_router(mp_admin_partners.router)
+app.include_router(mp_admin_ops.router)
+app.include_router(mp_admin_system_health.router)
+app.include_router(mp_admin_service_areas.router)
 app.include_router(mp_admin_finance.router)
+app.include_router(mp_admin_finance_reports.router)
 app.include_router(mp_admin_support.router)
 
 # Serve admin-uploaded images read-only (optional; the site works without any).

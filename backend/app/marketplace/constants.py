@@ -39,18 +39,24 @@ class PanditStatus:
     SUBMITTED = "submitted"
     UNDER_REVIEW = "under_review"
     ACTION_REQUIRED = "action_required"
+    INTERVIEW_SCHEDULED = "interview_scheduled"
+    INTERVIEW_COMPLETED = "interview_completed"
     APPROVED = "approved"
     REJECTED = "rejected"
     SUSPENDED = "suspended"
+    REVERIFICATION_REQUIRED = "reverification_required"
 
     ALL = (
         DRAFT,
         SUBMITTED,
         UNDER_REVIEW,
         ACTION_REQUIRED,
+        INTERVIEW_SCHEDULED,
+        INTERVIEW_COMPLETED,
         APPROVED,
         REJECTED,
         SUSPENDED,
+        REVERIFICATION_REQUIRED,
     )
     # Only an approved partner may receive ordinary dispatch offers.
     ELIGIBLE = (APPROVED,)
@@ -181,3 +187,7 @@ class MpAudit:
     REVIEW_MODERATE = "mp.review.moderate"
     TICKET_CREATE = "mp.ticket.create"
     TICKET_UPDATE = "mp.ticket.update"
+    CUSTOMER_UPDATE = "mp.customer.update"
+    CUSTOMER_SUSPEND = "mp.customer.suspend"
+    CUSTOMER_REACTIVATE = "mp.customer.reactivate"
+    CUSTOMER_EXPORT = "mp.customer.export"

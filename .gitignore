@@ -34,3 +34,9 @@ backend/uploads/
 Thumbs.db
 .idea/
 .vscode/
+
+# Machine-specific preview launch config (absolute paths)
+.claude/launch.json
+
+# local venv symlink (machine-specific)
+backend/.venv

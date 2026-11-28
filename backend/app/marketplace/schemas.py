@@ -72,6 +72,8 @@ class BookingCreate(BaseModel):
     service_slug: str
     mode: Literal["immediate", "scheduled"] = "immediate"
     scheduled_at: datetime | None = None
+    # Optional customer-selected pandit (from discovery). Offered first.
+    preferred_pandit_id: str | None = None
     address_id: str | None = None
     # Inline address (used when no saved address_id is given)
     address_line: str | None = None
@@ -124,6 +126,8 @@ class PanditOnboard(BaseModel):
     base_lng: float = Field(ge=-180, le=180)
     service_radius_km: float = Field(default=10, ge=1, le=100)
     service_slugs: list[str] = Field(default_factory=list)
+    experience_years: int | None = Field(default=None, ge=0, le=80)
+    specialisation: str | None = Field(default=None, max_length=120)
 
 
 class CapabilityRef(BaseModel):
@@ -145,6 +149,8 @@ class PanditOut(BaseModel):
     service_radius_km: float
     rating_avg: float | None
     rating_count: int
+    experience_years: int | None = None
+    specialisation: str | None = None
     capabilities: list[CapabilityRef]
 
 
@@ -175,12 +181,50 @@ class PanditSearchItem(BaseModel):
     service_radius_km: float
     rating_avg: float | None = None
     rating_count: int = 0
+    # Estimated time for the pandit to reach the customer (straight-line distance
+    # over an average urban travel speed; indicative, not a routed ETA).
+    eta_minutes: int | None = None
+    # Indicative price for the requested service (formatted).
+    price_display: str | None = None
+    experience_years: int | None = None
+    specialisation: str | None = None
 
 
 class Serviceability(BaseModel):
     serviceable: bool
     reason: str | None = None
     available_partners: int = 0
+
+
+# ── Operations analytics ─────────────────────────────────────────────────────
+class AnalyticsDaily(BaseModel):
+    date: str  # YYYY-MM-DD (UTC)
+    total: int
+    completed: int
+    no_partner: int
+
+
+class AnalyticsTopService(BaseModel):
+    title: str
+    bookings: int
+
+
+class AnalyticsTotals(BaseModel):
+    bookings: int
+    completed: int
+    no_partner: int
+    cancelled: int
+    completion_rate: float
+    no_match_rate: float
+    gmv_paise: int
+    gmv_display: str
+
+
+class AnalyticsOut(BaseModel):
+    days: int
+    totals: AnalyticsTotals
+    daily: list[AnalyticsDaily]
+    top_services: list[AnalyticsTopService]
 
 
 # ── Admin ────────────────────────────────────────────────────────────────────
@@ -198,7 +242,15 @@ class PanditAdminOut(BaseModel):
 
 
 class VerificationDecision(BaseModel):
-    decision: Literal["approve", "reject", "request_changes", "suspend"]
+    decision: Literal[
+        "approve",
+        "reject",
+        "request_changes",
+        "suspend",
+        "schedule_interview",
+        "complete_interview",
+        "require_reverification",
+    ]
     reason: str | None = Field(default=None, max_length=500)
 
 
@@ -296,6 +348,11 @@ class NotificationOut(BaseModel):
     created_at: datetime
 
 
+class PushTokenIn(BaseModel):
+    token: str = Field(min_length=8, max_length=512)
+    platform: str = Field(default="unknown", max_length=20)
+
+
 # ── Payments & finance (Phase 3) ─────────────────────────────────────────────
 class OrderOut(BaseModel):
     payment_id: str
@@ -353,6 +410,19 @@ class FinanceSummaryOut(BaseModel):
     outstanding_payable_paise: int
 
 
+class FinanceReportOut(BaseModel):
+    start: datetime | None
+    end: datetime | None
+    gross_booking_value_paise: int
+    platform_commission_paise: int
+    gateway_fees_paise: int
+    partner_payable_paise: int
+    refunds_paise: int
+    paid_out_paise: int
+    net_commission_paise: int  # platform commission net of refunds
+    bookings_count: int
+
+
 # ── Reviews (Phase 3) ────────────────────────────────────────────────────────
 class ReviewCreate(BaseModel):
     rating: int = Field(ge=1, le=5)
@@ -376,6 +446,26 @@ class ReviewModerate(BaseModel):
 
 
 # ── Support tickets (Phase 3) ────────────────────────────────────────────────
+class EarningsLine(BaseModel):
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_id: str | None
+    settled: bool
+    at: datetime
+
+
+class EarningsOut(BaseModel):
+    total_earned_paise: int
+    total_earned_display: str
+    pending_paise: int
+    pending_display: str
+    paid_out_paise: int
+    paid_out_display: str
+    bookings_count: int
+    recent: list[EarningsLine]
+
+
 class TicketCreate(BaseModel):
     subject: str = Field(min_length=3, max_length=160)
     body: str = Field(min_length=3, max_length=4000)
@@ -462,3 +552,395 @@ class PermissionRow(BaseModel):
 class PermissionMatrixOut(BaseModel):
     roles: list[str]
     modules: list[PermissionRow]
+
+
+# ── Customers CRM (admin) ────────────────────────────────────────────────────
+class CustomerAdminOut(BaseModel):
+    id: str
+    phone: str
+    name: str | None
+    language: str | None
+    status: str
+    created_at: datetime
+    bookings_count: int
+    completed_count: int
+    cancelled_count: int
+    total_spent_paise: int
+    total_spent_display: str
+    review_count: int
+    open_tickets: int
+    last_booking_at: datetime | None
+
+
+class CustomerListOut(BaseModel):
+    items: list[CustomerAdminOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class CustomerAdminDetail(CustomerAdminOut):
+    addresses: list[AddressOut]
+
+
+class CustomerStatusUpdate(BaseModel):
+    reason: str = Field(min_length=2, max_length=500)
+
+
+class CustomerActivityOut(BaseModel):
+    action: str
+    actor_email: str | None
+    at: datetime
+    meta: dict | None = None
+
+
+class CustomerExportOut(BaseModel):
+    profile: CustomerAdminDetail
+    bookings: list[BookingOut]
+    payments: list[PaymentOut]
+    reviews: list[ReviewOut]
+    tickets: list[TicketOut]
+    exported_at: datetime
+    exported_by: str
+
+
+# ── Partner management CRM (admin) ───────────────────────────────────────────
+class PartnerAdminRow(BaseModel):
+    id: str
+    name: str | None
+    phone: str
+    city: str | None
+    status: str
+    availability: str
+    capability_count: int
+    rating_avg: float | None
+    rating_count: int
+    completed_count: int
+    acceptance_rate: float | None
+    outstanding_paise: int
+    outstanding_display: str
+    created_at: datetime
+
+
+class PartnerListOut(BaseModel):
+    items: list[PartnerAdminRow]
+    total: int
+    page: int
+    page_size: int
+
+
+class PartnerPerformance(BaseModel):
+    offers_received: int
+    offers_accepted: int
+    acceptance_rate: float | None
+    completed_count: int
+    cancelled_count: int
+    active_count: int
+    rating_avg: float | None
+    rating_count: int
+
+
+class PartnerEarnings(BaseModel):
+    lifetime_earned_paise: int
+    lifetime_earned_display: str
+    paid_out_paise: int
+    paid_out_display: str
+    outstanding_paise: int
+    outstanding_display: str
+
+
+class PartnerOverview(BaseModel):
+    id: str
+    name: str | None
+    phone: str
+    city: str | None
+    status: str
+    availability: str
+    languages: list[str] | None
+    base_lat: float | None
+    base_lng: float | None
+    service_radius_km: float
+    verification_reason: str | None
+    reviewed_by: str | None
+    created_at: datetime
+    capabilities: list[CapabilityRef]
+    performance: PartnerPerformance
+    earnings: PartnerEarnings
+
+
+class PartnerEarningRow(BaseModel):
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_code: str | None
+    settled: bool
+    created_at: datetime
+
+
+class PartnerPayoutRow(BaseModel):
+    amount_paise: int
+    amount_display: str
+    bookings_count: int
+    status: str
+    created_at: datetime
+
+
+class PartnerEarningsDetail(BaseModel):
+    summary: PartnerEarnings
+    entries: list[PartnerEarningRow]
+    payouts: list[PartnerPayoutRow]
+
+
+# ── Live Operations Centre (admin) ───────────────────────────────────────────
+class OpsPartnerCounts(BaseModel):
+    online: int
+    busy: int
+    offline: int
+    unavailable: int
+    approved_total: int
+
+
+class OpsBookingCounts(BaseModel):
+    dispatching: int
+    active: int
+    unassigned: int
+    scheduled_upcoming: int
+    completed_today: int
+
+
+class OpsActiveBooking(BaseModel):
+    id: str
+    code: str
+    status: str
+    customer_name: str | None
+    partner_id: str | None
+    partner_name: str | None
+    live_lat: float | None
+    live_lng: float | None
+    live_fresh_seconds: int | None
+    eta_minutes: int | None
+    dest_lat: float
+    dest_lng: float
+
+
+class OpsDispatchBooking(BaseModel):
+    id: str
+    code: str
+    status: str
+    created_at: datetime
+    waiting_seconds: int
+    offers_count: int
+    current_partner_name: str | None
+
+
+class OpsUnassignedBooking(BaseModel):
+    id: str
+    code: str
+    status: str
+    created_at: datetime
+    waiting_seconds: int
+
+
+class OpsAlert(BaseModel):
+    id: str
+    code: str
+    status: str
+    kind: str  # stuck_dispatch | no_partner | stale_location
+    since_seconds: int | None
+
+
+class OpsOverviewOut(BaseModel):
+    generated_at: datetime
+    partners: OpsPartnerCounts
+    bookings: OpsBookingCounts
+    active: list[OpsActiveBooking]
+    dispatching: list[OpsDispatchBooking]
+    unassigned: list[OpsUnassignedBooking]
+    alerts: list[OpsAlert]
+
+
+class OpsMapPartner(BaseModel):
+    id: str
+    name: str | None
+    availability: str
+    lat: float
+    lng: float
+    is_live: bool
+
+
+class OpsMapDestination(BaseModel):
+    code: str
+    lat: float
+    lng: float
+    status: str
+
+
+class OpsMapOut(BaseModel):
+    center_lat: float | None
+    center_lng: float | None
+    partners: list[OpsMapPartner]
+    destinations: list[OpsMapDestination]
+
+
+# ── Finance reporting & reconciliation (admin) ───────────────────────────────
+class ReconciliationTotals(BaseModel):
+    gross_booking_value_paise: int
+    gross_booking_value_display: str
+    platform_commission_paise: int
+    platform_commission_display: str
+    gateway_fees_paise: int
+    gateway_fees_display: str
+    partner_payable_paise: int
+    partner_payable_display: str
+    refunds_paise: int
+    refunds_display: str
+    payouts_paise: int
+    payouts_display: str
+    net_platform_revenue_paise: int
+    net_platform_revenue_display: str
+    outstanding_payable_paise: int
+    outstanding_payable_display: str
+
+
+class FinanceDayRow(BaseModel):
+    date: str
+    charges_paise: int
+    commission_paise: int
+    gateway_paise: int
+    payable_paise: int
+    refunds_paise: int
+    payouts_paise: int
+
+
+class ReconciliationOut(BaseModel):
+    range_days: int
+    totals: ReconciliationTotals
+    by_day: list[FinanceDayRow]
+
+
+class LedgerFeedRow(BaseModel):
+    id: str
+    entry_type: str
+    amount_paise: int
+    amount_display: str
+    booking_code: str | None
+    pandit_id: str | None
+    settled: bool
+    created_at: datetime
+
+
+class LedgerFeedOut(BaseModel):
+    items: list[LedgerFeedRow]
+    total: int
+    page: int
+    page_size: int
+
+
+class RefundRow(BaseModel):
+    id: str
+    booking_code: str | None
+    amount_paise: int
+    amount_display: str
+    reason: str | None
+    status: str
+    created_by: str | None
+    created_at: datetime
+
+
+# ── Support metrics (admin) ──────────────────────────────────────────────────
+class SupportMetricsOut(BaseModel):
+    open: int
+    assigned: int
+    escalated: int
+    unassigned: int
+    resolved_today: int
+    oldest_open_hours: float | None
+    sla_breaches: int
+    sla_threshold_hours: int
+
+
+# ── System health (admin) ────────────────────────────────────────────────────
+class SystemDatabase(BaseModel):
+    status: str
+    dialect: str
+
+
+class SystemCounters(BaseModel):
+    customers: int
+    pandits_total: int
+    pandits_approved: int
+    pandits_online: int
+    bookings_total: int
+    bookings_active: int
+    bookings_dispatching: int
+    bookings_no_partner: int
+    reviews: int
+    open_tickets: int
+    payments: int
+
+
+class SystemConfigOut(BaseModel):
+    environment: str
+    is_production: bool
+    geo_backend: str
+    storage_backend: str
+    media_storage_backend: str
+    commission_percent: float
+    gateway_fee_percent: float
+    cors_origins: int
+    docs_enabled: bool
+    supabase_kyc_configured: bool
+    supabase_media_configured: bool
+    revalidate_configured: bool
+
+
+class SystemHealthOut(BaseModel):
+    status: str
+    generated_at: datetime
+    database: SystemDatabase
+    counters: SystemCounters
+    config: SystemConfigOut
+    warnings: list[str]
+
+
+# ── Service areas (admin) ────────────────────────────────────────────────────
+class ServiceAreaOut(BaseModel):
+    id: str
+    name: str
+    city: str | None
+    center_lat: float
+    center_lng: float
+    radius_km: float
+    pincodes: list[str]
+    active: bool
+    notes: str | None
+    created_at: datetime
+
+
+class ServiceAreaCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    city: str | None = Field(default=None, max_length=80)
+    center_lat: float = Field(ge=-90, le=90)
+    center_lng: float = Field(ge=-180, le=180)
+    radius_km: float = Field(gt=0, le=500)
+    pincodes: list[str] = Field(default_factory=list)
+    active: bool = True
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class ServiceAreaUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    city: str | None = Field(default=None, max_length=80)
+    center_lat: float | None = Field(default=None, ge=-90, le=90)
+    center_lng: float | None = Field(default=None, ge=-180, le=180)
+    radius_km: float | None = Field(default=None, gt=0, le=500)
+    pincodes: list[str] | None = None
+    active: bool | None = None
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class CoverageOut(BaseModel):
+    lat: float
+    lng: float
+    covered: bool
+    areas: list[ServiceAreaOut]

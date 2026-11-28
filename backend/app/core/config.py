@@ -84,12 +84,32 @@ class Settings(BaseSettings):
     seed_admin_email: str = "admin@panditjiexpress.in"
     seed_admin_password: str = _DEFAULT_SEED_ADMIN_PASSWORD
 
+    # Shared secret for the scheduled-booking dispatch endpoint. Empty by default,
+    # which DISABLES the endpoint (503). Set it in prod and have an external cron
+    # (Vercel Cron / GitHub Action) POST with the `X-Scheduler-Token` header so
+    # scheduled bookings dispatch at their time. No background worker required.
+    scheduler_secret: str = ""
+
     # Marketplace payments (mock gateway in dev). The webhook secret signs the
     # provider callback; a real gateway (e.g. Razorpay) replaces the mock while
     # the verification + idempotency + ledger flow stays the same.
     payment_webhook_secret: str = _INSECURE_WEBHOOK_SECRET
     platform_commission_percent: float = 15.0
     gateway_fee_percent: float = 2.0
+    # Payment provider adapter: "mock" (dev/sandbox) or "razorpay" (prod). The
+    # ledger/idempotency/webhook-verify flow is identical; only signature scheme
+    # and order creation differ. Live keys come from the environment.
+    payment_provider: str = "mock"
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+
+    # SMS / OTP delivery provider: "none" (dev — code returned in the response),
+    # "console" (dev — code logged, not returned), or "msg91" (prod DLT). Live
+    # credentials come from the environment and a DLT-approved template.
+    sms_provider: str = "none"
+    msg91_auth_key: str = ""
+    msg91_sender_id: str = ""
+    msg91_dlt_template_id: str = ""
 
     # Geo matching backend for dispatch eligibility. "haversine" scans in Python
     # (dev/SQLite, correct but O(n)); "postgis" uses an indexed ST_DWithin radius
@@ -108,10 +128,10 @@ class Settings(BaseSettings):
     # Hard cap on a single uploaded KYC file, in bytes. Default 10 MB.
     verification_max_upload_bytes: int = 10 * 1024 * 1024
 
-    # Public marketing media (service/category thumbnails, homepage/banner
-    # images). Unlike KYC, these ARE served from a public URL — kept in a
-    # SEPARATE store from the private KYC bucket above. "local" writes under
-    # MEDIA_LOCAL_DIR and serves via the /uploads mount; "supabase" stores
+    # Public marketing media / Media Library (service/category thumbnails,
+    # homepage/banner images). Unlike KYC, these ARE served from a public URL —
+    # kept in a SEPARATE store from the private KYC bucket above. "local" writes
+    # under MEDIA_LOCAL_DIR and serves via the /uploads mount; "supabase" stores
     # objects in a PUBLIC Supabase Storage bucket (survives serverless).
     media_storage_backend: str = "local"
     media_local_dir: str = "./uploads/media"
@@ -122,6 +142,11 @@ class Settings(BaseSettings):
     media_public_base_url: str = ""
     # Hard cap on a single uploaded marketing image, in bytes. Default 8 MB.
     media_max_upload_bytes: int = 8 * 1024 * 1024
+    # Legacy alias (release/full): the directory the public media proxy endpoint
+    # (/api/v1/public/media/{id}) and marketplace.storage.get_media_storage read
+    # from. Same default dir as media_local_dir, so the proxy read path keeps
+    # working alongside the Media Library's direct-URL serving.
+    media_storage_local_dir: str = "./uploads/media"
 
     @field_validator("database_url")
     @classmethod

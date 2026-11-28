@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -14,7 +15,8 @@ import { AField, AdminModal, StatusDot } from "@/components/admin/kit";
 import { cn } from "@/lib/utils";
 
 const STATUSES = [
-  "all", "submitted", "under_review", "action_required", "approved", "rejected", "suspended",
+  "all", "submitted", "under_review", "action_required", "interview_scheduled",
+  "interview_completed", "approved", "rejected", "suspended", "reverification_required",
 ];
 
 function PartnersInner() {
@@ -44,7 +46,14 @@ function PartnersInner() {
       id, decision,
     }: {
       id: string;
-      decision: "approve" | "reject" | "request_changes" | "suspend";
+      decision:
+        | "approve"
+        | "reject"
+        | "request_changes"
+        | "suspend"
+        | "schedule_interview"
+        | "complete_interview"
+        | "require_reverification";
     }) => mpApi.decide(id, decision, reason),
     onSuccess: () => {
       toast.success("Decision recorded");
@@ -118,6 +127,12 @@ function PartnersInner() {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusDot status={p.status} />
+                  <Link
+                    href={`/admin/marketplace/partners/${p.id}`}
+                    className="rounded-pill border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-2"
+                  >
+                    360
+                  </Link>
                   <Button variant="outline" size="sm" onClick={() => setReviewId(p.id)}>
                     Review
                   </Button>
@@ -156,6 +171,16 @@ function PartnersInner() {
               {detail.data.languages?.length ? (
                 <p className="mt-1 text-sm text-muted">
                   Languages: {detail.data.languages.join(", ")}
+                </p>
+              ) : null}
+              {detail.data.experience_years != null ? (
+                <p className="mt-1 text-sm text-muted">
+                  Experience: {detail.data.experience_years} yrs
+                </p>
+              ) : null}
+              {detail.data.specialisation ? (
+                <p className="mt-1 text-sm text-muted">
+                  Specialisation: {detail.data.specialisation}
                 </p>
               ) : null}
             </div>
@@ -250,15 +275,45 @@ function PartnersInner() {
               >
                 Reject
               </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  decide.mutate({ id: detail.data!.id, decision: "schedule_interview" })
+                }
+                disabled={decide.isPending}
+              >
+                Schedule interview
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  decide.mutate({ id: detail.data!.id, decision: "complete_interview" })
+                }
+                disabled={decide.isPending}
+              >
+                Interview done
+              </Button>
               {detail.data.status === "approved" && (
-                <Button
-                  variant="outline"
-                  onClick={() => decide.mutate({ id: detail.data!.id, decision: "suspend" })}
-                  disabled={decide.isPending}
-                  className="border-tomato/40 text-tomato"
-                >
-                  Suspend
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      decide.mutate({ id: detail.data!.id, decision: "require_reverification" })
+                    }
+                    disabled={decide.isPending}
+                    className="border-tomato/40 text-tomato"
+                  >
+                    Require re-verification
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => decide.mutate({ id: detail.data!.id, decision: "suspend" })}
+                    disabled={decide.isPending}
+                    className="border-tomato/40 text-tomato"
+                  >
+                    Suspend
+                  </Button>
+                </>
               )}
             </div>
           </div>

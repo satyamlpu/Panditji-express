@@ -58,21 +58,28 @@ export const WEBSITE_NAV: NavItem[] = [
   { href: "/admin/pages", label: "Pages", icon: "pages" },
   { href: "/admin/homepage", label: "Homepage", icon: "homepage" },
   { href: "/admin/media", label: "Media Library", icon: "media" },
+  { href: "/admin/releases", label: "App Releases", icon: "app" },
   { href: "/admin/seo", label: "SEO", icon: "seo" },
   { href: "/admin/enquiries", label: "Enquiries", icon: "enquiries" },
   { href: "/admin/activity", label: "Sync & Activity", icon: "activity" },
+  { href: "/admin/staff", label: "Staff & Roles", icon: "security" },
   { href: "/admin/settings", label: "Settings", icon: "settings" },
 ];
 
 export const APP_NAV: NavItem[] = [
   { href: "/admin/marketplace", label: "Operations", icon: "operations", exact: true },
+  { href: "/admin/marketplace/analytics", label: "Analytics", icon: "analytics" },
+  { href: "/admin/marketplace/ops", label: "Live Ops", icon: "activity" },
   { href: "/admin/marketplace/customers", label: "Customers", icon: "customers" },
   { href: "/admin/marketplace/partners", label: "Partners", icon: "partners" },
+  { href: "/admin/marketplace/service-areas", label: "Service Areas", icon: "locations" },
   { href: "/admin/marketplace/bookings", label: "Bookings", icon: "bookings" },
-  { href: "/admin/marketplace/finance", label: "Finance", icon: "finance" },
+  { href: "/admin/marketplace/finance", label: "Finance", icon: "finance", exact: true },
+  { href: "/admin/marketplace/finance/reports", label: "Finance Reports", icon: "analytics" },
   { href: "/admin/marketplace/reviews", label: "Reviews", icon: "reviews" },
   { href: "/admin/marketplace/support", label: "Support", icon: "support" },
   { href: "/admin/marketplace/audit", label: "Audit & Roles", icon: "security" },
+  { href: "/admin/marketplace/system", label: "System Health", icon: "activity" },
 ];
 
 export const NAV_BY_MODULE: Record<ModuleId, NavItem[]> = {
