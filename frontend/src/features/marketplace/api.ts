@@ -551,6 +551,38 @@ export interface RefundRow {
   status: string;
   created_by: string | null;
   created_at: string;
+export interface SystemHealth {
+  status: string;
+  generated_at: string;
+  database: { status: string; dialect: string };
+  counters: {
+    customers: number;
+    pandits_total: number;
+    pandits_approved: number;
+    pandits_online: number;
+    bookings_total: number;
+    bookings_active: number;
+    bookings_dispatching: number;
+    bookings_no_partner: number;
+    reviews: number;
+    open_tickets: number;
+    payments: number;
+  };
+  config: {
+    environment: string;
+    is_production: boolean;
+    geo_backend: string;
+    storage_backend: string;
+    media_storage_backend: string;
+    commission_percent: number;
+    gateway_fee_percent: number;
+    cors_origins: number;
+    docs_enabled: boolean;
+    supabase_kyc_configured: boolean;
+    supabase_media_configured: boolean;
+    revalidate_configured: boolean;
+  };
+  warnings: string[];
 }
 
 const BASE = "/api/v1/mp/admin";
@@ -701,4 +733,6 @@ export const mpApi = {
     return api.get<LedgerFeed>(`${BASE}/finance/ledger?${qs.toString()}`);
   },
   financeRefunds: () => api.get<RefundRow[]>(`${BASE}/finance/refunds`),
+  // System health
+  systemHealth: () => api.get<SystemHealth>(`${BASE}/system/health`),
 };
