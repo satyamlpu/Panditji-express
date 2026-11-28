@@ -176,6 +176,17 @@ export interface TicketMessage {
   at: string;
 }
 
+export interface SupportMetrics {
+  open: number;
+  assigned: number;
+  escalated: number;
+  unassigned: number;
+  resolved_today: number;
+  oldest_open_hours: number | null;
+  sla_breaches: number;
+  sla_threshold_hours: number;
+}
+
 export interface TicketDetail extends Ticket {
   resolution: string | null;
   messages: TicketMessage[];
@@ -593,11 +604,19 @@ export const mpApi = {
     api.post<{ amount_display: string }>(`${BASE}/finance/payouts`, { pandit_id }),
 
   // Reviews
-  reviews: () => api.get<Review[]>(`${BASE}/reviews`),
+  reviews: (params: { reported?: boolean; hidden?: boolean; rating?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.reported !== undefined) qs.set("reported", String(params.reported));
+    if (params.hidden !== undefined) qs.set("hidden", String(params.hidden));
+    if (params.rating !== undefined) qs.set("rating", String(params.rating));
+    const s = qs.toString();
+    return api.get<Review[]>(`${BASE}/reviews${s ? `?${s}` : ""}`);
+  },
   moderateReview: (id: string, hidden: boolean) =>
     api.post<Review>(`${BASE}/reviews/${id}/moderate`, { hidden }),
 
   // Support
+  supportMetrics: () => api.get<SupportMetrics>(`${BASE}/support/metrics`),
   tickets: (status?: string) =>
     api.get<Ticket[]>(`${BASE}/support/tickets${status ? `?status=${status}` : ""}`),
   ticket: (id: string) => api.get<TicketDetail>(`${BASE}/support/tickets/${id}`),
