@@ -393,6 +393,94 @@ export interface MpAnalytics {
   totals: MpAnalyticsTotals;
   daily: MpAnalyticsDaily[];
   top_services: MpAnalyticsTopService[];
+export interface OpsPartnerCounts {
+  online: number;
+  busy: number;
+  offline: number;
+  unavailable: number;
+  approved_total: number;
+}
+
+export interface OpsBookingCounts {
+  dispatching: number;
+  active: number;
+  unassigned: number;
+  scheduled_upcoming: number;
+  completed_today: number;
+}
+
+export interface OpsActiveBooking {
+  id: string;
+  code: string;
+  status: string;
+  customer_name: string | null;
+  partner_id: string | null;
+  partner_name: string | null;
+  live_lat: number | null;
+  live_lng: number | null;
+  live_fresh_seconds: number | null;
+  eta_minutes: number | null;
+  dest_lat: number;
+  dest_lng: number;
+}
+
+export interface OpsDispatchBooking {
+  id: string;
+  code: string;
+  status: string;
+  created_at: string;
+  waiting_seconds: number;
+  offers_count: number;
+  current_partner_name: string | null;
+}
+
+export interface OpsUnassignedBooking {
+  id: string;
+  code: string;
+  status: string;
+  created_at: string;
+  waiting_seconds: number;
+}
+
+export interface OpsAlert {
+  id: string;
+  code: string;
+  status: string;
+  kind: string;
+  since_seconds: number | null;
+}
+
+export interface OpsOverview {
+  generated_at: string;
+  partners: OpsPartnerCounts;
+  bookings: OpsBookingCounts;
+  active: OpsActiveBooking[];
+  dispatching: OpsDispatchBooking[];
+  unassigned: OpsUnassignedBooking[];
+  alerts: OpsAlert[];
+}
+
+export interface OpsMapPartner {
+  id: string;
+  name: string | null;
+  availability: string;
+  lat: number;
+  lng: number;
+  is_live: boolean;
+}
+
+export interface OpsMapDestination {
+  code: string;
+  lat: number;
+  lng: number;
+  status: string;
+}
+
+export interface OpsMap {
+  center_lat: number | null;
+  center_lng: number | null;
+  partners: OpsMapPartner[];
+  destinations: OpsMapDestination[];
 }
 
 const BASE = "/api/v1/mp/admin";
@@ -521,4 +609,7 @@ export const mpApi = {
     api.get<Review[]>(`${BASE}/partners/${id}/reviews`),
   partnerEarnings: (id: string) =>
     api.get<PartnerEarningsDetail>(`${BASE}/partners/${id}/earnings`),
+  // Live Operations Centre
+  opsOverview: () => api.get<OpsOverview>(`${BASE}/ops/overview`),
+  opsMap: () => api.get<OpsMap>(`${BASE}/ops/map`),
 };
