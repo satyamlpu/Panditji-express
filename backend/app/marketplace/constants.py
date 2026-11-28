@@ -187,3 +187,7 @@ class MpAudit:
     REVIEW_MODERATE = "mp.review.moderate"
     TICKET_CREATE = "mp.ticket.create"
     TICKET_UPDATE = "mp.ticket.update"
+    CUSTOMER_UPDATE = "mp.customer.update"
+    CUSTOMER_SUSPEND = "mp.customer.suspend"
+    CUSTOMER_REACTIVATE = "mp.customer.reactivate"
+    CUSTOMER_EXPORT = "mp.customer.export"

@@ -31,6 +31,7 @@ from app.core.middleware import RequestContextMiddleware, SecurityHeadersMiddlew
 from app.core.observability import init_observability
 from app.marketplace.routers import admin as mp_admin
 from app.marketplace.routers import admin_audit as mp_admin_audit
+from app.marketplace.routers import admin_customers as mp_admin_customers
 from app.marketplace.routers import admin_finance as mp_admin_finance
 from app.marketplace.routers import admin_support as mp_admin_support
 from app.marketplace.routers import auth as mp_auth
@@ -110,6 +111,7 @@ app.include_router(mp_discovery.router)
 app.include_router(mp_payments.router)
 app.include_router(mp_admin.router)
 app.include_router(mp_admin_audit.router)
+app.include_router(mp_admin_customers.router)
 app.include_router(mp_admin_finance.router)
 app.include_router(mp_admin_support.router)
 
